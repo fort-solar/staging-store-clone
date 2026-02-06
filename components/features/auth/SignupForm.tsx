@@ -107,14 +107,14 @@ const SignupForm = () => {
       </div>
 
       <div className="space-y-5">
-        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-1 shadow-sm">
+        <div className="">
           <GoogleLogin
             onSuccess={() => setStatus({ tone: "success", message: "Google sign-in success." })}
             onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
             size="large"
             width="100%"
             text="continue_with"
-            shape="pill"
+            shape="rectangular"
           />
         </div>
 
