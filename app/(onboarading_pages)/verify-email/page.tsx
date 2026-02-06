@@ -1,9 +1,13 @@
-import React from 'react'
+import React from "react";
+import { AuthLayout } from "@/components/features/auth/AuthLayout";
+import { VerifyEmailForm } from "@/components/features/auth/VerifyEmailForm";
 
-const page = () => {
+const Page = () => {
   return (
-    <div>page</div>
-  )
-}
+    <AuthLayout>
+      <VerifyEmailForm />
+    </AuthLayout>
+  );
+};
 
-export default page
+export default Page;
