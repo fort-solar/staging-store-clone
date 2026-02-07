@@ -20,7 +20,7 @@ const ProductsGrid = ({
 }: {
     items: ProductItem[];
     view: "grid" | "list";
-    favorites: Record<number, boolean>;
+    favorites: number[];
     onToggleFavorite: (id: number) => void;
 }) => {
     if (view === "list") {
@@ -36,7 +36,8 @@ const ProductsGrid = ({
                         availability={p.availability}
                         warrantyYears={p.warrantyYears}
                         href={`/dashboard/products/${p.id}`}
-                        isFavorite={!!favorites[p.id]}
+                        id={p.id}
+                        isFavorite={favorites.includes(p.id)}
                         onToggleFavorite={() => onToggleFavorite(p.id)}
                     />
                 ))}
@@ -45,22 +46,30 @@ const ProductsGrid = ({
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {
-                items.map((p) => (
-                    <ProductCard
-                        key={p.id}
-                        title={p.title}
-                        mini_description={p.mini_description}
-                        price={p.price}
-                        image={p.image}
-                        availability={p.availability}
-                        href={`/dashboard/products/${p.id}`}
-                        isFavorite={!!favorites[p.id]}
-                        onToggleFavorite={() => onToggleFavorite(p.id)}
-                    />
-                ))
-            }
+        <div className="@container">
+            <div className="
+        grid grid-cols-1
+        sm:grid-cols-3
+        @[900px]:grid-cols-4
+        gap-5
+      ">
+                {
+                    items.map((p) => (
+                        <ProductCard
+                            key={p.id}
+                            id={p.id}
+                            title={p.title}
+                            mini_description={p.mini_description}
+                            price={p.price}
+                            image={p.image}
+                            availability={p.availability}
+                            href={`/dashboard/products/${p.id}`}
+                            isFavorite={favorites.includes(p.id)}
+                            onToggleFavorite={() => onToggleFavorite(p.id)}
+                        />
+                    ))
+                }
+            </div>
         </div>
     )
 }
