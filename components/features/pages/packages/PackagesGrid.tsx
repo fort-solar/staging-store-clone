@@ -33,15 +33,23 @@ const PackagesGrid = ({ items, view }: { items: PackageItem[]; view: "grid" | "l
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {
-                items.map((p) => (
-                    <Link key={p.id} href={`/dashboard/packages/${p.id}`}>
-                        <PackageCard title={p.title} mini_description={p.mini_description} image={p.image} />
-                    </Link>
-                ))
-            }
+        <div className="@container">
+            <div className="
+        grid grid-cols-1
+        sm:grid-cols-3
+        @[900px]:grid-cols-4
+        gap-5
+      ">
+                {
+                    items.map((p) => (
+                        <Link key={p.id} href={`/dashboard/packages/${p.id}`}>
+                            <PackageCard title={p.title} mini_description={p.mini_description} image={p.image} />
+                        </Link>
+                    ))
+                }
+            </div>
         </div>
+
     )
 }
 
