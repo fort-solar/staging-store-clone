@@ -1,9 +1,7 @@
-import React from 'react'
+import DashboardProductsPackages from "@/components/features/pages/dashboard/DashboardProductsPackages";
 
 const page = () => {
-  return (
-    <div>Dashboard</div>
-  )
+  return <DashboardProductsPackages initialTab="products" />;
 }
 
 export default page
