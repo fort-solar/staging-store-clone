@@ -9,6 +9,8 @@ import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useGeneralStore } from "@/store/GeneralStore";
+import Link from "next/link";
 
 type TabKey = "products" | "packages";
 
@@ -120,7 +122,16 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const [packageView, setPackageView] = useState<"grid" | "list">("grid");
   const [productQuery, setProductQuery] = useState("");
   const [packageQuery, setPackageQuery] = useState("");
-  const [favorites, setFavorites] = useState<Record<number, boolean>>({});
+  const favorites = useGeneralStore((state) => state.favorites);
+  const toggleFavoriteProduct = useGeneralStore(
+    (state) => state.toggleFavoriteProduct
+  );
+  const isCategorySidebarOpen = useGeneralStore(
+    (state) => state.isCategorySidebarOpen
+  );
+  const toggleCategorySidebar = useGeneralStore(
+    (state) => state.toggleCategorySidebar
+  );
 
   const toggleArrayValue = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((item) => item !== value) : [...arr, value];
@@ -275,22 +286,18 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     }
   };
 
-  const toggleFavorite = (id: number) => {
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   return (
     <div className="min-h-screen bg-white pt-22">
       <DashboardHeader query={activeQuery} onQueryChange={setActiveQuery} />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-2">
         <div className="flex flex-col lg:flex-row mt-28 lg:mt-0 lg:justify-between lg:items-center">
-          <div className="lg:flex items-center gap-2 text-sm text-[#5A646B] hidden">
+          <Link href="https://www.fortsolar.ng" target="_blank" className="lg:flex items-center gap-2 text-sm text-[#5A646B] hidden">
             <span className="text-lg">←</span>
             <span>Home</span>
-          </div>
+          </Link>
 
-          <div className="flex flex-col gap-3 mb-5 lg:mt-0">
+          <div className="flex flex-col gap-3 mb-5 lg:mb-0 lg:mt-0">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               {activeTab === "products" ? (
                 <div className="flex flex-wrap items-center gap-2 text-sm text-[#5A646B]">
@@ -419,8 +426,22 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
         </div>
 
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-          <aside className="space-y-6">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+
+          {isCategorySidebarOpen && (
+            <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden" onClick={toggleCategorySidebar} />
+          )}
+          <aside
+            className={`space-y-6 transition-all duration-300 ${
+              isCategorySidebarOpen
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-4 pointer-events-none lg:hidden"
+            } ${
+              isCategorySidebarOpen
+                ? "fixed left-0 top-0 z-50 lg:z-2 h-full w-80 overflow-y-auto bg-white px-4 py-14 shadow-lg lg:static lg:h-auto lg:w-auto lg:overflow-visible lg:bg-transparent lg:px-0 lg:pt-0 lg:shadow-none"
+                : "hidden lg:static"
+            }`}
+          >
             <FilterSection title="Price, $">
               <div className="flex gap-3">
                 <Input
@@ -445,7 +466,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 />
               </div>
             </FilterSection>
-
             <FilterSection title="Category">
               <div className="space-y-2">
                 {["Solar Products", "Solar Packages"].map((cat) => (
@@ -463,7 +483,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 ))}
               </div>
             </FilterSection>
-
             <FilterSection
               title={activeTab === "products" ? "Product Type" : "Package Type"}
             >
@@ -485,7 +504,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 )}
               </div>
             </FilterSection>
-
             <FilterSection title="Power Rating/ Capacity">
               <div className="space-y-2">
                 {powerRatings.map((rating) => (
@@ -503,7 +521,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 ))}
               </div>
             </FilterSection>
-
             <FilterSection title="Features">
               <div className="space-y-2">
                 {featureOptions.map((feature) => (
@@ -581,13 +598,17 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             </Button>
           </aside>
 
-          <section>
+          <section
+            className={`transition-all duration-300 ${
+              isCategorySidebarOpen ? "" : "lg:col-span-2"
+            }`}
+          >
             {activeTab === "products" ? (
               <ProductsGrid
                 items={filteredProducts}
                 view={productView}
-                favorites={favorites}
-                onToggleFavorite={toggleFavorite}
+                favorites={favorites.products}
+                onToggleFavorite={toggleFavoriteProduct}
               />
             ) : (
               <>
