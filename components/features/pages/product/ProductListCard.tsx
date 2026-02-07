@@ -2,8 +2,10 @@ import React from 'react';
 import Link from 'next/link';
 import HeartIcon from '@/components/features/icons/HeartIcon';
 import { CartIcon } from '@/components/features/icons/CartIcon';
+import { useGeneralStore } from '@/store/GeneralStore';
 
 const ProductListCard = ({
+  id,
   title,
   mini_description,
   image,
@@ -11,6 +13,7 @@ const ProductListCard = ({
   isFavorite = false,
   onToggleFavorite,
 }: {
+  id: number;
   title: string;
   mini_description: string;
   price: number;
@@ -21,6 +24,7 @@ const ProductListCard = ({
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
 }) => {
+  const addToCart = useGeneralStore((state) => state.addToCart);
   return (
     <div className="group overfow-hidden flex flex-col sm:flex-row gap-8 rounded-lg border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#058A05] transition-colors">
       <div
@@ -40,7 +44,13 @@ const ProductListCard = ({
               className={isFavorite ? "text-[#E11D48]" : "text-[#3B3B3B]/70"}
             />
           </button>
-          <button className="h-8 w-8 rounded-md bg-white/90 shadow-sm grid place-items-center hover:bg-white">
+          <button
+            onClick={(event) => {
+              event.preventDefault();
+              addToCart({ id, itemType: "product" });
+            }}
+            className="h-8 w-8 rounded-md bg-white/90 shadow-sm grid place-items-center hover:bg-white"
+          >
             <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#058A05]" />
           </button>
         </div>
