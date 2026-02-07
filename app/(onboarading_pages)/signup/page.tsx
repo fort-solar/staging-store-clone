@@ -1,6 +1,6 @@
 import React from "react";
-import { AuthLayout } from "@/components/features/auth/AuthLayout";
-import { SignupForm } from "@/components/features/auth/SignupForm";
+import { AuthLayout } from "@/components/features/pages/auth/AuthLayout";
+import { SignupForm } from "@/components/features/pages/auth/SignupForm";
 
 const Page = () => {
   return (
