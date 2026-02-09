@@ -585,7 +585,7 @@ const Page = () => {
                       {activeLabel}
                     </p>
                     <p className="text-sm text-[#7C7C7C]">
-                      No data yet
+                     
                     </p>
                   </div>
                 )}
