@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { GoogleLogin } from "@react-oauth/google";
+// import { GoogleLogin } from "@react-oauth/google";
+import { GoogleIcon } from "../../icons/GoogleIcon";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
@@ -58,15 +59,17 @@ const LoginForm = () => {
       </div>
 
       <div className="space-y-5">
-        <div className="">
-          <GoogleLogin
+        <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#969595]">
+          {/* <GoogleLogin
             onSuccess={() => setStatus({ tone: "success", message: "Google sign-in success." })}
             onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
             size="large"
             width="100%"
             text="continue_with"
             shape="rectangular"
-          />
+          /> */}
+          <GoogleIcon />
+          Continue With Google
         </div>
 
         <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">
@@ -133,7 +136,7 @@ const LoginForm = () => {
             Sign Up
           </Link>
         </p>
-        <p>
+        <p >
           Are you an installer?{" "}
           <Link
             href="/signup?role=installer"
