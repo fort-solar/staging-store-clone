@@ -1,0 +1,31 @@
+name: Mirror to Personal Repo
+
+on:
+  push:
+    branches:
+      - '**'  # Mirror all branches
+  delete:
+    branches:
+      - '**'  # Mirror branch deletions
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.MIRROR_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Push to mirror repository
+        run: |
+          git remote add mirror git@github.com:fort-solar/fortsolar-store-webapp-frontend-clone.git
+          git push mirror --all --force
+          git push mirror --tags --force
