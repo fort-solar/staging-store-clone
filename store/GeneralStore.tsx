@@ -6,7 +6,7 @@ import { GeneralStoreState } from "@/types/common.types";
 const initialState: GeneralStoreState = {
     isHydrated: false,
     setHydrated: () => { },
-    isCategorySidebarOpen: true,
+    isCategorySidebarOpen: false,
     toggleCategorySidebar: () => { },
     cartItems: [],
     favorites: {
