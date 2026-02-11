@@ -32,7 +32,6 @@ const productSections = [
   "Batteries",
   "Inverters",
   "Accessories",
-  "Packages",
 ];
 
 const productTypes = [
@@ -291,7 +290,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
       <DashboardHeader query={activeQuery} onQueryChange={setActiveQuery} />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-2">
-        <div className="flex flex-col lg:flex-row mt-28 lg:mt-0 lg:justify-between lg:items-center">
+        <div className="flex flex-col lg:flex-row mt-14 lg:mt-0 lg:justify-between lg:items-center">
           <Link href="https://www.fortsolar.ng" target="_blank" className="lg:flex items-center gap-2 text-sm text-[#5A646B] hidden">
             <span className="text-lg">←</span>
             <span>Home</span>
@@ -300,7 +299,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
           <div className="flex flex-col gap-3 mb-5 lg:mb-0 lg:mt-0">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               {activeTab === "products" ? (
-                <div className="flex flex-wrap items-center gap-2 text-sm text-[#5A646B]">
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm text-[#5A646B]">
                   {productSections.map((section) => (
                     <button
                       key={section}
@@ -315,7 +314,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                         }
                         setProductSection(section);
                       }}
-                      className={`rounded-full px-3 py-1 transition-colors ${productSection === section
+                      className={`rounded-full px-2 lg:px-3 py-1 transition-colors ${productSection === section
                         ? "text-[#058A05] font-semibold"
                         : "hover:text-[#252C32]"
                         }`}
@@ -336,7 +335,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                       category: "Solar Products",
                     }));
                   }}
-                  className={`px-4 py-1.5 w-[50%] lg:w-fit rounded-l-lg text-sm ${activeTab === "products"
+                  className={`px-4 py-3 lg:py-1.5 w-[50%] lg:w-fit rounded-l-lg text-sm ${activeTab === "products"
                     ? "bg-[#058A05] text-white"
                     : "text-[#3B3B3B]"
                     }`}
@@ -351,7 +350,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                       category: "Solar Packages",
                     }));
                   }}
-                  className={`px-4 py-1.5 rounded-r-lg w-[50%] lg:w-fit text-sm ${activeTab === "packages"
+                  className={`px-4 py-3 lg:py-1.5 rounded-r-lg w-[50%] lg:w-fit text-sm ${activeTab === "packages"
                     ? "bg-[#058A05] text-white"
                     : "text-[#3B3B3B]"
                     }`}
