@@ -14,6 +14,7 @@ const initialState: GeneralStoreState = {
         packages: [],
     },
     addToCart: () => { },
+    setCategorySidebarOpen: () => { }, 
     updateCartQuantity: () => { },
     removeFromCart: () => { },
     clearCart: () => { },
@@ -49,6 +50,13 @@ export const useGeneralStore = create<GeneralStoreState>()(
                     }
                 });
             },
+
+            setCategorySidebarOpen: (value) => {
+                set((state) => {
+                    state.isCategorySidebarOpen = value;
+                });
+            },
+
 
             updateCartQuantity: ({ id, itemType, quantity }) => {
                 set((state) => {
