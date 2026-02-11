@@ -58,7 +58,7 @@ const DashboardHeader = ({
             </span>
 
           </Button>
-          <div className="relative max-w-lg lg:max-w-xl w-full">
+          <div className="relative max-w-lg lg:max-w-xl w-full mr-10">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA5AC]">
               <SearchIcon />
             </span>
@@ -72,7 +72,10 @@ const DashboardHeader = ({
           <div className="flex lg:hidden items-center gap-4 justify-end text-sm text-[#3B3B3B]">
             <div className="flex items-center gap-2 text-xs text-[#3B3B3B]">
               <OrdersIcon className="text-[#3B3B3B]/60" />
-              Orders
+              <span className="hidden lg:block">
+              Orders  
+              </span>
+              
             </div>
             <button className="relative flex items-center gap-2">
               <HeartIcon className="text-[#3B3B3B]/60" />
@@ -88,12 +91,15 @@ const DashboardHeader = ({
                 </span>
               )}
               <CartIcon className="text-[#3B3B3B]/60" />
-              Cart
+              <span className="hidden lg:block">
+              Cart  
+              </span>
+              
             </Link>
             <Link href="/login">
               <Button
                 variant="outline"
-                className="rounded-lg cursor-pointer border-[#E4E9EC] px-5 text-xs text-[#3B3B3B]"
+                className="rounded-lg cursor-pointer border-[#E4E9EC] px-3 py-2 lg:px-5 text-xs text-[#3B3B3B]"
               >
                 Sign In
               </Button>
