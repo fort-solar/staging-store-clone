@@ -10,6 +10,7 @@ export interface GeneralStoreState {
   removeFromCart: (item: CartItemInput) => void;
   clearCart: () => void;
   toggleFavoriteProduct: (id: number) => void;
+  setCategorySidebarOpen: (value: boolean) => void;
   toggleFavoritePackage: (id: number) => void;
 }
 
