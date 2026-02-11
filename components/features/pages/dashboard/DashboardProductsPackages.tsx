@@ -375,7 +375,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between lg:justify-start gap-3">
             <div className="relative">
               <select
                 value={activeSort}
@@ -389,7 +389,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 ))}
               </select>
             </div>
-            <div className="flex items-center bg-gray-50 rounded-md">
+            <div className="flex items-center  bg-gray-50 rounded-md">
               <button
                 onClick={() => setActiveView("grid")}
                 className={`h-9 w-9 rounded-l-md  grid place-items-center ${activeView === "grid"
