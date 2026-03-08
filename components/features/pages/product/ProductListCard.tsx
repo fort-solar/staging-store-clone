@@ -12,6 +12,7 @@ const ProductListCard = ({
   href,
   isFavorite = false,
   onToggleFavorite,
+  onGetQuote,
 }: {
   id: number;
   title: string;
@@ -23,6 +24,7 @@ const ProductListCard = ({
   href: string;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
+  onGetQuote?: () => void;
 }) => {
   const addToCart = useGeneralStore((state) => state.addToCart);
   return (
@@ -58,12 +60,21 @@ const ProductListCard = ({
       <div className="flex-1 flex flex-col gap-1 p-5 lg:p-2">
         <div className='flex gap-2 lg:gap-0 flex-col lg:flex-row lg:justify-between lg:items-center'>
           <p className="order-2  lg:order-1 text-lg font-bold text-[#252C32]">{title}</p>
-          <Link
-            href={href}
-            className="text-sm order-1 lg:order-2 border border-[#BFE8BF] rounded-xl py-1 px-2 text-[#058A05] text-center hover:bg-[#EBFAEB]"
-          >
-            View Details
-          </Link>
+          <div className="order-1 lg:order-2 flex items-center gap-2">
+            <Link
+              href={href}
+              className="text-sm border border-[#BFE8BF] rounded-xl py-1 px-2 text-[#058A05] text-center hover:bg-[#EBFAEB]"
+            >
+              View Details
+            </Link>
+            <button
+              type="button"
+              onClick={onGetQuote}
+              className="text-sm rounded-xl border border-[#2CB22C] bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-3 py-1 text-white"
+            >
+              Get Quote
+            </button>
+          </div>
         </div>
         <p className="text-sm text-[#5A646B]">{mini_description}</p>
       </div>

@@ -7,6 +7,7 @@ type ProductItem = {
     title: string;
     mini_description: string;
     price: number;
+    priceOriginal: number;
     image: string;
     availability: string;
     warrantyYears: number;
@@ -17,11 +18,13 @@ const ProductsGrid = ({
     view,
     favorites,
     onToggleFavorite,
+    onGetQuote,
 }: {
     items: ProductItem[];
     view: "grid" | "list";
     favorites: number[];
     onToggleFavorite: (id: number) => void;
+    onGetQuote?: (item: ProductItem) => void;
 }) => {
     if (view === "list") {
         return (
@@ -32,13 +35,15 @@ const ProductsGrid = ({
                         title={p.title}
                         mini_description={p.mini_description}
                         price={p.price}
+                       
                         image={p.image}
                         availability={p.availability}
                         warrantyYears={p.warrantyYears}
-                        href={`/dashboard/products/${p.id}`}
+                        href={`/store/products/${p.id}`}
                         id={p.id}
                         isFavorite={favorites.includes(p.id)}
                         onToggleFavorite={() => onToggleFavorite(p.id)}
+                        onGetQuote={() => onGetQuote?.(p)}
                     />
                 ))}
             </div>
@@ -61,11 +66,13 @@ const ProductsGrid = ({
                             title={p.title}
                             mini_description={p.mini_description}
                             price={p.price}
+                             priceOriginal={p.priceOriginal}
                             image={p.image}
                             availability={p.availability}
-                            href={`/dashboard/products/${p.id}`}
+                            href={`/store/products/${p.id}`}
                             isFavorite={favorites.includes(p.id)}
                             onToggleFavorite={() => onToggleFavorite(p.id)}
+                            onGetQuote={() => onGetQuote?.(p)}
                         />
                     ))
                 }
