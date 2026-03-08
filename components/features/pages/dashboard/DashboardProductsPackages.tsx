@@ -10,9 +10,15 @@ import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGeneralStore } from "@/store/GeneralStore";
-import Link from "next/link";
+import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 
 type TabKey = "products" | "packages";
+type QuoteProduct = {
+  id: number;
+  title: string;
+  image: string;
+  price: number;
+};
 
 type FilterState = {
   priceMin: string;
@@ -38,18 +44,22 @@ const productTypes = [
   "All",
   "Solar Panel",
   "Inverter",
-  "Battery",
-  "Charge Controller",
-  "Cable & Accessories",
+  "Batteries",
+  "Streetlights/ floodlights",
+  "Solar CCTV",
+  "Solar Appliances",
+  "Charge Controllers",
 ];
 
 const packageTypes = ["All", "Home", "SME", "Campus", "Office"];
 
-const powerRatings = ["1kVA - 2kVA", "3kVA - 5kVA", "5kVA - 10kVA", "10kVA+"];
+const powerRatingsProducts = ["1kVA - 5kVA", "6kVA - 10kVA", "10kVA+"];
 
-const featureOptions = ["Battery Backup", "Smart Monitoring"];
+const powerRatingsPackages = ["1kVA - 2kVA", "3kVA - 5kVA", "6kVA - 10kVA", "10kVA+"];
 
-const availabilityOptions = ["In Stock", "Pre-Order"];
+// const featureOptions = ["Battery Backup", "Smart Monitoring"];
+
+// const availabilityOptions = ["In Stock", "Pre-Order"];
 
 const sortOptions = [
   "Newest",
@@ -121,9 +131,13 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const [packageView, setPackageView] = useState<"grid" | "list">("grid");
   const [productQuery, setProductQuery] = useState("");
   const [packageQuery, setPackageQuery] = useState("");
+  const [quoteProduct, setQuoteProduct] = useState<QuoteProduct | null>(null);
   const favorites = useGeneralStore((state) => state.favorites);
   const toggleFavoriteProduct = useGeneralStore(
     (state) => state.toggleFavoriteProduct
+  );
+  const toggleFavoritePackage = useGeneralStore(
+    (state) => state.toggleFavoritePackage
   );
   const isCategorySidebarOpen = useGeneralStore(
     (state) => state.isCategorySidebarOpen
@@ -259,46 +273,13 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const resultsCount =
     activeTab === "products" ? filteredProducts.length : filteredPackages.length;
 
-  const clearFilters = () => {
-    if (activeTab === "products") {
-      setProductFilters({
-        priceMin: "",
-        priceMax: "",
-        category: "Solar Products",
-        type: "All",
-        powerRatings: [],
-        features: [],
-        availability: [],
-        warrantyMin: 1,
-      });
-    } else {
-      setPackageFilters({
-        priceMin: "",
-        priceMax: "",
-        category: "Solar Packages",
-        type: "All",
-        powerRatings: [],
-        features: [],
-        availability: [],
-        warrantyMin: 1,
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white pt-22">
       <DashboardHeader query={activeQuery} onQueryChange={setActiveQuery} />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-2">
         <div className="flex flex-col lg:flex-row mt-14 lg:mt-0 lg:justify-between lg:items-center">
-          <Link href="https://www.fortsolar.ng" target="_blank" className="lg:flex items-center gap-2 text-sm text-[#5A646B] hidden">
-            <span className="text-lg">←</span>
-            <span>Home</span>
-          </Link>
-
-          <div className="flex flex-col gap-3 mb-5 lg:mb-0 lg:mt-0">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-              {activeTab === "products" ? (
+           {activeTab === "products" ? (
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm text-[#5A646B]">
                   {productSections.map((section) => (
                     <button
@@ -326,6 +307,9 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
               ) : (
                 <div />
               )}
+
+          <div className="flex flex-col gap-3 mb-5 lg:mb-0 lg:mt-0">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">           
               <div className="inline-flex w-full lg:w-fit  rounded-lg mt-5 lg:mt-0 bg-[#F3F4F6]">
                 <button
                   onClick={() => {
@@ -441,7 +425,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 : "hidden lg:static"
             }`}
           >
-            <FilterSection title="Price, $">
+            <FilterSection title="Price, ₦">
               <div className="flex gap-3">
                 <Input
                   placeholder="Min"
@@ -505,7 +489,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             </FilterSection>
             <FilterSection title="Power Rating/ Capacity">
               <div className="space-y-2">
-                {powerRatings.map((rating) => (
+                {(activeTab === "products" ? powerRatingsProducts : powerRatingsPackages).map((rating) => (
                   <CheckboxItem
                     key={rating}
                     label={rating}
@@ -520,7 +504,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 ))}
               </div>
             </FilterSection>
-            <FilterSection title="Features">
+            {/* <FilterSection title="Features">
               <div className="space-y-2">
                 {featureOptions.map((feature) => (
                   <CheckboxItem
@@ -536,8 +520,8 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   />
                 ))}
               </div>
-            </FilterSection>
-
+            </FilterSection> */}
+{/* 
             <FilterSection title="Availability">
               <div className="space-y-2">
                 {availabilityOptions.map((option) => (
@@ -554,9 +538,9 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   />
                 ))}
               </div>
-            </FilterSection>
+            </FilterSection> */}
 
-            <FilterSection title="Warranty">
+            {/* <FilterSection title="Warranty">
               <div className="space-y-2">
                 <div className="relative">
                   <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-[#E4E9EC]" />
@@ -586,15 +570,15 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   <span>25 Yrs</span>
                 </div>
               </div>
-            </FilterSection>
+            </FilterSection> */}
 
-            <Button
+            {/* <Button
               variant="outline"
               className="w-full border-[#E4E9EC] text-[#3B3B3B]"
               onClick={clearFilters}
             >
               Clear Filters
-            </Button>
+            </Button> */}
           </aside>
 
           <section
@@ -608,10 +592,23 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 view={productView}
                 favorites={favorites.products}
                 onToggleFavorite={toggleFavoriteProduct}
+                onGetQuote={(item) =>
+                  setQuoteProduct({
+                    id: item.id,
+                    title: item.title,
+                    image: item.image,
+                    price: item.price,
+                  })
+                }
               />
             ) : (
               <>
-                <PackagesGrid items={filteredPackages} view={packageView} />
+                <PackagesGrid
+                  items={filteredPackages}
+                  view={packageView}
+                  favorites={favorites.packages}
+                  onToggleFavorite={toggleFavoritePackage}
+                />
                 <div className="mt-8 flex justify-center">
                   <Button className="bg-[#EBFAEB] text-[#058A05] hover:bg-[#DFF4DF] rounded-xl px-6">
                     Load more
@@ -622,6 +619,14 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
           </section>
         </div>
       </div>
+      {quoteProduct && (
+        <GetQuoteModal
+          key={quoteProduct.id}
+          open={!!quoteProduct}
+          product={quoteProduct}
+          onClose={() => setQuoteProduct(null)}
+        />
+      )}
     </div>
   );
 };
