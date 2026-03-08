@@ -16,7 +16,7 @@ import { FaTiktok, FaYoutube, FaInstagram, FaFacebook, FaLinkedin, FaShare } fro
 
 const ProductDetailPage = () => {
   const [query, setQuery] = useState("");
-  const [showFeatures, setShowFeatures] = useState(false)
+  const [showFeatures, setShowFeatures] = useState(true)
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -105,7 +105,7 @@ const ProductDetailPage = () => {
                       This product is included in one of our recommended Packages.
                     </p>
                     <Link
-                      href="/dashboard/packages"
+                      href="/store/packages"
                       className="mt-4 inline-flex items-center rounded-lg bg-white text-[#1FA21B] cursor-pointer hover:opacity-90 px-4 py-2 text-sm"
                     >
                       View Packages
@@ -133,7 +133,7 @@ const ProductDetailPage = () => {
                   ({product.reviewsCount} Reviews)
                 </span>
               </div>
-              <span className="text-sm text-[#1FA21B]">{product.availability}</span>
+              <span className={`text-sm ${product.availability === "Out Of Stock" ? "text-[#EF5350]" : product.availability === "Limited Stock" ? "text-[#FFAD33]" : "text-[#1FA21B]"} `}>{product.availability}</span>
             </div>
             <div className="mt-2">
               <h1 className="text-2xl font-semibold text-[#252C32]">
@@ -144,15 +144,17 @@ const ProductDetailPage = () => {
 
             <div className="mt-4 flex items-center gap-3 border w-fit rounded-sm overflow-hidden">
               <button
+               disabled={product.availability === "Out Of Stock" ? true : false}
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                className="h-9 w-9 border-r border-[#E4E9EC] text-lg"
+                className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 border-r border-[#E4E9EC] text-lg`}
               >
                 -
               </button>
               <span className="min-w-8 text-center ">{quantity}</span>
               <button
+               disabled={product.availability === "Out Of Stock" ? true : false}
                 onClick={() => setQuantity((prev) => prev + 1)}
-                className="h-9 w-9  border-l border-[#E4E9EC] text-lg text-white bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)]"
+                className="disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9  border-l border-[#E4E9EC] text-lg text-white bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)]"
               >
                 +
               </button>
@@ -169,19 +171,14 @@ const ProductDetailPage = () => {
 
             <div className="mt-4 flex items-center gap-3">
               <button
-                onClick={() => {
-                  addToCart({ id: product.id, itemType: "product" });
-                  updateCartQuantity({
-                    id: product.id,
-                    itemType: "product",
-                    quantity,
-                  });
-                }}
-                className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] py-3 text-sm font-semibold text-white"
+               disabled={product.availability === "Out Of Stock" ? true : false}
+             
+                className="disabled:opacity-50 disabled:cursor-not-allowed flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] py-3 text-sm font-semibold text-white"
               >
                 Buy Now
               </button>
               <button
+               disabled={product.availability === "Out Of Stock" ? true : false}
                 onClick={() => {
                   addToCart({ id: product.id, itemType: "product" });
                   updateCartQuantity({
@@ -190,7 +187,7 @@ const ProductDetailPage = () => {
                     quantity,
                   });
                 }}
-                className="h-11 w-11 rounded-xl border border-[#E4E9EC] grid place-items-center"
+                className="disabled:opacity-50 disabled:cursor-not-allowed h-11 w-11 rounded-xl border border-[#E4E9EC] grid place-items-center"
               >
                 <CartIcon className="text-[#3B3B3B]/70" />
               </button>
@@ -259,10 +256,10 @@ const ProductDetailPage = () => {
             Other Related Products
           </h2>
           <Link
-            href="/dashboard/products"
+            href="/store/products"
             className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-4 py-2 text-sm text-white"
           >
-            View all Panels
+            View All Products
           </Link>
         </div>
         <div className="mt-6">

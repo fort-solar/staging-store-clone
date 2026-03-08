@@ -6,7 +6,6 @@ import { packages_dummy } from "@/components/features/constants";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { FinancingIcon } from "@/components/features/icons/FinancingIcon";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
-import { CartIcon } from "@/components/features/icons/CartIcon";
 import HeartIcon from "@/components/features/icons/HeartIcon";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import Link from "next/link";
@@ -18,18 +17,13 @@ import { FaTiktok, FaYoutube, FaInstagram, FaFacebook, FaLinkedin, FaShare } fro
 const PackageDetailPage = () => {
   const [query, setQuery] = useState("");
   const params = useParams<{ id: string }>();
-  const [showFeatures, setShowFeatures] = useState(false)
+  const [showFeatures, setShowFeatures] = useState(true)
   const router = useRouter();
   const id = params?.id;
 
   const data = useMemo(() => {
     return packages_dummy.find((item) => String(item.id) === id);
   }, [id]);
-
-  const addToCart = useGeneralStore((state) => state.addToCart);
-  const updateCartQuantity = useGeneralStore(
-    (state) => state.updateCartQuantity
-  );
   const favorites = useGeneralStore((state) => state.favorites.packages);
   const toggleFavorite = useGeneralStore((state) => state.toggleFavoritePackage);
 
@@ -166,30 +160,9 @@ const PackageDetailPage = () => {
 
             <div className="mt-4 flex items-center gap-3">
               <button
-                onClick={() => {
-                  addToCart({ id: data.id, itemType: "package" });
-                  updateCartQuantity({
-                    id: data.id,
-                    itemType: "package",
-                    quantity: 1,
-                  });
-                }}
                 className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] py-3 text-sm font-semibold text-white"
               >
                 Get Package
-              </button>
-              <button
-                onClick={() => {
-                  addToCart({ id: data.id, itemType: "package" });
-                  updateCartQuantity({
-                    id: data.id,
-                    itemType: "package",
-                    quantity: 1,
-                  });
-                }}
-                className="h-11 w-11 rounded-xl border border-[#E4E9EC] grid place-items-center"
-              >
-                <CartIcon className="text-[#3B3B3B]/70" />
               </button>
               <button
                 onClick={() => toggleFavorite(data.id)}
@@ -262,10 +235,10 @@ const PackageDetailPage = () => {
             Other Related Packages
           </h2>
           <Link
-            href="/dashboard/packages"
+            href="/store/packages"
             className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-4 py-2 text-sm text-white"
           >
-            View all Panels
+             View All Packages
           </Link>
         </div>
         <div className="mt-6">

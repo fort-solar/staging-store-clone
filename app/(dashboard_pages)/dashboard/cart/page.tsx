@@ -7,12 +7,14 @@ import { packages_dummy, products_dummy } from "@/components/features/constants"
 import Link from "next/link";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { TrashIcon } from "@/components/features/icons/TrashIcon";
+import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
 const CartPage = () => {
   const [query, setQuery] = useState("");
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const cartItems = useGeneralStore((state) => state.cartItems);
   const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
   const removeFromCart = useGeneralStore((state) => state.removeFromCart);
@@ -29,6 +31,7 @@ const CartPage = () => {
           ...item,
           title: product.title,
           price: product.price * 2930,
+          image: product.image,
         };
       })
       .filter(Boolean) as Array<{
@@ -37,6 +40,7 @@ const CartPage = () => {
         quantity: number;
         title: string;
         price: number;
+        image: string | { src: string };
       }>;
   }, [cartItems]);
 
@@ -48,6 +52,18 @@ const CartPage = () => {
   const shipping = 0;
   const tax = subtotal * 0.05;
   const total = subtotal + shipping + tax;
+
+  const quoteProducts = useMemo(() => {
+    return cartDetails
+      .filter((item) => item.itemType === "product")
+      .map((item) => ({
+      id: item.id,
+      title: item.title,
+      image: typeof item.image === "string" ? item.image : item.image.src,
+      price: item.price / 2930,
+      quantity: item.quantity,
+    }));
+  }, [cartDetails]);
 
   return (
     <div className="min-h-screen bg-white py-24">
@@ -157,17 +173,27 @@ const CartPage = () => {
               </div>
 
               <div className="mt-5 space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsQuoteModalOpen(true)}
+                    disabled={quoteProducts.length === 0}
+                    className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center text-white font-semibold"
+                  >
+                    Get Quote
+                  </button>
+                  <Link
+                    href="/store/products"
+                    className="block w-full rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
+                  >
+                    Continue Shopping
+                  </Link>
+                </div>
                 <Link
-                  href="/dashboard/checkout"
-                  className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center text-white font-semibold"
-                >
-                  Checkout
-                </Link>
-                <Link
-                  href="/dashboard/products"
+                  href="/store/checkout"
                   className="block w-full rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
                 >
-                  Continue Shopping
+                  Checkout
                 </Link>
               </div>
 
@@ -178,7 +204,7 @@ const CartPage = () => {
                 </p>
                 <p className="mt-2">
                   Get this product as part of a complete solar setup that includes panels, batteries, and expert installation all optimized for performance and savings. Installation is completely free.  <Link
-                    href="/dashboard/packages"
+                    href="/store/packages"
                     className="inline-flex items-center gap-1 text-[#252C32] font-medium underline"
                   >
                     View the Package Package
@@ -192,6 +218,13 @@ const CartPage = () => {
           </aside>
         </div>
       </div>
+      {isQuoteModalOpen && quoteProducts.length > 0 && (
+        <GetQuoteModal
+          open={isQuoteModalOpen}
+          products={quoteProducts}
+          onClose={() => setIsQuoteModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

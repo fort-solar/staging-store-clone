@@ -1,19 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { packages_dummy, products_dummy } from "@/components/features/constants";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import Link from "next/link";
+import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
+import { getMockCurrentUser, getMockSession } from "@/lib/localAuth";
+import { useRouter } from "next/navigation";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
 const CheckoutPage = () => {
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const session = useMemo(() => getMockSession(), []);
+  const currentUser = useMemo(() => getMockCurrentUser(), []);
   const cartItems = useGeneralStore((state) => state.cartItems);
+  const isAuthenticatedCustomer = !!session && session.role === "customer";
+
+  useEffect(() => {
+    if (!isAuthenticatedCustomer) {
+      router.replace("/login");
+    }
+  }, [isAuthenticatedCustomer, router]);
 
   const cartDetails = useMemo(() => {
     return cartItems
@@ -49,6 +63,22 @@ const CheckoutPage = () => {
   const discount = 50000;
   const total = subtotal + shipping + tax - discount;
 
+  const quoteProducts = useMemo(() => {
+    return cartDetails
+      .filter((item) => item.itemType === "product")
+      .map((item) => ({
+      id: item.id,
+      title: item.title,
+      image: String(item.image),
+      price: item.price / 2930,
+      quantity: item.quantity,
+    }));
+  }, [cartDetails]);
+
+  if (!isAuthenticatedCustomer) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-white py-24">
       <DashboardHeader query={query} onQueryChange={setQuery} />
@@ -66,12 +96,11 @@ const CheckoutPage = () => {
               </h1>
               <div className="mt-4 rounded-2xl border border-[#E9EEF0] p-4">
                 {[
-                  { label: "Email", value: "exampleuser32@email.com" },
-                  { label: "Phone", value: "+234 901 2624 183" },
+                  { label: "Email", value: currentUser?.email ?? session?.email ?? "exampleuser32@email.com" },
+                  { label: "Phone", value: currentUser?.phone ?? "+234 901 2624 183" },
                   {
                     label: "Ship To",
-                    value:
-                      "No 21 Chindah Street, Agip Ada-George Port Harcourt, Rivers State",
+                    value: currentUser?.address ?? "No 21 Chindah Street, Agip Ada-George Port Harcourt, Rivers State",
                   },
                 ].map((row) => (
                   <div
@@ -190,6 +219,14 @@ const CheckoutPage = () => {
               <button className="mt-5 w-full rounded-xl bg-[#1FA21B] py-3 text-center font-semibold text-white">
                 Continue
               </button>
+              <button
+                type="button"
+                onClick={() => setIsQuoteModalOpen(true)}
+                disabled={quoteProducts.length === 0}
+                className="block mt-2 w-full rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
+              >
+               Get Quote
+              </button>
               <div className="mt-20 text-sm text-[#5A646B]">
                 <p className="mb-2">Good to know</p>
                 <p className="font-semibold text-[#252C32]">
@@ -197,7 +234,7 @@ const CheckoutPage = () => {
                 </p>
                 <p className="mt-2">
                   Get this product as part of a complete solar setup that includes panels, batteries, and expert installation all optimized for performance and savings. Installation is completely free.  <Link
-                    href="/dashboard/packages"
+                    href="/store/packages"
                     className="inline-flex items-center gap-1 text-[#252C32] font-medium underline"
                   >
                     View the Package Package
@@ -210,6 +247,13 @@ const CheckoutPage = () => {
           </aside>
         </div>
       </div>
+      {isQuoteModalOpen && quoteProducts.length > 0 && (
+        <GetQuoteModal
+          open={isQuoteModalOpen}
+          products={quoteProducts}
+          onClose={() => setIsQuoteModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

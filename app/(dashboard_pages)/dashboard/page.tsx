@@ -1,7 +1,7 @@
-import DashboardProductsPackages from "@/components/features/pages/dashboard/DashboardProductsPackages";
+import { redirect } from "next/navigation";
 
 const page = () => {
-  return <DashboardProductsPackages initialTab="products" />;
+  redirect("/store");
 }
 
 export default page
