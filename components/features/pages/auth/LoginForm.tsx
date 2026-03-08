@@ -8,7 +8,8 @@ import { GoogleIcon } from "../../icons/GoogleIcon";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
-import { submitFormClient } from "@/lib/submitFormClient";
+import { loginMockUser } from "@/lib/localAuth";
+import { useRouter } from "next/navigation";
 
 type LoginFormValues = {
   email: string;
@@ -16,11 +17,10 @@ type LoginFormValues = {
   remember: boolean;
 };
 
-const LOGIN_ENDPOINT = "/auth/login";
-
 const LoginForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -36,20 +36,22 @@ const LoginForm = () => {
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     setStatus(null);
-    const { error } = await submitFormClient({
-      endpoint: LOGIN_ENDPOINT,
-      values,
+    const { error, session } = loginMockUser({
+      email: values.email,
+      password: values.password,
     });
+
     if (error) {
       setStatus({ tone: "error", message: error });
     } else {
-      setStatus({ tone: "success", message: "Login successful." });
+      setStatus({ tone: "success", message: "Login successful. Redirecting..." });
+      router.push(session?.role === "installer" ? "/installer/dashboard" : "/store/dashboard");
     }
     setIsSubmitting(false);
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 ">
       <div className="space-y-3">
         <h1 className="text-3xl font-semibold text-[#0F172A]">Welcome back!</h1>
         <p className="text-base text-[#6B7280]">
@@ -59,15 +61,8 @@ const LoginForm = () => {
       </div>
 
       <div className="space-y-5">
-        <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#969595]">
-          {/* <GoogleLogin
-            onSuccess={() => setStatus({ tone: "success", message: "Google sign-in success." })}
-            onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
-            size="large"
-            width="100%"
-            text="continue_with"
-            shape="rectangular"
-          /> */}
+        <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#fafafac8]">
+        
           <GoogleIcon />
           Continue With Google
         </div>
@@ -132,7 +127,7 @@ const LoginForm = () => {
       <div className="space-y-2 text-center text-sm text-[#64748B]">
         <p>
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-semibold text-[#16A34A] hover:underline">
+          <Link href="/signup?role=customer" className="font-semibold text-[#16A34A] hover:underline">
             Sign Up
           </Link>
         </p>

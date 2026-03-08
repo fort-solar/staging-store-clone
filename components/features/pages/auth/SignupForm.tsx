@@ -9,8 +9,8 @@ import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { PasswordInput } from "@/components/features/pages/auth/PasswordInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
-import { submitFormClient } from "@/lib/submitFormClient";
 import { GoogleIcon } from "../../icons/GoogleIcon";
+import { registerMockUser } from "@/lib/localAuth";
 
 type SignupFormValues = {
   fullName: string;
@@ -21,8 +21,6 @@ type SignupFormValues = {
   confirmPassword: string;
   acceptTerms: boolean;
 };
-
-const SIGNUP_ENDPOINT = "/auth/signup";
 
 const SignupForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
@@ -48,14 +46,8 @@ const SignupForm = () => {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const passwordValue = watch("password");
-
-  const createVerificationId = () => {
-    if (typeof window !== "undefined" && window.crypto?.randomUUID) {
-      return window.crypto.randomUUID();
-    }
-    return `verify_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-  };
 
   const onSubmit = async (values: SignupFormValues) => {
     if (values.password !== values.confirmPassword) {
@@ -70,17 +62,13 @@ const SignupForm = () => {
 
     setIsSubmitting(true);
     setStatus(null);
-    const { error } = await submitFormClient({
-      endpoint: SIGNUP_ENDPOINT,
-      values: {
-        fullName: values.fullName,
-        email: values.email,
-        phone: values.phone,
-        address: values.address,
-        password: values.password,
-        confirmPassword: values.confirmPassword,
-        role,
-      },
+    const { error, session } = registerMockUser({
+      fullName: values.fullName,
+      email: values.email,
+      phone: values.phone,
+      address: values.address,
+      password: values.password,
+      role: role === "installer" ? "installer" : "customer",
     });
 
     if (error) {
@@ -89,9 +77,14 @@ const SignupForm = () => {
       return;
     }
 
-    const verificationId = createVerificationId();
-    setStatus({ tone: "success", message: "Account created. Redirecting to verification..." });
-    router.push(`/verify-email?id=${verificationId}&email=${encodeURIComponent(values.email)}`);
+    if (!session) {
+      setStatus({ tone: "error", message: "Unable to create account. Please try again." });
+      setIsSubmitting(false);
+      return;
+    }
+
+    setStatus({ tone: "success", message: "Account created successfully. Redirecting..." });
+    router.push(session.role === "installer" ? "/installer/dashboard" : "/store/dashboard");
     setIsSubmitting(false);
   };
 
@@ -108,7 +101,7 @@ const SignupForm = () => {
       </div>
 
       <div className="space-y-5">
-        <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#969595]">
+        <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#fafafac8]">
           {/* <GoogleLogin
                     onSuccess={() => setStatus({ tone: "success", message: "Google sign-in success." })}
                     onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
@@ -206,12 +199,12 @@ const SignupForm = () => {
           </Link>
         </p>
         <p>
-          Are you an installer?{" "}
+          Are you {role === "customer" ? "an installer?" : "a customer?"} {" "}
           <Link
-            href="/signup?role=installer"
+            href={role === "installer" ? "/signup?role=customer" : "/signup?role=installer"}
             className="font-semibold text-[#16A34A] hover:underline"
           >
-            Join as Installer
+            Join as {role === "installer" ? "Customer" : "Installer"}
           </Link>
         </p>
       </div>
