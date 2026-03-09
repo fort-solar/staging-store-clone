@@ -1,4 +1,4 @@
-# Fortsolar Store Webapp
+# Fortsolar Store WebApp
 
 Fortsolar's e-commerce platform where users can create accounts, browse products, add items to their cart, and place orders.
 
