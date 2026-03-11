@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { clearMockSession, getMockSession } from "@/lib/localAuth";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, HelpCircle, LogOut, Settings } from "lucide-react";
+import { ChevronDown, ChevronUp, HelpCircle, LogOut, Settings, List, InspectionPanel  } from "lucide-react";
 import { OrdersIcon } from "../icons/OrdersIcon";
 
 const DashboardHeader = ({
@@ -62,8 +62,19 @@ const DashboardHeader = ({
             </span>
           </Button>
         </div>
+          <div className="lg:hidden block relative max-w-lg lg:max-w-xl w-full mr-10">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA5AC]">
+              <SearchIcon />
+            </span>
+            <Input
+              placeholder="Search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              className="pl-10 h-11 text-xs rounded-lg border-[#C9D4D9] focus-visible:ring-[#BFE8BF]"
+            />
+          </div>
 
-        <div className="flex-1 flex gap-2 items-center justify-between lg:justify-start">
+        <div className="flex-1 flex gap-10 lg:gap-2 items-center justify-end lg:justify-start">
           <Button
             onClick={toggleCategorySidebar}
             className="bg-[#058A05] hidden lg:flex hover:bg-[#047804] text-white rounded-md h-9 px-4 text-xs gap-2"
@@ -76,7 +87,7 @@ const DashboardHeader = ({
             <span>Categories</span>
           </Button>
 
-          <div className="relative max-w-lg lg:max-w-xl w-full mr-10">
+          <div className="hidden lg:block relative max-w-lg lg:max-w-xl w-full mr-10">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA5AC]">
               <SearchIcon />
             </span>
@@ -214,10 +225,52 @@ const DashboardHeader = ({
                   <p className="text-xs text-[#4B5563]">{userEmail}</p>
                 </div>
               </div>
-              <ChevronUp className="h-5 w-5 text-[#4B5563]" />
+              <ChevronUp className="h-5 w-5 text-[#4B5563]" onClick={() => setIsProfileMenuOpen(false)}/>
             </div>
 
             <div className="mt-4 border-t border-[#D8E0E8] pt-3">
+              <Link
+                href="/store/settings/orders#section"
+                className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
+              >
+                <OrdersIcon className="h-5 w-5" />
+                Orders
+              </Link>
+              <Link
+                href="/store/settings/orders"
+                className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
+              >
+                <OrdersIcon className="h-5 w-5" />
+                Orders
+              </Link>
+              <Link
+                href="/store/settings/quotes#section"
+                className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
+              >
+                <List className="h-5 w-5" />
+                Quotes
+              </Link>
+              <Link
+                href="/store/settings/quotes"
+                className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
+              >
+                <List className="h-5 w-5" />
+                Quotes
+              </Link>
+              <Link
+                href="/store/settings/installations#section"
+                className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
+              >
+                <InspectionPanel className="h-5 w-5" />
+                Installations
+              </Link>
+              <Link
+                href="/store/settings/installations"
+                className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
+              >
+                <InspectionPanel className="h-5 w-5" />
+                Installations
+              </Link>
               <Link
                 href="/store/settings/profile"
                 className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"

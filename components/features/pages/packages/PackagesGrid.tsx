@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import PackageCard from './PackageCard';
 import PackageListCard from './PackageListCard';
 import Link from 'next/link';
-import HeartIcon from '@/components/features/icons/HeartIcon';
+// import HeartIcon from '@/components/features/icons/HeartIcon';
 
 type PackageItem = {
     id: number;
@@ -30,22 +31,7 @@ const PackagesGrid = ({
             <div className="flex flex-col gap-4">
                 {items.map((p) => (
                     <div key={p.id} className="relative">
-                        {onToggleFavorite && (
-                            <button
-                                type="button"
-                                onClick={() => onToggleFavorite(p.id)}
-                                className="absolute right-3 top-3 z-20 h-8 w-8 rounded-md border border-[#E4E9EC] bg-white/95 grid place-items-center"
-                            >
-                                <HeartIcon
-                                    filled={favorites.includes(p.id)}
-                                    className={
-                                        favorites.includes(p.id)
-                                            ? "text-[#E11D48]"
-                                            : "text-[#3B3B3B]/60"
-                                    }
-                                />
-                            </button>
-                        )}
+                     
                         <PackageListCard
                             title={p.title}
                             mini_description={p.mini_description}
@@ -71,22 +57,7 @@ const PackagesGrid = ({
                 {
                     items.map((p) => (
                         <div key={p.id} className="relative">
-                            {onToggleFavorite && (
-                                <button
-                                    type="button"
-                                    onClick={() => onToggleFavorite(p.id)}
-                                    className="absolute right-3 top-3 z-20 h-8 w-8 rounded-md border border-[#E4E9EC] bg-white/95 grid place-items-center"
-                                >
-                                    <HeartIcon
-                                        filled={favorites.includes(p.id)}
-                                        className={
-                                            favorites.includes(p.id)
-                                                ? "text-[#E11D48]"
-                                                : "text-[#3B3B3B]/60"
-                                        }
-                                    />
-                                </button>
-                            )}
+                         
                             <Link href={`/store/packages/${p.id}`}>
                                 <PackageCard title={p.title} mini_description={p.mini_description} image={p.image} />
                             </Link>

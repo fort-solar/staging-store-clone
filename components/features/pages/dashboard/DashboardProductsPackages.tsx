@@ -258,7 +258,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     return sortItems(items, packageSort);
   }, [packageFilters, packageQuery, packageSort]);
 
-  const activeFilters = activeTab === "products" ? productFilters : packageFilters;
+  const activeFilters = activeTab === "packages" ? productFilters : packageFilters;
   const setActiveFilters =
     activeTab === "products" ? setProductFilters : setPackageFilters;
   const activeSort = activeTab === "products" ? productSort : packageSort;
@@ -274,58 +274,42 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     activeTab === "products" ? filteredProducts.length : filteredPackages.length;
 
   return (
-    <div className="min-h-screen bg-white pt-22">
+    <div className="min-h-screen bg-white py-22">
       <DashboardHeader query={activeQuery} onQueryChange={setActiveQuery} />
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-2">
-        <div className="flex flex-col lg:flex-row mt-14 lg:mt-0 lg:justify-between lg:items-center">
-           {activeTab === "products" ? (
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm text-[#5A646B]">
-                  {productSections.map((section) => (
-                    <button
-                      key={section}
-                      onClick={() => {
-                        if (section === "Packages") {
-                          setActiveTab("packages");
-                          setPackageFilters((prev) => ({
-                            ...prev,
-                            category: "Solar Packages",
-                          }));
-                          return;
-                        }
-                        setProductSection(section);
-                      }}
-                      className={`rounded-full px-2 lg:px-3 py-1 transition-colors ${productSection === section
-                        ? "text-[#058A05] font-semibold"
-                        : "hover:text-[#252C32]"
-                        }`}
-                    >
-                      {section}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div />
-              )}
-
-          <div className="flex flex-col gap-3 mb-5 lg:mb-0 lg:mt-0">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">           
-              <div className="inline-flex w-full lg:w-fit  rounded-lg mt-5 lg:mt-0 bg-[#F3F4F6]">
+      <div className="mx-auto w-full max-w-6xl px-4 py-2  ">
+        <div className="flex flex-col w-full lg:flex-row mt-26 lg:mt-0 lg:justify-between lg:items-center">
+          {activeTab === "products" ? (
+            <div className="order-2 lg:order-1 w-full flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm text-[#5A646B]">
+              {productSections.map((section) => (
                 <button
+                  key={section}
                   onClick={() => {
-                    setActiveTab("products");
-                    setProductFilters((prev) => ({
-                      ...prev,
-                      category: "Solar Products",
-                    }));
+                    if (section === "Packages") {
+                      setActiveTab("packages");
+                      setPackageFilters((prev) => ({
+                        ...prev,
+                        category: "Solar Packages",
+                      }));
+                      return;
+                    }
+                    setProductSection(section);
                   }}
-                  className={`px-4 py-3 lg:py-1.5 w-[50%] lg:w-fit rounded-l-lg text-sm ${activeTab === "products"
-                    ? "bg-[#058A05] text-white"
-                    : "text-[#3B3B3B]"
+                  className={`rounded-full px-2 lg:px-3 py-1 transition-colors ${productSection === section
+                    ? "text-[#058A05] font-semibold"
+                    : "hover:text-[#252C32]"
                     }`}
                 >
-                  Products
+                  {section}
                 </button>
+              ))}
+            </div>
+          ) : (
+            <div className=""/>
+          )}
+          <div className="order-1 lg:order-2 flex flex-col gap-3 mb-5 lg:mb-0  lg:mt-0 ">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              <div className="inline-flex w-full lg:w-fit  rounded-lg mt-5 lg:mt-0 bg-[#F3F4F6]">
                 <button
                   onClick={() => {
                     setActiveTab("packages");
@@ -334,13 +318,29 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                       category: "Solar Packages",
                     }));
                   }}
-                  className={`px-4 py-3 lg:py-1.5 rounded-r-lg w-[50%] lg:w-fit text-sm ${activeTab === "packages"
+                  className={`px-4 py-3 lg:py-1.5 rounded-l-lg w-[50%] lg:w-fit text-sm ${activeTab === "packages"
                     ? "bg-[#058A05] text-white"
                     : "text-[#3B3B3B]"
                     }`}
                 >
                   Packages
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveTab("products");
+                    setProductFilters((prev) => ({
+                      ...prev,
+                      category: "Solar Products",
+                    }));
+                  }}
+                  className={`px-4 py-3 lg:py-1.5 w-[50%] lg:w-fit rounded-r-lg text-sm ${activeTab === "products"
+                    ? "bg-[#058A05] text-white"
+                    : "text-[#3B3B3B]"
+                    }`}
+                >
+                  Products
+                </button>
+
               </div>
             </div>
           </div>
@@ -368,7 +368,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
               >
                 {sortOptions.map((opt) => (
                   <option key={opt} value={opt}>
-                  <span className="text-xs text-[#9AA6AC]">Sort by </span>{opt}
+                    <span className="text-xs text-[#9AA6AC]">Sort by </span>{opt}
                   </option>
                 ))}
               </select>
@@ -415,15 +415,13 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden" onClick={toggleCategorySidebar} />
           )}
           <aside
-            className={`space-y-6 transition-all duration-300 ${
-              isCategorySidebarOpen
+            className={`space-y-6 transition-all duration-300 ${isCategorySidebarOpen
                 ? "opacity-100 translate-x-0"
                 : "opacity-0 -translate-x-4 pointer-events-none lg:hidden"
-            } ${
-              isCategorySidebarOpen
+              } ${isCategorySidebarOpen
                 ? "fixed left-0 top-0 z-50 lg:z-2 h-full w-80 overflow-y-auto bg-white px-4 py-14 shadow-lg lg:static lg:h-auto lg:w-auto lg:overflow-visible lg:bg-transparent lg:px-0 lg:pt-0 lg:shadow-none"
                 : "hidden lg:static"
-            }`}
+              }`}
           >
             <FilterSection title="Price, ₦">
               <div className="flex gap-3">
@@ -504,87 +502,11 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 ))}
               </div>
             </FilterSection>
-            {/* <FilterSection title="Features">
-              <div className="space-y-2">
-                {featureOptions.map((feature) => (
-                  <CheckboxItem
-                    key={feature}
-                    label={feature}
-                    checked={activeFilters.features.includes(feature)}
-                    onChange={() =>
-                      setActiveFilters((prev) => ({
-                        ...prev,
-                        features: toggleArrayValue(prev.features, feature),
-                      }))
-                    }
-                  />
-                ))}
-              </div>
-            </FilterSection> */}
-{/* 
-            <FilterSection title="Availability">
-              <div className="space-y-2">
-                {availabilityOptions.map((option) => (
-                  <CheckboxItem
-                    key={option}
-                    label={option}
-                    checked={activeFilters.availability.includes(option)}
-                    onChange={() =>
-                      setActiveFilters((prev) => ({
-                        ...prev,
-                        availability: toggleArrayValue(prev.availability, option),
-                      }))
-                    }
-                  />
-                ))}
-              </div>
-            </FilterSection> */}
-
-            {/* <FilterSection title="Warranty">
-              <div className="space-y-2">
-                <div className="relative">
-                  <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-[#E4E9EC]" />
-                  <div
-                    className="absolute left-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-[#058A05]"
-                    style={{
-                      width: `${((activeFilters.warrantyMin - 1) / 24) * 100}%`,
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min={1}
-                    max={25}
-                    value={activeFilters.warrantyMin}
-                    onChange={(event) =>
-                      setActiveFilters((prev) => ({
-                        ...prev,
-                        warrantyMin: Number(event.target.value),
-                      }))
-                    }
-                    className="relative w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#058A05] [&::-webkit-slider-thumb]:shadow-sm"
-                  />
-                </div>
-                <div className="flex justify-between text-xs text-[#5A646B]">
-                  <span>1 Yr</span>
-                  <span>{activeFilters.warrantyMin} Yr+</span>
-                  <span>25 Yrs</span>
-                </div>
-              </div>
-            </FilterSection> */}
-
-            {/* <Button
-              variant="outline"
-              className="w-full border-[#E4E9EC] text-[#3B3B3B]"
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </Button> */}
           </aside>
 
           <section
-            className={`transition-all duration-300 ${
-              isCategorySidebarOpen ? "" : "lg:col-span-2"
-            }`}
+            className={`transition-all duration-300 ${isCategorySidebarOpen ? "" : "lg:col-span-2"
+              }`}
           >
             {activeTab === "products" ? (
               <ProductsGrid

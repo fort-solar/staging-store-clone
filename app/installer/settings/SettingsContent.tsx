@@ -61,12 +61,23 @@ type InstallerProject = {
 };
 
 const tabs = [
-  { key: "profile", label: "Settings", link: "/installer/settings/profile" },
-  { key: "projects", label: "Projects", link: "/installer/settings/projects" },
+  {
+    key: "profile",
+    label: "Profile",
+    link: "/installer/settings/profile",
+    mobileLink: "/installer/settings/profile#section",
+  },
+  {
+    key: "projects",
+    label: "Projects",
+    link: "/installer/settings/projects",
+    mobileLink: "/installer/settings/projects#section",
+  },
   {
     key: "bills_and_payments",
     label: "Billing & Payments",
     link: "/installer/settings/bills-and-payments",
+    mobileLink: "/installer/settings/bills-and-payments#section",
   },
 ] as const;
 
@@ -155,7 +166,7 @@ const InfoItem = ({
   label: string;
   value: string;
 }) => (
-  <div className="flex flex-wrap items-center gap-3 text-sm text-[#5B5B5B]">
+  <div className="flex flex-wrap items-center gap-3 text-xs lg:text-sm text-[#5B5B5B]">
     <span className="flex items-center justify-center text-[#7C7C7C]">{icon}</span>
     <div className="min-w-22.5 text-[#8B8B8B] text-xs">{label}</div>
     <div className="font-medium text-[#202020]">{value}</div>
@@ -289,7 +300,7 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
 
   return (
     <div className="min-h-screen bg-white py-10">
-      <div className="mx-auto w-full max-w-7xl px-6 py-6 mt-20 lg:mt-0">
+      <div className="mx-auto w-full max-w-7xl px-6 py-6 lg:mt-0">
         <div className="flex items-center justify-between gap-2">
           <Link
             href="/installer/dashboard"
@@ -306,10 +317,10 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                 {profile.firstName?.charAt(0)?.toUpperCase() || "A"}
               </div>
               <div>
-                <p className="text-2xl font-semibold text-[#202020] flex items-center gap-3">
+                <p className="text-xl lg:text-2xl font-semibold text-[#202020] flex items-center gap-3">
                   {profile.firstName} {profile.lastName}
-                  <span className="flex flex-col text-[#FFA726] text-xs font-bold items-center border w-fit p-1 rounded-md border-[#FFA726]">
-                    <Star className="w-3 h-3" />
+                  <span className="flex flex-col text-[#FFA726] text-[10px] font-bold items-center border w-fit p-1 rounded-md border-[#FFA726]">
+                    <Star className="w-2 h-2 lg:w-3 lg:h-3" />
                     <span>{profile.rating}</span>
                   </span>
                 </p>
@@ -324,16 +335,51 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
 
             <div className="mt-8 flex flex-col gap-4">
               <InfoItem
-                icon={<span>⌕</span>}
+                icon={
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3 5.18 2 2 0 0 1 5 3h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.5a2 2 0 0 1-.45 1.9L9 10.91a16 16 0 0 0 4.09 4.09l1.79-1.09a2 2 0 0 1 1.9-.45c.8.24 1.64.42 2.5.54A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                }
                 label="Phone Number"
                 value={profile.phone}
               />
-              <InfoItem icon={<span>✉</span>} label="Email" value={profile.email} />
-              <InfoItem icon={<MapPin className="h-4 w-4" />} label="Location" value={profile.location} />
+              <InfoItem icon={
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                  <path d="m22 6-10 7L2 6" />
+                </svg>
+              } label="Email" value={profile.email} />
+              <InfoItem icon={
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path d="M12 22s7-4.5 7-11a7 7 0 0 0-14 0c0 6.5 7 11 7 11z" />
+                  <circle cx="12" cy="11" r="3" />
+                </svg>
+              } label="Location" value={profile.location} />
             </div>
 
             <div className="mt-8">
-              <p className="text-2xl font-semibold text-[#202020]">Skills</p>
+              <p className="text-xl lg:text-2xl font-semibold text-[#202020]">Skills</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {profile.skills.map((skill) => (
                   <span
@@ -356,15 +402,15 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
             </div>
           </aside>
 
-          <section className="rounded-t-3xl border-t border-x border-[#ECECEC] bg-white p-6 sm:p-8 overflow-x-auto">
+          <section className="rounded-t-3xl border-t border-x border-[#ECECEC] bg-white px-3 py-6 lg:py-8 lg:px-8  overflow-x-auto">
             <div className="flex flex-col gap-6 w-full">
-              <div className="w-full overflow-x-auto">
+              <div className="w-full overflow-x-auto scroll-mt-24 lg:scroll-mt-0" id="section">
                 <SmartTabsInstaller tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
               </div>
 
               {activeTab === "profile" && (
                 <div className="space-y-6">
-                  <h2 className="text-2xl font-semibold text-[#202020]">Personal Details</h2>
+                  <h2 className="text-xl lg:text-2xl font-semibold text-[#202020]">Personal Details</h2>
 
                   <div className="grid gap-6 lg:grid-cols-2">
                     <label className="space-y-2 text-sm font-medium text-[#202020]">
@@ -495,7 +541,7 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                     <div key={project.id} className="rounded-[22px] border border-[#DCE1E7] bg-white p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-base leading-none font-bold text-[#1F2937]">{project.title}</h3>
+                          <h3 className="text-sm lg:text-base leading-none font-bold text-[#1F2937]">{project.title}</h3>
                           <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#07940F]">
                             <MapPin className="h-4 w-4" /> {project.location}
                           </p>
@@ -509,9 +555,8 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                         {project.tags.map((tag) => (
                           <span
                             key={`${project.id}-${tag}`}
-                            className={`rounded-md px-3 py-1 text-xs text-white ${
-                              tag.includes("New") ? "bg-[#2563EB]" : tag.includes("Standard") ? "bg-[#059669]" : "bg-[#475569]"
-                            }`}
+                            className={`rounded-md px-3 py-1 text-xs text-white ${tag.includes("New") ? "bg-[#2563EB]" : tag.includes("Standard") ? "bg-[#059669]" : "bg-[#475569]"
+                              }`}
                           >
                             {tag}
                           </span>
@@ -519,7 +564,7 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                       </div>
 
                       <div className="mt-4 border-t border-[#D7DDE3] pt-4 flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-base font-bold text-[#1D2430]">{project.budget}</p>
+                        <p className="text-sm lg:text-base font-bold text-[#1D2430]">{project.budget}</p>
                         <div className="flex items-center gap-3">
                           {project.status === "Completed" && (
                             <>
@@ -596,16 +641,16 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                     </div>
                   </div>
 
-                  <div className="rounded-[22px] border border-[#E4E8ED] bg-[#FAFAFA] p-6">
+                  <div className="rounded-[22px] border border-[#E4E8ED] bg-white p-6">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="inline-flex items-center gap-3 text-lg font-bold text-[#1B2330]">
+                      <h3 className="inline-flex items-center gap-1 lg:gap-3 text-lg mb-3 lg:mb-0 font-bold text-[#1B2330]">
                         <HistoryIcon /> Payout History
                       </h3>
-                      <div className="relative">
+                      <div className="relative w-full lg:w-fit">
                         <button
                           type="button"
                           onClick={() => setIsPayoutFilterOpen((prev) => !prev)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-[#E5E9EF] bg-white px-4 py-2 text-[#6D7683]"
+                          className="inline-flex items-center gap-2 rounded-lg border border-[#E5E9EF] bg-white px-4 py-2 text-[#6D7683] w-full lg:w-fit"
                         >
                           <SoonIcon /> {payoutFilter} <ChevronDown className="h-4 w-4" />
                         </button>
@@ -619,9 +664,8 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                                   setPayoutFilter(value);
                                   setIsPayoutFilterOpen(false);
                                 }}
-                                className={`w-full rounded-lg px-3 py-2 text-left text-sm ${
-                                  payoutFilter === value ? "bg-[#EBFAEB] text-[#168416]" : "text-[#4B5563]"
-                                }`}
+                                className={`w-full rounded-lg px-3 py-2 text-left text-sm ${payoutFilter === value ? "bg-[#EBFAEB] text-[#168416]" : "text-[#4B5563]"
+                                  }`}
                               >
                                 {value}
                               </button>
@@ -632,7 +676,7 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                     </div>
 
                     <div className="mt-4 overflow-x-auto">
-                      <table className="w-full min-w-190 text-left">
+                      <table className="w-full min-w-150 text-left">
                         <thead>
                           <tr className="text-[#6D7683] text-base font-medium border-b border-[#E6E9EF]">
                             <th className="py-3">Reference ID</th>
@@ -644,7 +688,7 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                         </thead>
                         <tbody>
                           {filteredPayoutHistory.map((row) => (
-                            <tr key={row.id} className="text-base text-[#556070]">
+                            <tr key={row.id} className="text-base text-[#556070] border-b">
                               <td className="py-3">{row.referenceId}</td>
                               <td className="py-3">{row.amount}</td>
                               <td className="py-3">{row.date}</td>
@@ -654,19 +698,16 @@ const SettingsContent = ({ page }: { page: TabKeyInstaller }) => {
                                 </span>
                               </td>
                               <td className="py-3">
-                                <div className="flex items-center gap-3">
-                                    {
-                                        row.status === "Pending" && ( <SoonIcon className="h-4 w-4" />)
-                                    }
-                                    {
-                                        row.status === "Approved" && ( <PrintIcon className="h-5 w-5" />)
-                                    }
-                                    {
-                                        row.status === "Declined" && ( <div className="h-5 w-5"/>)
-                                    }
-                                  
-                                 
-                                  <Trash2 className="h-5 w-5 text-[#D64545]" />
+                                <div className="flex justify-center">
+                                  {
+                                    row.status === "Pending" && (<SoonIcon className="h-4 w-4" />)
+                                  }
+                                  {
+                                    row.status === "Approved" && (<PrintIcon className="h-5 w-5" />)
+                                  }
+                                  {
+                                    row.status === "Declined" && (<div className="h-5 w-5" />)
+                                  }
                                 </div>
                               </td>
                             </tr>

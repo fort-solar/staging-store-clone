@@ -47,7 +47,7 @@ const PackageDetailPage = () => {
     <div className="min-h-screen bg-white py-24">
       <DashboardHeader query={query} onQueryChange={setQuery} />
 
-      <div className="mx-auto w-full max-w-6xl px-4">
+      <div className="mx-auto w-full max-w-6xl px-4 mt-26 lg:mt-0">
         <button
           onClick={() => router.back()}
           className="flex cursor-pointer items-center gap-2 text-sm text-[#5A646B]"

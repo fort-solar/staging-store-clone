@@ -16,9 +16,19 @@ export type TabKeyInstaller =
   | "projects"
   | "bills_and_payments"
 
-export type Tab = Readonly<{ key: TabKey; label: string; link: string }>;
+export type Tab = Readonly<{
+  key: TabKey;
+  label: string;
+  link: string;
+  mobileLink?: string;
+}>;
 
-export type TabInstaller = Readonly<{ key: TabKeyInstaller; label: string; link: string }>;
+export type TabInstaller = Readonly<{
+  key: TabKeyInstaller;
+  label: string;
+  link: string;
+  mobileLink?: string;
+}>;
 
 function useResizeObserver<T extends HTMLElement>(
   ref: React.RefObject<T | null>,
@@ -35,6 +45,29 @@ function useResizeObserver<T extends HTMLElement>(
   }, [ref, onResize]);
 }
 
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const media = window.matchMedia("(min-width: 1024px)");
+    const handleChange = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+
+    setIsDesktop(media.matches);
+
+    if ("addEventListener" in media) {
+      media.addEventListener("change", handleChange);
+      return () => media.removeEventListener("change", handleChange);
+    }
+
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
+
+  return isDesktop;
+}
+
 export function SmartTabs({
   tabs,
   activeTab,
@@ -46,6 +79,7 @@ export function SmartTabs({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const moreBtnRef = useRef<HTMLButtonElement>(null);
+  const isDesktop = useIsDesktop();
 
   const measureRowRef = useRef<HTMLDivElement>(null);
   const tabMeasureRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -134,7 +168,7 @@ export function SmartTabs({
                 : "text-[#7C7C7C] hover:text-[#202020] bg-transparent hover:bg-white"
             }`}
           >
-            <Link href={tab.link}>
+            <Link href={isDesktop ? tab.link : tab.mobileLink ?? tab.link}>
             {tab.label}
             </Link>
             
@@ -214,6 +248,7 @@ export function SmartTabsInstaller({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const moreBtnRef = useRef<HTMLButtonElement>(null);
+  const isDesktop = useIsDesktop();
 
   const measureRowRef = useRef<HTMLDivElement>(null);
   const tabMeasureRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -302,7 +337,7 @@ export function SmartTabsInstaller({
                 : "text-[#7C7C7C] hover:text-[#202020] bg-transparent hover:bg-white"
             }`}
           >
-            <Link href={tab.link}>
+            <Link href={isDesktop ? tab.link : tab.mobileLink ?? tab.link}>
             {tab.label}
             </Link>
             

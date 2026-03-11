@@ -10,7 +10,7 @@ const PackageCard = ({ title, mini_description, image, }: { title: string; mini_
     return (
         <div className="
       group flex flex-col gap-3 h-full justify-between overflow-hidden shadow-sm rounded-lg pt-4 px-4
-      bg-white border border-transparent cursor-pointer
+      lg:bg-white bg-[#EBFAEB] border border-[#058A05] lg:border-transparent cursor-pointer
       transition-all duration-300
       hover:bg-[#EBFAEB] hover:border-[#058A05]
     ">

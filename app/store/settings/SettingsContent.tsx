@@ -18,10 +18,15 @@ import { ChevronUp } from "lucide-react";
 
 
 const tabs = [
-    { key: "profile", label: "Profile", link: "/store/settings/profile" },
-    { key: "orders", label: "Orders", link: "/store/settings/orders" },
-    { key: "quotes", label: "Quotes", link: "/store/settings/quotes" },
-    { key: "installations", label: "Installations", link: "/store/settings/installations" },
+    { key: "profile", label: "Profile", link: "/store/settings/profile", mobileLink: "/store/settings/profile#section" },
+    { key: "orders", label: "Orders", link: "/store/settings/orders", mobileLink: "/store/settings/orders#section" },
+    { key: "quotes", label: "Quotes", link: "/store/settings/quotes", mobileLink: "/store/settings/quotes#section" },
+    {
+        key: "installations",
+        label: "Installations",
+        link: "/store/settings/installations",
+        mobileLink: "/store/settings/installations#section",
+    },
     // { key: "package_requests", label: "Package Requests", link: "/settings/package-requests" },
 
 ] as const;
@@ -35,7 +40,7 @@ const InfoItem = ({
     label: string;
     value: string;
 }) => (
-    <div className="flex flex-wrap items-center gap-3 text-sm text-[#5B5B5B]">
+    <div className="flex flex-wrap items-center gap-3 text-xs lg:text-sm text-[#5B5B5B]">
         <span className="flex items-center justify-center text-[#7C7C7C]">
             {icon}
         </span>
@@ -137,7 +142,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             </div>
                         </div>
 
-                        <div className="mt-8 flex flex-col gap-4">
+                        <div className="mt-8 flex flex-col gap-4" >
                             <InfoItem
                                 icon={
                                     <svg
@@ -190,15 +195,18 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             />
                         </div>
 
-                        <div className="mt-10 flex flex-col gap-2">
+                        <div className="mt-10 flex flex-col gap-2" >
                             <SummaryRow label="Package Requests" value="5" />
                             <SummaryRow label="Completed Installations" value="1" />
                         </div>
                     </aside>
 
-                    <section className="rounded-t-3xl border-t border-x  border-[#ECECEC] bg-white p-6 sm:p-8 overflow-x-auto">
+                    <section
+                        className="rounded-t-3xl border-t border-x border-[#ECECEC] bg-white p-6 sm:p-8 overflow-x-auto scroll-mt-50 lg:scroll-mt-0"
+                        id="section"
+                    >
                         <div className="flex flex-col gap-6 w-full ">
-                            <div className="w-full overflow-x-auto">
+                            <div className="w-full overflow-x-auto" >
                                 <SmartTabs
                                     tabs={tabs}
                                     activeTab={activeTab}
@@ -212,7 +220,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             {activeTab === "profile" && (
                                 <div className="space-y-6">
                                     <div>
-                                        <h2 className="text-2xl font-semibold text-[#202020]">
+                                        <h2 className="text-xl lg:text-2xl font-semibold text-[#202020]">
                                             Personal Details
                                         </h2>
                                     </div>
@@ -328,7 +336,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                         </label>
                                     </div>
                                     <div className="flex justify-end">
-                                        <Button className="rounded-xl bg-[#1D9A1D] px-8 py-6 text-base font-semibold text-white hover:bg-[#168416]">
+                                        <Button className="rounded-xl bg-[#1D9A1D] px-8 py-6 text-base font-semibold text-white hover:bg-[#168416] lg:w-fit w-full">
                                             Edit Details
                                         </Button>
                                     </div>
@@ -338,7 +346,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             {activeTab === "quotes" && (
                                 <div className="space-y-6 ">
                                     <div>
-                                        <h2 className="text-2xl font-semibold text-[#202020]">
+                                        <h2 className="text-xl lg:text-2xl font-semibold text-[#202020]">
                                             My Quotes &amp; Energy summaries
                                         </h2>
                                         <p className="text-sm text-[#7C7C7C]">
@@ -416,7 +424,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             {activeTab === "installations" && (
                                 <div className="space-y-6">
                                     <div>
-                                        <h2 className="text-2xl font-semibold text-[#202020]">
+                                        <h2 className="text-xl lg:text-2xl font-semibold text-[#202020]">
                                             My Installations
                                         </h2>
                                         <p className="text-sm text-[#7C7C7C]">
@@ -436,7 +444,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                             >
                                                 <p className="text-xs text-[#1C1C1C]">{card.label}</p>
                                                 <div className="flex items-center justify-between mt-2">
-                                                    <p className="text-2xl font-semibold text-[#202020]">
+                                                    <p className="text-xl lg:text-2xl font-semibold text-[#202020]">
                                                         {card.value}
                                                     </p>
                                                     <span
@@ -462,7 +470,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                             </div>
                                             <div className="p-4  flex flex-col gap-4 lg:flex-row lg:items-center bg-[#FAFAFA] lg:justify-between">
                                                 <div className="space-y-2">
-                                                    <p className="text-lg flex items-center gap-3 font-semibold text-[#202020]">
+                                                    <p className="text-base lg:text-lg flex items-center gap-3 font-semibold text-[#202020]">
                                                         5kW Hybrid Inverter Package <span className="text-[10px] text-[#21C45D] border border-[#21C45D] p-1 rounded-sm">Completed</span>
                                                     </p>
                                                     <p className="text-xs text-[#7C7C7C]">
@@ -474,7 +482,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-xs text-[#7C7C7C]">Total Cost</p>
-                                                    <p className="text-2xl font-semibold text-[#202020]">
+                                                    <p className="text-xl lg:text-2xl font-semibold text-[#202020]">
                                                         ₦2,500,000
                                                     </p>
                                                     <p className="text-xs font-medium text-[#1D9A1D]">
@@ -500,11 +508,11 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                     <div className="mt-4 flex flex-wrap justify-end gap-3">
                                                         <Button
                                                             variant="outline"
-                                                            className="rounded-md border-[#BEBEBE] px-5 text-xs font-semibold"
+                                                            className="rounded-md border-[#BEBEBE] px-5 text-xs font-semibold lg:w-fit w-full"
                                                         >
                                                             Report Issue
                                                         </Button>
-                                                        <Button className="rounded-md bg-[#1D9A1D] px-5 text-xs font-semibold text-white hover:bg-[#168416]">
+                                                        <Button className="rounded-md bg-[#1D9A1D] px-5 text-xs font-semibold text-white hover:bg-[#168416] lg:w-fit w-full">
                                                             Approve Installation
                                                         </Button>
                                                     </div>
@@ -556,7 +564,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             {activeTab === "orders" && (
                                 <div className="space-y-5">
                                     <div>
-                                        <h2 className="text-2xl font-semibold text-[#202020]">
+                                        <h2 className="text-xl lg:text-2xl font-semibold text-[#202020]">
                                             My Orders
                                         </h2>
                                         <p className="text-sm text-[#7C7C7C]">
@@ -572,7 +580,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                             >
                                                 <p className="text-xs text-[#1C1C1C]">{card.label}</p>
                                                 <div className="mt-3 flex items-center justify-between">
-                                                    <p className="text-2xl font-semibold text-[#202020]">
+                                                    <p className="text-xl lg:text-2xl font-semibold text-[#202020]">
                                                         {card.value}
                                                     </p>
                                                     <span>{card.icon}</span>
@@ -593,7 +601,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                             className="overflow-hidden rounded-xl border border-[#D9D9D9] bg-white"
                                                         >
                                                             <div className="flex items-center justify-between border-b border-[#EFEFEF] bg-[#FFF8E5] px-5 py-3">
-                                                                <div className="flex items-center gap-3 text-xs text-[#FFB83C] font-semibold">
+                                                                <div className="flex items-center gap-1 lg:gap-3 text-xs text-[#FFB83C] font-semibold">
                                                                     <LargeTickIcon />
                                                                     Order {order.status}
                                                                 </div>
@@ -723,17 +731,17 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                                 </div>
 
                                                                 <div className="space-y-4">
-                                                                    <div className="rounded-2xl  p-3.5">
+                                                                    <div className="rounded-2xl  lg:p-3.5">
                                                                         <div className="flex items-center gap-3">
-                                                                            <div className="h-20 w-20 rounded-lg bg-[#E2E2E2]" />
+                                                                            <div className="h-10 w-10 rounded-lg bg-[#E2E2E2]" />
                                                                             <div className="space-y-1">
-                                                                                <p className="text-sm leading-6 font-medium text-[#202020]">
+                                                                                <p className="text-xs lg:text-sm leading-6 font-medium text-[#202020]">
                                                                                     Jinko 550W Monocrystalline
                                                                                 </p>
-                                                                                <p className="text-sm font-medium text-[#202020]">
+                                                                                <p className="text-xs lg:text-sm font-medium text-[#202020]">
                                                                                     Solar Panel | Jinko Solar
                                                                                 </p>
-                                                                                <p className="text-[13px] leading-9 flex justify-between items-center font-semibold tracking-[-0.02em] text-[#202020]">
+                                                                                <p className="text-xs lg:text-[13px] leading-9 flex justify-between items-center font-semibold tracking-[-0.02em] text-[#202020]">
                                                                                     {order.unitPrice} <span className="text-xs font-normal text-[#8F8F8F]">QTY: {order.qty}</span>
                                                                                 </p>
                                                                             </div>
@@ -793,6 +801,17 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                             key={order.id}
                                                             className="overflow-hidden rounded-xl border border-[#D9D9D9] bg-white"
                                                         >
+                                                            <div className="flex lg:hidden gap-5 items-center justify-between w-full p-4">
+                                                                <div className="w-fit border border-[#3730A3] text-[#3730A3] p-2 rounded-full text-[10px] lg:text-xs font-semibold">
+                                                                    Quote Requested
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => toggleOrderCard(order.id)}
+                                                                    className="text-xs font-semibold text-[#168416]"
+                                                                >
+                                                                    {isExpanded ? (<span className="flex items-center gap-1">Ouote Details <ChevronUp className="w-5 h-5" /></span>) : "View Quote Details >"}
+                                                                </button>
+                                                            </div>
                                                             <div className="grid gap-6 px-5 py-10 lg:grid-cols-[1fr_320px] bg-[#FAFAFA]">
                                                                 <div className="space-y-4">
                                                                     <div>
@@ -871,8 +890,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                                 </div>
 
                                                                 <div className="space-y-4">
-                                                                    <div className="flex gap-5 items-center justify-end">
-                                                                        <div className="w-fit border border-[#3730A3] text-[#3730A3] p-2 rounded-full text-xs font-semibold">
+                                                                    <div className="hidden lg:flex gap-5 items-center justify-end">
+                                                                        <div className="w-fit border border-[#3730A3] text-[#3730A3] p-2 rounded-full text-[10px] lg:text-xs font-semibold">
                                                                             Quote Requested
                                                                         </div>
                                                                         <button
@@ -882,17 +901,17 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                                             {isExpanded ? (<span className="flex items-center gap-1">Ouote Details <ChevronUp className="w-5 h-5" /></span>) : "View Quote Details >"}
                                                                         </button>
                                                                     </div>
-                                                                    <div className="rounded-2xl  p-3.5">
+                                                                    <div className="rounded-2xl  lg:p-3.5">
                                                                         <div className="flex items-center gap-3">
-                                                                            <div className="h-20 w-20 rounded-lg bg-[#E2E2E2]" />
+                                                                            <div className="w-10 h-10 lg:h-20 lg:w-20 rounded-lg bg-[#E2E2E2]" />
                                                                             <div className="space-y-1">
-                                                                                <p className="text-sm leading-6 font-medium text-[#202020]">
+                                                                                <p className="text-xs lg:text-sm leading-6 font-medium text-[#202020]">
                                                                                     Jinko 550W Monocrystalline
                                                                                 </p>
-                                                                                <p className="text-sm font-medium text-[#202020]">
+                                                                                <p className="text-xs lg:text-sm font-medium text-[#202020]">
                                                                                     Solar Panel | Jinko Solar
                                                                                 </p>
-                                                                                <p className="text-[13px] leading-9 flex justify-between items-center font-semibold tracking-[-0.02em] text-[#202020]">
+                                                                                <p className="text-xs lg:text-[13px] leading-9 flex justify-between items-center font-semibold tracking-[-0.02em] text-[#202020]">
                                                                                     {order.unitPrice} <span className="text-xs font-normal text-[#8F8F8F]">QTY: {order.qty}</span>
                                                                                 </p>
                                                                             </div>

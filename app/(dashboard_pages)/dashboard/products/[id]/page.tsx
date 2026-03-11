@@ -12,11 +12,20 @@ import { useParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { useRouter } from "next/navigation";
+import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import { FaTiktok, FaYoutube, FaInstagram, FaFacebook, FaLinkedin, FaShare } from 'react-icons/fa';
+
+type QuoteProduct = {
+  id: number;
+  title: string;
+  image: string;
+  price: number;
+};
 
 const ProductDetailPage = () => {
   const [query, setQuery] = useState("");
-  const [showFeatures, setShowFeatures] = useState(true)
+  const [showFeatures, setShowFeatures] = useState(true);
+  const [quoteProduct, setQuoteProduct] = useState<QuoteProduct | null>(null);
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -51,7 +60,7 @@ const ProductDetailPage = () => {
     <div className="min-h-screen bg-white py-24">
       <DashboardHeader query={query} onQueryChange={setQuery} />
 
-      <div className="mx-auto w-full max-w-6xl px-4">
+      <div className="mx-auto w-full max-w-6xl px-4 mt-26 lg:mt-0">
         <button
           onClick={() => router.back()}
           className="flex cursor-pointer items-center gap-2 text-sm text-[#5A646B]"
@@ -144,7 +153,7 @@ const ProductDetailPage = () => {
 
             <div className="mt-4 flex items-center gap-3 border w-fit rounded-sm overflow-hidden">
               <button
-               disabled={product.availability === "Out Of Stock" ? true : false}
+                disabled={product.availability === "Out Of Stock" ? true : false}
                 onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                 className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 border-r border-[#E4E9EC] text-lg`}
               >
@@ -152,7 +161,7 @@ const ProductDetailPage = () => {
               </button>
               <span className="min-w-8 text-center ">{quantity}</span>
               <button
-               disabled={product.availability === "Out Of Stock" ? true : false}
+                disabled={product.availability === "Out Of Stock" ? true : false}
                 onClick={() => setQuantity((prev) => prev + 1)}
                 className="disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9  border-l border-[#E4E9EC] text-lg text-white bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)]"
               >
@@ -169,16 +178,34 @@ const ProductDetailPage = () => {
               </span>
             </div>
 
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4">
               <button
-               disabled={product.availability === "Out Of Stock" ? true : false}
-             
-                className="disabled:opacity-50 disabled:cursor-not-allowed flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] py-3 text-sm font-semibold text-white"
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setQuoteProduct({
+                    id: product.id,
+                    title: product.title,
+                    image: product.image,
+                    price: product.price,
+                  })
+                }}
+                className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center text-white font-semibold"
+              >
+                Get Quote
+              </button>
+            </div>
+
+            <div className="mt-2 flex items-center gap-3">
+              <button
+                disabled={product.availability === "Out Of Stock" ? true : false}
+
+                className="disabled:opacity-50 disabled:cursor-not-allowed flex-1 rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
               >
                 Buy Now
               </button>
               <button
-               disabled={product.availability === "Out Of Stock" ? true : false}
+                disabled={product.availability === "Out Of Stock" ? true : false}
                 onClick={() => {
                   addToCart({ id: product.id, itemType: "product" });
                   updateCartQuantity({
@@ -206,7 +233,7 @@ const ProductDetailPage = () => {
               <div className="flex items-center justify-between text-[#252C32] font-semibold">
                 <span>Product Highlights / Quick Specs</span>
                 <span onClick={() => setShowFeatures(!showFeatures)}>
-                  {showFeatures ? <ChevronDown className="text-gray-500 w-5 h-5" /> : <ChevronUp className="text-gray-500 w-5 h-5"/>}
+                  {showFeatures ? <ChevronDown className="text-gray-500 w-5 h-5" /> : <ChevronUp className="text-gray-500 w-5 h-5" />}
                 </span>
               </div>
               {
@@ -271,6 +298,14 @@ const ProductDetailPage = () => {
           />
         </div>
       </div>
+      {quoteProduct && (
+        <GetQuoteModal
+          key={quoteProduct.id}
+          open={!!quoteProduct}
+          product={quoteProduct}
+          onClose={() => setQuoteProduct(null)}
+        />
+      )}
     </div>
   );
 };

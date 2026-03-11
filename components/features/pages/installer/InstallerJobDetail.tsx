@@ -47,15 +47,15 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
         </div>
 
         <div className="mx-auto mt-4 max-w-2xl text-center">
-          <h1 className="text-4xl font-semibold leading-tight text-[#111827]">{job.title}</h1>
+          <h1 className="text-2xl lg:text-4xl font-semibold leading-tight text-[#111827]">{job.title}</h1>
           <p className="mt-2 inline-flex items-center gap-1 text-xs text-[#4B5563]">
             <LocateFixed className="h-4 w-4" /> {job.city} {job.state}.{" "}
             <span className="text-[#16A34A]">({job.distanceKm}km away)</span>
           </p>
 
-          <div className="mt-3 flex items-center justify-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
             {isApplied ? (
-              <span className="inline-flex rounded-xl bg-[#DFF3DF] px-6 py-2 text-xl font-semibold text-[#169A2A]">
+              <span className="inline-flex justify-center rounded-xl bg-[#DFF3DF] px-6 py-3 text-base font-semibold text-[#169A2A] w-full lg:w-fit">
                 Job Assigned
               </span>
             ) : (
@@ -70,7 +70,7 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
                         : [...prev.appliedJobIds, job.id],
                     }))
                   }
-                  className="rounded-xl bg-[#1FA21B] px-8 py-2 text-lg font-medium text-white"
+                  className="rounded-xl bg-[#1FA21B] px-8 py-3 text-base font-medium text-white w-full lg:w-fit"
                 >
                   Apply Now
                 </button>
@@ -84,7 +84,7 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
                         : [...prev.savedJobIds, job.id],
                     }))
                   }
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2 text-base text-[#4B5563]"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-base text-[#4B5563] w-full lg:w-fit"
                 >
                   <Bookmark className="h-4 w-4" /> {isSaved ? "Saved" : "Save Job"}
                 </button>
@@ -93,15 +93,15 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_420px] border-l border-r border-b px-6 py-6 rounded-b-2xl">
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_420px] border-l border-r border-b px-3 lg:px-6 py-6 rounded-b-2xl">
           <div className="space-y-6 lg:pr-8 order-2 lg:order-1">
             <section>
-              <h3 className="text-2xl font-semibold text-[#171A1F]">Job Description</h3>
+              <h3 className="text-xl lg:text-2xl font-semibold text-[#171A1F]">Job Description</h3>
               <p className="mt-2 text-lg text-[#3E454F]">{job.description}</p>
             </section>
 
             <section>
-              <h3 className="text-2xl font-semibold text-[#171A1F]">Scope of Work</h3>
+              <h3 className="text-xl lg:text-2xl font-semibold text-[#171A1F]">Scope of Work</h3>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-lg text-[#3E454F]">
                 {job.scope.map((item) => (
                   <li key={item}>{item}</li>
@@ -110,7 +110,7 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
             </section>
 
             <section>
-              <h3 className="text-2xl font-semibold text-[#171A1F]">Requirements</h3>
+              <h3 className="text-xl lg:text-2xl font-semibold text-[#171A1F]">Requirements</h3>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-lg text-[#3E454F]">
                 {job.requirements.map((item) => (
                   <li key={item}>{item}</li>
@@ -119,7 +119,7 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
             </section>
 
             <section>
-              <h3 className="text-2xl font-semibold text-[#171A1F]">Installation Components</h3>
+              <h3 className="text-xl lg:text-2xl font-semibold text-[#171A1F]">Installation Components</h3>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-lg text-[#3E454F]">
                 {job.components.map((item) => (
                   <li key={item}>{item}</li>
@@ -128,7 +128,7 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
             </section>
 
             <section>
-              <h3 className="text-2xl font-semibold text-[#171A1F]">Site Conditions</h3>
+              <h3 className="text-xl lg:text-2xl font-semibold text-[#171A1F]">Site Conditions</h3>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-lg text-[#3E454F]">
                 {job.siteConditions.map((item) => (
                   <li key={item}>{item}</li>
@@ -137,7 +137,7 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
             </section>
 
             {!isApplied && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() =>
@@ -148,7 +148,7 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
                         : [...prev.appliedJobIds, job.id],
                     }))
                   }
-                  className="rounded-xl bg-[#1FA21B] px-8 py-2 text-lg font-medium text-white"
+                  className="rounded-xl bg-[#1FA21B] px-8 py-3 text-base font-medium text-white w-full lg:w-fit"
                 >
                   Apply Now
                 </button>
@@ -162,14 +162,14 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
                         : [...prev.savedJobIds, job.id],
                     }))
                   }
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2 text-base text-[#4B5563]"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-base text-[#4B5563] w-full lg:w-fit"
                 >
-                  <Bookmark className="h-5 w-5" /> {isSaved ? "Saved" : "Save Job"}
+                  <Bookmark className="h-4 w-4" /> {isSaved ? "Saved" : "Save Job"}
                 </button>
               </div>
             )}
 
-            <div className="rounded-xl border border-[#F2BE6A] bg-[#FFF8EF] p-4 text-lg font-medium text-[#424A57]">
+            <div className="rounded-xl border border-[#F2BE6A] bg-[#FFF8EF] p-4 text-sm lg:text-lg font-medium text-[#424A57]">
               <p className="inline-flex items-start gap-2">
                 <CautionIcon className="mt-1" />
                 Always verify site conditions before starting work. Report any discrepancies
@@ -244,22 +244,22 @@ const InstallerJobDetail = ({ jobId }: { jobId: string }) => {
             )}
 
             <div className="rounded-2xl border border-[#B8C0CC] bg-[#F9FAFB] p-4">
-              <p className="mb-4 inline-flex w-fit justify-start rounded-lg bg-[#DFF3DF] px-4 py-2 text-base font-medium text-[#169A2A]">
+              <p className="mb-4 inline-flex w-fit justify-start rounded-lg bg-[#DFF3DF] px-4 py-2 text-sm lg:text-base font-medium text-[#169A2A]">
                 {isApplied ? "Job Assigned" : "Job Summary"}
               </p>
 
-              <h3 className="text-2xl font-semibold text-[#171A1F]">Job Summary</h3>
-              <div className="mt-3 space-y-2 text-base">
+              <h3 className="text-xl lg:text-2xl font-semibold text-[#171A1F]">Job Summary</h3>
+              <div className="mt-3 space-y-2 text-sm lg:text-base">
                 <p className="text-[#9BA2AE]">Budget</p>
-                <p className="font-semibold text-[#111827] text-xl">{job.budgetLabel}</p>
+                <p className="font-semibold text-[#111827] text-lg lg:text-xl">{job.budgetLabel}</p>
                 <p className="text-[#9BA2AE]">Job Type</p>
-                <p className="font-semibold text-[#111827] text-xl">{job.jobType}</p>
+                <p className="font-semibold text-[#111827] text-lg lg:text-xl">{job.jobType}</p>
                 <p className="text-[#9BA2AE]">System Size</p>
-                <p className="font-semibold text-[#111827] text-xl">{job.systemSize}</p>
+                <p className="font-semibold text-[#111827] text-lg lg:text-xl">{job.systemSize}</p>
                 <p className="text-[#9BA2AE]">Est. Duration</p>
-                <p className="font-semibold text-[#111827] text-xl">{job.duration}</p>
+                <p className="font-semibold text-[#111827] text-lg lg:text-xl">{job.duration}</p>
                 <p className="text-[#9BA2AE]">Start Date</p>
-                <p className="font-semibold text-[#111827] text-xl">{job.startDateLabel}</p>
+                <p className="font-semibold text-[#111827] text-lg lg:text-xl">{job.startDateLabel}</p>
               </div>
 
               {isApplied ? (

@@ -78,9 +78,23 @@ const AuthLayout = ({
   return (
     <div className="relative min-h-screen bg-white">
       <div className="min-h-screen lg:grid lg:grid-cols-[1.3fr_1fr]">
-        <main className="flex max-h-screen items-start justify-center overflow-y-auto px-6 py-12 lg:px-16">
-          <div className="w-full max-w-115 space-y-8 py-14">
-            <div className="h-15 w-15">
+        <main className="lg:flex max-h-screen items-start justify-center overflow-y-auto px-0 lg:py-12 lg:px-16">
+          <div className="block lg:hidden relative h-full overflow-hidden w-full">
+            <div className="absolute inset-0 fortsolar-auth-gradient" />
+            <div className="relative flex h-full w-full flex-col justify-between items-center text-center px-6 py-10 text-white">
+              <LogoTransparent className="h-10" />
+              <div className="max-w-105">
+                <p className="text-xs font-semibold tracking-[0.32em] text-white/70 mt-10">
+                  {asideTitle}
+                </p>
+                <p className="mt-4 text-xl font-semibold leading-snug min-h-20">
+                  <TypewriterText texts={facts} />
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="w-full max-w-115 space-y-8 py-14 px-6">
+            <div className="h-15 w-15 hidden lg:block">
               <LogoIcon />
             </div>
             {children}

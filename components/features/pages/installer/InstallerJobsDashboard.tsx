@@ -11,12 +11,11 @@ import {
   HelpCircle,
   LocateFixed,
   LogOut,
-  Menu,
   Search,
   Settings,
   SlidersHorizontal,
-  User,
   Wrench,
+  Receipt,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -77,7 +76,7 @@ const SidebarFilters = ({
       <button
         type="button"
         onClick={() => setIsCategoryOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between text-2xl font-semibold text-[#13161A]"
+        className="flex w-full items-center justify-between text-xl lg:text-2xl font-semibold text-[#13161A]"
       >
         Job Categories
         <span className="text-[#6B7280]">
@@ -86,7 +85,7 @@ const SidebarFilters = ({
       </button>
 
       {isCategoryOpen && (
-        <div className="mt-4 space-y-3 text-lg text-[#20242A]">
+        <div className="mt-4 space-y-3 text-base text-[#20242A]">
           {categoryItems.map((item) => (
             <label key={item.key} className="flex cursor-pointer items-center gap-3">
               <input
@@ -105,7 +104,7 @@ const SidebarFilters = ({
 
     <div className="mt-8 border-t border-[#D4D7DB] pt-6">
       <h3 className="text-base text-[#9A9EA6]">System Size</h3>
-      <div className="mt-4 space-y-3 text-lg text-[#20242A]">
+      <div className="mt-4 space-y-3 text-base text-[#20242A]">
         {systemSizeItems.map((item) => (
           <label key={item.key} className="flex cursor-pointer items-center gap-3">
             <input
@@ -131,6 +130,8 @@ const InstallerJobsDashboard = () => {
   const [systemSize, setSystemSize] = useState<SystemSize>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [isJobCategoryOpen, setIsJobCategoryOpen] = useState(false);
+  const [isSystemSizeOpen, setIsSystemSizeOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -216,32 +217,10 @@ const InstallerJobsDashboard = () => {
         />
       )}
 
-      <div
-        className={`fixed left-0 top-0 z-50 h-full w-90 lg:w-80 transform overflow-y-auto p-4 transition-transform duration-300 lg:hidden ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-      >
-        <SidebarFilters
-          isMobile
-          category={category}
-          setCategory={setCategory}
-          systemSize={systemSize}
-          setSystemSize={setSystemSize}
-          isCategoryOpen={isCategoryOpen}
-          setIsCategoryOpen={setIsCategoryOpen}
-        />
-      </div>
-
       <div>
         <div className="flex items-center justify-between w-full gap-2 px-6 pt-6">
           <LogoFull className="h-8 lg:h-10  w-auto" />
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsMobileSidebarOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#D1D5DB] lg:hidden"
-            >
-              <Menu className="h-5 w-5 text-[#374151]" />
-            </button>
             <div className="relative block">
               <button
                 type="button"
@@ -270,7 +249,7 @@ const InstallerJobsDashboard = () => {
                         <p className="text-xs text-[#4B5563]">{userEmail}</p>
                       </div>
                     </div>
-                    <ChevronUp className="h-5 w-5 text-[#4B5563]" />
+                    <ChevronUp className="h-5 w-5 text-[#4B5563]" onClick={() => setIsProfileMenuOpen(false)} />
                   </div>
 
                   {/* <div className="mt-4 border-t border-[#D8E0E8] pt-4">
@@ -315,6 +294,19 @@ const InstallerJobsDashboard = () => {
                     <Wrench className="h-5 w-5" />
                     My Jobs
                   </button> */}
+                    <Link href="/installer/settings/projects#section">
+                      <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]">
+                        <Wrench className="h-5 w-5" />
+                        Projects
+                      </button>
+                    </Link>
+                    <Link href="/installer/settings/bills-and-payments#section">
+                      <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]">
+                        <Receipt className="h-5 w-5" />
+                        Bills and payments
+                      </button>
+                    </Link>
+
                     <Link href="/installer/settings">
                       <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]">
                         <Settings className="h-5 w-5" />
@@ -381,7 +373,7 @@ const InstallerJobsDashboard = () => {
             </div>
 
             <div className="flex justify-between items-center mt-7 gap-3 flex-wrap">
-              <h1 className="text-2xl font-semibold text-[#0F172A]">
+              <h1 className="text-xl lg:text-2xl font-semibold text-[#0F172A]">
                 {activeTab === "board" && `Available Jobs (${visibleJobs.length})`}
                 {activeTab === "applications" && `My Applications (${visibleJobs.length})`}
                 {activeTab === "saved" && `Saved Jobs (${visibleJobs.length})`}
@@ -389,24 +381,27 @@ const InstallerJobsDashboard = () => {
               </h1>
 
               <div className="flex items-center gap-3 flex-wrap">
-                <label className="flex h-11 items-center gap-3 rounded-xl border border-[#D1D5DB] bg-white px-4">
+                <label className="flex h-11 items-center gap-3 rounded-xl border border-[#D1D5DB] bg-white px-4  w-full lg:w-fit">
                   <Search className="h-4 w-4 text-[#6B7280]" />
                   <input
                     placeholder="Search by city, state..."
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    className="w-56 text-sm outline-none"
+                    className="w-full lg:w-56 text-sm outline-none"
                   />
                 </label>
 
-                <div className="relative">
+                <div className="relative w-full lg:w-fit">
                   <button
                     type="button"
-                    onClick={() => setIsSortMenuOpen((prev) => !prev)}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#D1D5DB] bg-white px-4 text-sm text-[#4B5563]"
+                    onClick={() => { setIsJobCategoryOpen(false); setIsSystemSizeOpen(false); setIsSortMenuOpen((prev) => !prev) }}
+                    className="inline-flex justify-between w-full h-11 items-center gap-2 rounded-xl border border-[#D1D5DB] bg-white px-4 text-sm text-[#4B5563]"
                   >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    {sortOrder === "newest" ? "Newest" : "Oldest"}
+                    <div className="inline-flex items-center gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {sortOrder === "newest" ? "Newest" : "Oldest"}
+                    </div>
+
                     <ChevronDown className="h-4 w-4" />
                   </button>
 
@@ -434,6 +429,72 @@ const InstallerJobsDashboard = () => {
                       >
                         Oldest
                       </button>
+                    </div>
+                  )}
+                </div>
+                <div className="block lg:hidden relative w-full">
+                  <button
+                    type="button"
+                    onClick={() => { setIsSystemSizeOpen(false); setIsSortMenuOpen(false); setIsJobCategoryOpen((prev) => !prev) }}
+                    className="inline-flex w-full h-11 justify-between items-center gap-2 rounded-xl border border-[#D1D5DB] bg-white px-4 text-sm text-[#4B5563]"
+                  >
+                    <div className="inline-flex items-center gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {categoryItems.find((c) => c.key === category)?.label}
+                    </div>
+
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+
+                  {isJobCategoryOpen && (
+                    <div className="absolute right-0 top-12 z-20 w-36 rounded-xl border border-[#E5E7EB] bg-white p-1 shadow-md">
+                      {categoryItems.map((c, i) => (
+                        <button
+                          type="button"
+                          key={i}
+                          onClick={() => {
+                            setCategory(c.key)
+                            setIsJobCategoryOpen(false);
+                          }}
+                          className={`w-full rounded-lg px-3 py-2 text-left text-sm ${category === c.key ? "bg-[#EBFAEB] text-[#15803D]" : "text-[#374151]"
+                            }`}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="block lg:hidden relative w-full">
+                  <button
+                    type="button"
+                    onClick={() => { setIsJobCategoryOpen(false); setIsSortMenuOpen(false); setIsSystemSizeOpen((prev) => !prev); }}
+                    className="inline-flex w-full h-11 justify-between items-center gap-2 rounded-xl border border-[#D1D5DB] bg-white px-4 text-sm text-[#4B5563]"
+                  >
+                    <div className="inline-flex items-center gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {systemSizeItems.find((s) => s.key === systemSize)?.label}
+                    </div>
+
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+
+                  {isSystemSizeOpen && (
+                    <div className="absolute right-0 top-12 z-20 w-36 rounded-xl border border-[#E5E7EB] bg-white p-1 shadow-md">
+                      {systemSizeItems.map((s, i) => (
+                        <button
+                          type="button"
+                          key={i}
+                          onClick={() => {
+                            setSystemSize(s.key)
+                            setIsSystemSizeOpen(false);
+                          }}
+                          className={`w-full rounded-lg px-3 py-2 text-left text-sm ${systemSize === s.key ? "bg-[#EBFAEB] text-[#15803D]" : "text-[#374151]"
+                            }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

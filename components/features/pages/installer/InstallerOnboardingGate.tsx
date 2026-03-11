@@ -130,7 +130,7 @@ const InstallerOnboardingGate = ({ children }: { children: React.ReactNode }) =>
 
                   {state.currentStep === 1 && (
                     <>
-                      <h2 className="text-3xl font-semibold text-[#0B0F17]">
+                      <h2 className="text-xl lg:text-3xl font-semibold text-[#0B0F17]">
                         Finish Setting Up Your Profile
                       </h2>
                       <p className="mt-2 text-base text-[#556070]">
@@ -277,7 +277,7 @@ const InstallerOnboardingGate = ({ children }: { children: React.ReactNode }) =>
 
                   {state.currentStep === 2 && (
                     <>
-                      <h2 className="text-3xl font-semibold text-[#0B0F17]">
+                      <h2 className="text-xl lg:text-3xl font-semibold text-[#0B0F17]">
                          Verification &amp; Certification
                       </h2>
                       <p className="mt-2 text-base text-[#556070]">
@@ -357,7 +357,7 @@ const InstallerOnboardingGate = ({ children }: { children: React.ReactNode }) =>
 
                   {state.currentStep === 3 && (
                     <>
-                     <h2 className="text-3xl font-semibold text-[#0B0F17]">
+                     <h2 className="text-xl lg:text-3xl font-semibold text-[#0B0F17]">
                          Choose Your Service Areas
                       </h2>
                       <p className="mt-2 text-base text-[#556070]">
