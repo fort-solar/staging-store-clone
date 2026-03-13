@@ -46,7 +46,10 @@ function useResizeObserver<T extends HTMLElement>(
 }
 
 function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -54,15 +57,8 @@ function useIsDesktop() {
     const media = window.matchMedia("(min-width: 1024px)");
     const handleChange = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
 
-    setIsDesktop(media.matches);
-
-    if ("addEventListener" in media) {
-      media.addEventListener("change", handleChange);
-      return () => media.removeEventListener("change", handleChange);
-    }
-
-    media.addListener(handleChange);
-    return () => media.removeListener(handleChange);
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
   }, []);
 
   return isDesktop;
