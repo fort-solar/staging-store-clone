@@ -41,7 +41,7 @@ const DashboardHeader = ({
 
   const signOut = () => {
     clearMockSession();
-    router.push("/login");
+    router.refresh();
   };
 
   return (

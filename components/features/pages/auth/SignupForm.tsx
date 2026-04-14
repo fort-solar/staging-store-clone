@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter} from "next/navigation";
 import { useForm } from "react-hook-form";
 // import { GoogleLogin } from "@react-oauth/google";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
@@ -26,8 +26,6 @@ const SignupForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const role = useMemo(() => searchParams.get("role") ?? "customer", [searchParams]);
 
   const {
     register,
@@ -68,7 +66,7 @@ const SignupForm = () => {
       phone: values.phone,
       address: values.address,
       password: values.password,
-      role: role === "installer" ? "installer" : "customer",
+      role: "customer",
     });
 
     if (error) {
@@ -84,7 +82,7 @@ const SignupForm = () => {
     }
 
     setStatus({ tone: "success", message: "Account created successfully. Redirecting..." });
-    router.push(session.role === "installer" ? "/installer/dashboard" : "/store/dashboard");
+    router.push("/store/dashboard");
     setIsSubmitting(false);
   };
 
@@ -199,12 +197,13 @@ const SignupForm = () => {
           </Link>
         </p>
         <p>
-          Are you {role === "customer" ? "an installer?" : "a customer?"} {" "}
+          Are you an installer?
           <Link
-            href={role === "installer" ? "/signup?role=customer" : "/signup?role=installer"}
+            aria-disabled
+            href={""}
             className="font-semibold text-[#16A34A] hover:underline"
           >
-            Join as {role === "installer" ? "Customer" : "Installer"}
+            Join as Installer
           </Link>
         </p>
       </div>

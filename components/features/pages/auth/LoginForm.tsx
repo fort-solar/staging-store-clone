@@ -36,7 +36,7 @@ const LoginForm = () => {
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     setStatus(null);
-    const { error, session } = loginMockUser({
+    const { error} = loginMockUser({
       email: values.email,
       password: values.password,
     });
@@ -45,7 +45,7 @@ const LoginForm = () => {
       setStatus({ tone: "error", message: error });
     } else {
       setStatus({ tone: "success", message: "Login successful. Redirecting..." });
-      router.push(session?.role === "installer" ? "/installer/dashboard" : "/store/dashboard");
+      router.push("/store/dashboard");
     }
     setIsSubmitting(false);
   };
@@ -127,14 +127,15 @@ const LoginForm = () => {
       <div className="space-y-2 text-center text-sm text-[#64748B]">
         <p>
           Don&apos;t have an account?{" "}
-          <Link href="/signup?role=customer" className="font-semibold text-[#16A34A] hover:underline">
+          <Link href="/signup" className="font-semibold text-[#16A34A] hover:underline">
             Sign Up
           </Link>
         </p>
         <p >
           Are you an installer?{" "}
           <Link
-            href="/signup?role=installer"
+            href=""
+            aria-disabled
             className="font-semibold text-[#16A34A] hover:underline"
           >
             Join as Installer

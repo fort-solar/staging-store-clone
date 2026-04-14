@@ -1,6 +1,6 @@
 "use client";
 
-export type UserRole = "customer" | "installer";
+export type UserRole = "customer";
 
 export type MockUser = {
   id: string;
