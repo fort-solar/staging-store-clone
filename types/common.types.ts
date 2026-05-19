@@ -9,25 +9,41 @@ export interface GeneralStoreState {
   updateCartQuantity: (item: CartItemInput & { quantity: number }) => void;
   removeFromCart: (item: CartItemInput) => void;
   clearCart: () => void;
-  toggleFavoriteProduct: (id: number) => void;
+  toggleFavoriteProduct: (id: CatalogId) => void;
   setCategorySidebarOpen: (value: boolean) => void;
-  toggleFavoritePackage: (id: number) => void;
+  toggleFavoritePackage: (id: CatalogId) => void;
+  syncState: SyncState;
+  markCatalogSyncPending: (resource: SyncResource) => void;
+  markCatalogSyncComplete: (resource: SyncResource) => void;
 }
+
+export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export type CartItemType = "product" | "package";
 
 export type CartItem = {
-  id: number;
+  id: CatalogId;
   itemType: CartItemType;
   quantity: number;
 };
 
 export type CartItemInput = {
-  id: number;
+  id: CatalogId;
   itemType: CartItemType;
 };
 
 export type FavoritesState = {
-  products: number[];
-  packages: number[];
+  products: CatalogId[];
+  packages: CatalogId[];
+};
+
+export type CatalogId = string | number;
+
+export type SyncResource = "cart" | "favorites";
+
+export type SyncState = {
+  cartPending: boolean;
+  favoritesPending: boolean;
+  lastCartSyncAt: string | null;
+  lastFavoritesSyncAt: string | null;
 };

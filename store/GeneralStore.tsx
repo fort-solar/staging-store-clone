@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
-import { GeneralStoreState } from "@/types/common.types";
+import { GeneralStoreState, type SyncResource } from "@/types/common.types";
 
 const initialState: GeneralStoreState = {
     isHydrated: false,
@@ -20,6 +20,14 @@ const initialState: GeneralStoreState = {
     clearCart: () => { },
     toggleFavoriteProduct: () => { },
     toggleFavoritePackage: () => { },
+    syncState: {
+        cartPending: false,
+        favoritesPending: false,
+        lastCartSyncAt: null,
+        lastFavoritesSyncAt: null,
+    },
+    markCatalogSyncPending: () => { },
+    markCatalogSyncComplete: () => { },
 }
 
 export const useGeneralStore = create<GeneralStoreState>()(
@@ -38,6 +46,34 @@ export const useGeneralStore = create<GeneralStoreState>()(
                 });
             },
 
+            markCatalogSyncPending: (resource: SyncResource) => {
+                set((state) => {
+                    if (resource === "cart") {
+                        state.syncState.cartPending = true;
+                        state.syncState.lastCartSyncAt = null;
+                        return;
+                    }
+
+                    state.syncState.favoritesPending = true;
+                    state.syncState.lastFavoritesSyncAt = null;
+                });
+            },
+
+            markCatalogSyncComplete: (resource: SyncResource) => {
+                set((state) => {
+                    const timestamp = new Date().toISOString();
+
+                    if (resource === "cart") {
+                        state.syncState.cartPending = false;
+                        state.syncState.lastCartSyncAt = timestamp;
+                        return;
+                    }
+
+                    state.syncState.favoritesPending = false;
+                    state.syncState.lastFavoritesSyncAt = timestamp;
+                });
+            },
+
             addToCart: ({ id, itemType }) => {
                 set((state) => {
                     const existing = state.cartItems.find(
@@ -48,6 +84,9 @@ export const useGeneralStore = create<GeneralStoreState>()(
                     } else {
                         state.cartItems.push({ id, itemType, quantity: 1 });
                     }
+
+                    state.syncState.cartPending = true;
+                    state.syncState.lastCartSyncAt = null;
                 });
             },
 
@@ -66,6 +105,9 @@ export const useGeneralStore = create<GeneralStoreState>()(
                     if (existing) {
                         existing.quantity = Math.max(1, quantity);
                     }
+
+                    state.syncState.cartPending = true;
+                    state.syncState.lastCartSyncAt = null;
                 });
             },
 
@@ -74,12 +116,16 @@ export const useGeneralStore = create<GeneralStoreState>()(
                     state.cartItems = state.cartItems.filter(
                         (item) => !(item.id === id && item.itemType === itemType)
                     );
+                    state.syncState.cartPending = true;
+                    state.syncState.lastCartSyncAt = null;
                 });
             },
 
             clearCart: () => {
                 set((state) => {
                     state.cartItems = [];
+                    state.syncState.cartPending = true;
+                    state.syncState.lastCartSyncAt = null;
                 });
             },
 
@@ -92,6 +138,9 @@ export const useGeneralStore = create<GeneralStoreState>()(
                     } else {
                         state.favorites.products.push(id);
                     }
+
+                    state.syncState.favoritesPending = true;
+                    state.syncState.lastFavoritesSyncAt = null;
                 });
             },
 
@@ -104,6 +153,9 @@ export const useGeneralStore = create<GeneralStoreState>()(
                     } else {
                         state.favorites.packages.push(id);
                     }
+
+                    state.syncState.favoritesPending = true;
+                    state.syncState.lastFavoritesSyncAt = null;
                 });
             },
         })),

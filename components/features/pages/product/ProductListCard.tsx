@@ -3,6 +3,7 @@ import Link from 'next/link';
 import HeartIcon from '@/components/features/icons/HeartIcon';
 import { CartIcon } from '@/components/features/icons/CartIcon';
 import { useGeneralStore } from '@/store/GeneralStore';
+import type { CatalogId } from '@/types/common.types';
 
 const ProductListCard = ({
   id,
@@ -14,7 +15,7 @@ const ProductListCard = ({
   onToggleFavorite,
   onGetQuote,
 }: {
-  id: number;
+  id: CatalogId;
   title: string;
   mini_description: string;
   price: number;

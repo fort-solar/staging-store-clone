@@ -2,11 +2,11 @@ import React from 'react';
 import BundleIcon from '@/components/features/icons/BundleIcon';
 import BoltIcon from '@/components/features/icons/BoltIcon';
 import CircularGreenCheck from '@/components/features/icons/CircularGreenCheck';
-import Image, { StaticImageData } from 'next/image';
+import Image from 'next/image';
 import { SlantedArrow } from "@/components/features/icons/SlantedArrow";
 
 
-const PackageCard = ({ title, mini_description, image, }: { title: string; mini_description: string; image: StaticImageData }) => {
+const PackageCard = ({ title, mini_description, image, }: { title: string; mini_description: string; image: string }) => {
     return (
         <div className="
       group flex flex-col gap-3 h-full justify-between overflow-hidden shadow-sm rounded-lg pt-4 px-4

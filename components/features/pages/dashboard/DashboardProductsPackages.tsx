@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { packages_dummy, products_dummy } from "@/components/features/constants";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { CardViewIcon } from "@/components/features/icons/CardViewIcon";
 import { ListViewIcon } from "@/components/features/icons/ListViewIcon";
@@ -11,10 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGeneralStore } from "@/store/GeneralStore";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
+import { useStoreCatalog } from "@/lib/store-catalog";
+import type { CatalogId } from "@/types/common.types";
 
 type TabKey = "products" | "packages";
 type QuoteProduct = {
-  id: number;
+  id: CatalogId;
   title: string;
   image: string;
   price: number;
@@ -103,6 +104,7 @@ const CheckboxItem = ({
 );
 
 const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
+  const { products, packages } = useStoreCatalog();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [productSection, setProductSection] = useState("All Products");
   const [productFilters, setProductFilters] = useState<FilterState>({
@@ -173,7 +175,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
 
   const filteredProducts = useMemo(() => {
     const filters = productFilters;
-    const items = products_dummy.filter((product) => {
+    const items = products.filter((product) => {
       const matchesQuery =
         productQuery.trim().length === 0 ||
         product.title.toLowerCase().includes(productQuery.toLowerCase()) ||
@@ -215,11 +217,11 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     });
 
     return sortItems(items, productSort);
-  }, [productFilters, productQuery, productSection, productSort]);
+  }, [productFilters, productQuery, productSection, productSort, products]);
 
   const filteredPackages = useMemo(() => {
     const filters = packageFilters;
-    const items = packages_dummy.filter((item) => {
+    const items = packages.filter((item) => {
       const matchesQuery =
         packageQuery.trim().length === 0 ||
         item.title.toLowerCase().includes(packageQuery.toLowerCase()) ||
@@ -256,7 +258,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     });
 
     return sortItems(items, packageSort);
-  }, [packageFilters, packageQuery, packageSort]);
+  }, [packageFilters, packageQuery, packageSort, packages]);
 
   const activeFilters = activeTab === "packages" ? productFilters : packageFilters;
   const setActiveFilters =

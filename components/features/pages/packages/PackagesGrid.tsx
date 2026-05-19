@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import PackageCard from './PackageCard';
 import PackageListCard from './PackageListCard';
 import Link from 'next/link';
+import type { CatalogId } from '@/types/common.types';
 // import HeartIcon from '@/components/features/icons/HeartIcon';
 
 type PackageItem = {
-    id: number;
+    id: CatalogId;
     title: string;
     mini_description: string;
-    image: any;
+    image: string;
     price: number;
     availability: string;
 };
@@ -23,8 +23,8 @@ const PackagesGrid = ({
 }: {
     items: PackageItem[];
     view: "grid" | "list";
-    favorites?: number[];
-    onToggleFavorite?: (id: number) => void;
+    favorites?: CatalogId[];
+    onToggleFavorite?: (id: CatalogId) => void;
 }) => {
     if (view === "list") {
         return (

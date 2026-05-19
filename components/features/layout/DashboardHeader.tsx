@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { LogoFull } from "@/components/features/icons/Logo";
 import HeartIcon from "@/components/features/icons/HeartIcon";
 import { CartIcon } from "@/components/features/icons/CartIcon";
@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { SearchIcon } from "../icons/SearchIcon";
 import Link from "next/link";
 import { useGeneralStore } from "@/store/GeneralStore";
-import { clearMockSession, getMockSession } from "@/lib/localAuth";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, HelpCircle, LogOut, Settings, List, InspectionPanel  } from "lucide-react";
 import { OrdersIcon } from "../icons/OrdersIcon";
+import { useAuth } from "@/components/auth/auth-provider";
+import { logoutUser } from "@/lib/localAuth";
 
 const DashboardHeader = ({
   query,
@@ -22,8 +23,8 @@ const DashboardHeader = ({
   onQueryChange: (value: string) => void;
 }) => {
   const router = useRouter();
-  const session = useMemo(() => getMockSession(), []);
-  const isCustomerLoggedIn = !!session && session.role === "customer";
+  const { session } = useAuth();
+  const isCustomerLoggedIn = Boolean(session);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const cartCount = useGeneralStore((state) =>
@@ -34,13 +35,13 @@ const DashboardHeader = ({
   );
   const toggleCategorySidebar = useGeneralStore((state) => state.toggleCategorySidebar);
 
-  const userInitial = session?.fullName?.charAt(0)?.toUpperCase() ?? "A";
-  const userFullName = session?.fullName ?? "Customer User";
-  const userFirstName = session?.fullName?.split(" ")[0] ?? "Customer";
-  const userEmail = session?.email ?? "customer@email.com";
+  const userInitial = session?.user.fullName?.charAt(0)?.toUpperCase() ?? "A";
+  const userFullName = session?.user.fullName ?? "Customer User";
+  const userFirstName = session?.user.fullName?.split(" ")[0] ?? "Customer";
+  const userEmail = session?.user.email ?? "customer@email.com";
 
-  const signOut = () => {
-    clearMockSession();
+  const signOut = async () => {
+    await logoutUser();
     router.refresh();
   };
 

@@ -3,11 +3,12 @@
 import React, { useMemo, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useGeneralStore } from "@/store/GeneralStore";
-import { packages_dummy, products_dummy } from "@/components/features/constants";
 import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
+import { useStoreCatalog } from "@/lib/store-catalog";
 
 const FavoritesPage = () => {
+  const { products, packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const favoriteProductsIds = useGeneralStore((state) => state.favorites.products);
   const favoritePackageIds = useGeneralStore((state) => state.favorites.packages);
@@ -15,12 +16,12 @@ const FavoritesPage = () => {
   const toggleFavoritePackage = useGeneralStore((state) => state.toggleFavoritePackage);
 
   const favoriteProducts = useMemo(() => {
-    return products_dummy.filter((item) => favoriteProductsIds.includes(item.id));
-  }, [favoriteProductsIds]);
+    return products.filter((item) => favoriteProductsIds.includes(item.id));
+  }, [favoriteProductsIds, products]);
 
   const favoritePackages = useMemo(() => {
-    return packages_dummy.filter((item) => favoritePackageIds.includes(item.id));
-  }, [favoritePackageIds]);
+    return packages.filter((item) => favoritePackageIds.includes(item.id));
+  }, [favoritePackageIds, packages]);
 
   const hasFavorites = favoriteProducts.length > 0 || favoritePackages.length > 0;
 

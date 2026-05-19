@@ -1,52 +1,52 @@
-import { BASE_URL } from "@/components/features/constants";
+import { appRequest } from "@/lib/api/client";
+import { queuePendingPortalSubmission } from "@/lib/pending-submissions";
 
 type SubmitFormClientProps = {
   endpoint: string;
   method?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  values: any;
+  values: unknown;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const submitFormClient = async <T = any>({
+const PENDING_ENDPOINTS: Record<string, string> = {
+  "/auth/forgot-password": "forgot_password",
+  "/auth/reset-password": "reset_password",
+};
+
+export const submitFormClient = async <T = unknown>({
   endpoint,
   method,
   values,
 }: SubmitFormClientProps): Promise<{ data?: T; error?: string }> => {
-  if (!BASE_URL) {
-    return { error: "Missing NEXT_PUBLIC_BASE_URL environment variable." };
+  const resolvedMethod = method ?? "POST";
+
+  if (endpoint in PENDING_ENDPOINTS) {
+    queuePendingPortalSubmission(
+      PENDING_ENDPOINTS[endpoint],
+      endpoint,
+      resolvedMethod,
+      (values ?? {}) as Record<string, unknown>,
+      "customer",
+      "Endpoint not supplied yet. Payload captured for later API hookup.",
+    );
+
+    return {
+      data: {
+        success: true,
+        pending: true,
+      } as T,
+    };
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: method ?? "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(values),
+    const data = await appRequest<T>(endpoint, {
+      method: resolvedMethod as "POST" | "PUT" | "PATCH" | "DELETE",
+      body: (values ?? null) as Record<string, unknown> | null,
     });
 
-    const isJson = response.headers.get("Content-Type")?.includes("application/json");
-    const payload = isJson ? await response.json().catch(() => null) : null;
-
-    if (!response.ok) {
-      const errorMessage =
-        payload && typeof payload === "object"
-          ? Object.entries(payload)
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              .map(([key, value]) =>
-                Array.isArray(value) ? value.join(", ") : String(value)
-              )
-              .join(" | ")
-          : response.statusText;
-      return { error: errorMessage };
-    }
-
-    return { data: payload ?? ({} as T) };
+    return { data };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Something went wrong!",
+      error: error instanceof Error ? error.message : "Something went wrong.",
     };
   }
 };

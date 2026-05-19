@@ -36,7 +36,7 @@ const LoginForm = () => {
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     setStatus(null);
-    const { error} = loginMockUser({
+    const { error } = await loginMockUser({
       email: values.email,
       password: values.password,
     });

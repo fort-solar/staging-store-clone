@@ -17,9 +17,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getMockCurrentUser, getMockSession } from "@/lib/localAuth";
+import type { CatalogId } from "@/types/common.types";
 
 type QuoteProduct = {
-  id: number;
+  id: CatalogId;
   title: string;
   image: string;
   price: number;

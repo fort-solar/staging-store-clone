@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
-import { products_dummy } from "@/components/features/constants";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { CartIcon } from "@/components/features/icons/CartIcon";
 import HeartIcon from "@/components/features/icons/HeartIcon";
@@ -14,27 +13,26 @@ import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { useRouter } from "next/navigation";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import { FaTiktok, FaYoutube, FaInstagram, FaFacebook, FaLinkedin, FaShare } from 'react-icons/fa';
+import { useStoreCatalog, useStoreProductById } from "@/lib/store-catalog";
+import type { CatalogId } from "@/types/common.types";
 
 type QuoteProduct = {
-  id: number;
+  id: CatalogId;
   title: string;
   image: string;
   price: number;
 };
 
 const ProductDetailPage = () => {
+  const { products } = useStoreCatalog();
+  const params = useParams<{ id: string }>();
   const [query, setQuery] = useState("");
   const [showFeatures, setShowFeatures] = useState(true);
   const [quoteProduct, setQuoteProduct] = useState<QuoteProduct | null>(null);
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
-  const params = useParams<{ id: string }>();
   const id = params?.id;
-
-  const product = useMemo(
-    () => products_dummy.find((item) => String(item.id) === id),
-    [id]
-  );
+  const { product, isLoading } = useStoreProductById(id);
 
   const addToCart = useGeneralStore((state) => state.addToCart);
   const updateCartQuantity = useGeneralStore(
@@ -42,6 +40,17 @@ const ProductDetailPage = () => {
   );
   const favorites = useGeneralStore((state) => state.favorites.products);
   const toggleFavorite = useGeneralStore((state) => state.toggleFavoriteProduct);
+
+  if (isLoading && !product) {
+    return (
+      <div className="min-h-screen bg-white pt-24">
+        <DashboardHeader query={query} onQueryChange={setQuery} />
+        <div className="mx-auto w-full max-w-6xl px-4 py-8">
+          <p className="text-[#252C32]">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -54,7 +63,7 @@ const ProductDetailPage = () => {
     );
   }
 
-  const relatedProducts = products_dummy.filter((item) => String(item.id) !== id).slice(0, 3);
+  const relatedProducts = products.filter((item) => String(item.id) !== id).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-white py-24">
@@ -82,12 +91,16 @@ const ProductDetailPage = () => {
                 {product.images.map((img, index) => (
                   <div
                     key={`${img}-${index}`}
-                    className="h-20 w-20 rounded-lg border border-[#E9EEF0] bg-[#F3F4F6]"
+                    className="h-20 w-20 rounded-lg border border-[#E9EEF0] bg-[#F3F4F6] bg-contain bg-center bg-no-repeat"
+                    style={{ backgroundImage: `url(${img})` }}
                   />
                 ))}
               </div>
               <div className="rounded-2xl bg-[#F3F4F6] p-6 flex items-center justify-center">
-                <div className="h-96 w-full rounded-2xl bg-[url('/double_solar_panels.png')] bg-contain bg-center bg-no-repeat" />
+                <div
+                  className="h-96 w-full rounded-2xl bg-contain bg-center bg-no-repeat"
+                  style={{ backgroundImage: `url(${product.image})` }}
+                />
               </div>
             </div>
             <div className="mt-8 grid grid-cols-1 gap-8">

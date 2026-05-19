@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
-import { packages_dummy } from "@/components/features/constants";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { FinancingIcon } from "@/components/features/icons/FinancingIcon";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
@@ -13,19 +12,30 @@ import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { FaTiktok, FaYoutube, FaInstagram, FaFacebook, FaLinkedin, FaShare } from 'react-icons/fa';
+import { useStoreCatalog, useStorePackageById } from "@/lib/store-catalog";
 
 const PackageDetailPage = () => {
+  const { packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const params = useParams<{ id: string }>();
   const [showFeatures, setShowFeatures] = useState(true)
   const router = useRouter();
   const id = params?.id;
+  const { package: data, isLoading } = useStorePackageById(id);
 
-  const data = useMemo(() => {
-    return packages_dummy.find((item) => String(item.id) === id);
-  }, [id]);
   const favorites = useGeneralStore((state) => state.favorites.packages);
   const toggleFavorite = useGeneralStore((state) => state.toggleFavoritePackage);
+
+  if (isLoading && !data) {
+    return (
+      <div className="min-h-screen bg-white pt-24">
+        <DashboardHeader query={query} onQueryChange={setQuery} />
+        <div className="mx-auto w-full max-w-6xl px-4 py-8">
+          <p className="text-[#252C32]">Loading package...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!data) {
     return (
@@ -41,7 +51,7 @@ const PackageDetailPage = () => {
     );
   }
 
-  const relatedPackages = packages_dummy.filter((item) => String(item.id) !== id).slice(0, 3);
+  const relatedPackages = packages.filter((item) => String(item.id) !== id).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-white py-24">
@@ -67,7 +77,8 @@ const PackageDetailPage = () => {
                 {[1, 2, 3].map((index) => (
                   <div
                     key={index}
-                    className="relative h-20 w-20 rounded-lg border border-[#E9EEF0] bg-[#F3F4F6]"
+                    className="relative h-20 w-20 rounded-lg border border-[#E9EEF0] bg-[#F3F4F6] bg-contain bg-center bg-no-repeat"
+                    style={{ backgroundImage: `url(${data.image})` }}
                   >
                     <span className="absolute -left-2 -top-1 h-5 w-5 rounded-full bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] text-[10px] text-white grid place-items-center">
                       {index}
@@ -76,7 +87,10 @@ const PackageDetailPage = () => {
                 ))}
               </div>
               <div className="rounded-2xl bg-[#F3F4F6] p-6 flex items-center justify-center">
-                <div className="h-96 w-full rounded-2xl bg-[url('/double_solar_panels.png')] bg-contain bg-center bg-no-repeat" />
+                <div
+                  className="h-96 w-full rounded-2xl bg-contain bg-center bg-no-repeat"
+                  style={{ backgroundImage: `url(${data.image})` }}
+                />
               </div>
             </div>
             <div className="mt-8 grid grid-cols-1 gap-8">

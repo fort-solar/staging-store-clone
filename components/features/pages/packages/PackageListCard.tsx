@@ -1,5 +1,5 @@
 import React from 'react';
-import Image, { StaticImageData } from 'next/image';
+import Image from 'next/image';
 import { SlantedArrow } from "@/components/features/icons/SlantedArrow";
 import Link from 'next/link';
 
@@ -11,7 +11,7 @@ const PackageListCard = ({
 }: {
   title: string;
   mini_description: string;
-  image: StaticImageData;
+  image: string;
   price: number;
   availability: string;
   href: string;

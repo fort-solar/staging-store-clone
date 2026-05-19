@@ -3,16 +3,17 @@
 import React, { useMemo, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useGeneralStore } from "@/store/GeneralStore";
-import { packages_dummy, products_dummy } from "@/components/features/constants";
 import Link from "next/link";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { TrashIcon } from "@/components/features/icons/TrashIcon";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
+import { useStoreCatalog } from "@/lib/store-catalog";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
 const CartPage = () => {
+  const { products, packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const cartItems = useGeneralStore((state) => state.cartItems);
@@ -24,8 +25,8 @@ const CartPage = () => {
       .map((item) => {
         const product =
           item.itemType === "product"
-            ? products_dummy.find((p) => p.id === item.id)
-            : packages_dummy.find((p) => p.id === item.id);
+            ? products.find((p) => p.id === item.id)
+            : packages.find((p) => p.id === item.id);
         if (!product) return null;
         return {
           ...item,
@@ -35,14 +36,14 @@ const CartPage = () => {
         };
       })
       .filter(Boolean) as Array<{
-        id: number;
+        id: string | number;
         itemType: "product" | "package";
         quantity: number;
         title: string;
         price: number;
         image: string | { src: string };
       }>;
-  }, [cartItems]);
+  }, [cartItems, packages, products]);
 
   const subtotal = cartDetails.reduce(
     (sum, item) => sum + item.price * item.quantity,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
@@ -15,6 +15,8 @@ import { SmallTickIcon } from "@/components/features/icons/SmallTickIcon";
 import { MasterCardIcon } from "@/components/features/icons/MasterCardIcon";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ChevronUp } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-provider";
+import { sessionSnapshotToMockUser, updateCurrentUserProfile } from "@/lib/localAuth";
 
 
 const tabs = [
@@ -114,14 +116,79 @@ const requestStatusClasses: Record<string, string> = {
 };
 
 const SettingsContent = ({ page }: { page: TabKey }) => {
+    const { session } = useAuth();
+    const currentUser = useMemo(() => sessionSnapshotToMockUser(session), [session]);
     const [activeTab, setActiveTab] = useState<TabKey>(page ? page : "profile");
     const [query, setQuery] = useState("");
     const [expandedOrderIds, setExpandedOrderIds] = useState<number[]>([1, 4]);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [profileStatus, setProfileStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
+    const [profileForm, setProfileForm] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+    });
+
+    useEffect(() => {
+        const fullName = currentUser?.fullName ?? "";
+        const parts = fullName.split(/\s+/).filter(Boolean);
+
+        setProfileForm({
+            firstName: parts[0] ?? "",
+            lastName: parts.slice(1).join(" "),
+            email: currentUser?.email ?? "",
+            phone: currentUser?.phone ?? "",
+            address: currentUser?.address ?? "",
+        });
+    }, [currentUser?.address, currentUser?.email, currentUser?.fullName, currentUser?.phone]);
 
     const toggleOrderCard = (id: number) => {
         setExpandedOrderIds((prev) =>
             prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
         );
+    };
+
+    const handleProfileChange = (field: keyof typeof profileForm, value: string) => {
+        setProfileForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleProfileSave = async () => {
+        const fullName = `${profileForm.firstName} ${profileForm.lastName}`.trim();
+
+        if (!fullName || !profileForm.email) {
+            setProfileStatus({
+                tone: "error",
+                message: "First name, last name, and email are required.",
+            });
+            return;
+        }
+
+        setIsSavingProfile(true);
+        setProfileStatus(null);
+
+        try {
+            await updateCurrentUserProfile({
+                name: fullName,
+                phone: profileForm.phone,
+                address: profileForm.address,
+            });
+            setProfileStatus({
+                tone: "success",
+                message: "Profile updated successfully.",
+            });
+        } catch (error) {
+            setProfileStatus({
+                tone: "error",
+                message: error instanceof Error ? error.message : "Unable to update profile.",
+            });
+        } finally {
+            setIsSavingProfile(false);
+        }
     };
 
     return (
@@ -132,10 +199,10 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                     <aside className="w-full rounded-t-3xl border-t border-x border-[#ECECEC] bg-white p-6  lg:py-10">
                         <div className="flex flex-col items-center gap-4 text-center">
                             <div className="flex h-32 w-32 items-center justify-center rounded-[32px] border border-[#E3E3E3] bg-[#F3F4F6] text-5xl font-semibold text-[#5B5B5B] shadow-sm">
-                                A
+                                {currentUser?.fullName?.charAt(0)?.toUpperCase() ?? "A"}
                             </div>
                             <div>
-                                <p className="text-2xl font-semibold text-[#202020]">Ofor Ajo</p>
+                                <p className="text-2xl font-semibold text-[#202020]">{currentUser?.fullName ?? "Customer User"}</p>
                                 <span className="mt-2 inline-flex items-center rounded-full bg-[#EAF7E8] px-4 py-1 text-sm font-medium text-[#1E8E1E]">
                                     Customer
                                 </span>
@@ -157,7 +224,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     </svg>
                                 }
                                 label="Phone Number"
-                                value="+1 000 567 3456"
+                                value={currentUser?.phone || "Not added yet"}
                             />
                             <InfoItem
                                 icon={
@@ -174,7 +241,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     </svg>
                                 }
                                 label="Email"
-                                value="sarahjohnson@gmail.com"
+                                value={currentUser?.email ?? "No email available"}
                             />
                             <InfoItem
                                 icon={
@@ -191,7 +258,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     </svg>
                                 }
                                 label="Location"
-                                value="Port Harcourt"
+                                value={currentUser?.address || "No address yet"}
                             />
                         </div>
 
@@ -224,6 +291,17 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                             Personal Details
                                         </h2>
                                     </div>
+                                    {profileStatus ? (
+                                        <div
+                                            className={`rounded-xl px-4 py-3 text-sm ${
+                                                profileStatus.tone === "success"
+                                                    ? "bg-[#EAF7E8] text-[#168416]"
+                                                    : "bg-[#FDECEC] text-[#C73939]"
+                                            }`}
+                                        >
+                                            {profileStatus.message}
+                                        </div>
+                                    ) : null}
                                     <div className="grid gap-6 lg:grid-cols-2">
                                         <label className="space-y-2 text-sm font-medium text-[#202020]">
                                             <span className="flex items-center gap-2 text-[#5B5B5B]">
@@ -243,7 +321,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                 First Name
                                             </span>
                                             <Input
-                                                defaultValue="Sarah"
+                                                value={profileForm.firstName}
+                                                onChange={(event) => handleProfileChange("firstName", event.target.value)}
                                                 className="h-12 rounded-xl border-[#E3E3E3] bg-white text-base"
                                             />
                                         </label>
@@ -265,7 +344,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                 Last Name
                                             </span>
                                             <Input
-                                                defaultValue="Johnson"
+                                                value={profileForm.lastName}
+                                                onChange={(event) => handleProfileChange("lastName", event.target.value)}
                                                 className="h-12 rounded-xl border-[#E3E3E3] bg-white text-base"
                                             />
                                         </label>
@@ -287,7 +367,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                 Email Address
                                             </span>
                                             <Input
-                                                defaultValue="sarahjohnson@gmail.com"
+                                                value={profileForm.email}
+                                                readOnly
                                                 className="h-12 rounded-xl border-[#E3E3E3] bg-white text-base"
                                             />
                                         </label>
@@ -308,7 +389,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                 Phone Number
                                             </span>
                                             <Input
-                                                defaultValue="+1 000 567 3456"
+                                                value={profileForm.phone}
+                                                onChange={(event) => handleProfileChange("phone", event.target.value)}
                                                 className="h-12 rounded-xl border-[#E3E3E3] bg-white text-base"
                                             />
                                         </label>
@@ -330,14 +412,19 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                 Address
                                             </span>
                                             <Input
-                                                defaultValue="No 21 Chindah Street Ajip Adageorge, Port Harcourt Nigeria"
+                                                value={profileForm.address}
+                                                onChange={(event) => handleProfileChange("address", event.target.value)}
                                                 className="h-12 rounded-xl border-[#E3E3E3] bg-white text-base"
                                             />
                                         </label>
                                     </div>
                                     <div className="flex justify-end">
-                                        <Button className="rounded-xl bg-[#1D9A1D] px-8 py-6 text-base font-semibold text-white hover:bg-[#168416] lg:w-fit w-full">
-                                            Edit Details
+                                        <Button
+                                            onClick={handleProfileSave}
+                                            disabled={isSavingProfile}
+                                            className="rounded-xl bg-[#1D9A1D] px-8 py-6 text-base font-semibold text-white hover:bg-[#168416] lg:w-fit w-full"
+                                        >
+                                            {isSavingProfile ? "Saving..." : "Save Details"}
                                         </Button>
                                     </div>
                                 </div>

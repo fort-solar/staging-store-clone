@@ -10,7 +10,11 @@ import { PasswordInput } from "@/components/features/pages/auth/PasswordInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
 import { GoogleIcon } from "../../icons/GoogleIcon";
-import { registerMockUser } from "@/lib/localAuth";
+import {
+  registerMockUser,
+  requestEmailVerification,
+  updateCurrentUserProfile,
+} from "@/lib/localAuth";
 
 type SignupFormValues = {
   fullName: string;
@@ -60,7 +64,7 @@ const SignupForm = () => {
 
     setIsSubmitting(true);
     setStatus(null);
-    const { error, session } = registerMockUser({
+    const { error, session } = await registerMockUser({
       fullName: values.fullName,
       email: values.email,
       phone: values.phone,
@@ -81,8 +85,16 @@ const SignupForm = () => {
       return;
     }
 
-    setStatus({ tone: "success", message: "Account created successfully. Redirecting..." });
-    router.push("/store/dashboard");
+    await updateCurrentUserProfile({
+      name: values.fullName,
+      phone: values.phone,
+      address: values.address,
+    }).catch(() => null);
+
+    await requestEmailVerification().catch(() => null);
+
+    setStatus({ tone: "success", message: "Account created. Check your email to verify your address." });
+    router.push(`/verify-email?email=${encodeURIComponent(values.email)}&requested=1`);
     setIsSubmitting(false);
   };
 

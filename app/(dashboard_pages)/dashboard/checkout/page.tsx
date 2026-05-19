@@ -4,38 +4,45 @@
 import React, { useEffect, useMemo, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useGeneralStore } from "@/store/GeneralStore";
-import { packages_dummy, products_dummy } from "@/components/features/constants";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import Link from "next/link";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
-import { getMockCurrentUser, getMockSession } from "@/lib/localAuth";
+import { sessionSnapshotToMockSession, sessionSnapshotToMockUser } from "@/lib/localAuth";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/auth-provider";
+import { useStoreCatalog } from "@/lib/store-catalog";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
 const CheckoutPage = () => {
   const router = useRouter();
+  const { isRefreshing, session: authSession } = useAuth();
+  const { products, packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const session = useMemo(() => getMockSession(), []);
-  const currentUser = useMemo(() => getMockCurrentUser(), []);
+  const session = useMemo(() => sessionSnapshotToMockSession(authSession), [authSession]);
+  const currentUser = useMemo(() => sessionSnapshotToMockUser(authSession), [authSession]);
   const cartItems = useGeneralStore((state) => state.cartItems);
   const isAuthenticatedCustomer = !!session && session.role === "customer";
 
   useEffect(() => {
+    if (isRefreshing) {
+      return;
+    }
+
     if (!isAuthenticatedCustomer) {
       router.replace("/login");
     }
-  }, [isAuthenticatedCustomer, router]);
+  }, [isAuthenticatedCustomer, isRefreshing, router]);
 
   const cartDetails = useMemo(() => {
     return cartItems
       .map((item) => {
         const product =
           item.itemType === "product"
-            ? products_dummy.find((p) => p.id === item.id)
-            : packages_dummy.find((p) => p.id === item.id);
+            ? products.find((p) => p.id === item.id)
+            : packages.find((p) => p.id === item.id);
         if (!product) return null;
         return {
           ...item,
@@ -45,14 +52,14 @@ const CheckoutPage = () => {
         };
       })
       .filter(Boolean) as Array<{
-        id: number;
+        id: string | number;
         itemType: "product" | "package";
         quantity: number;
         title: string;
         price: number;
         image: any;
       }>;
-  }, [cartItems]);
+  }, [cartItems, packages, products]);
 
   const subtotal = cartDetails.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -75,7 +82,7 @@ const CheckoutPage = () => {
     }));
   }, [cartDetails]);
 
-  if (!isAuthenticatedCustomer) {
+  if (isRefreshing || !isAuthenticatedCustomer) {
     return null;
   }
 

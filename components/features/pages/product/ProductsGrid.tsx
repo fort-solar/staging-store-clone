@@ -1,9 +1,10 @@
 import React from 'react';
 import ProductCard from './ProductCard';
 import ProductListCard from './ProductListCard';
+import type { CatalogId } from '@/types/common.types';
 
 type ProductItem = {
-    id: number;
+    id: CatalogId;
     title: string;
     mini_description: string;
     price: number;
@@ -22,8 +23,8 @@ const ProductsGrid = ({
 }: {
     items: ProductItem[];
     view: "grid" | "list";
-    favorites: number[];
-    onToggleFavorite: (id: number) => void;
+    favorites: CatalogId[];
+    onToggleFavorite: (id: CatalogId) => void;
     onGetQuote?: (item: ProductItem) => void;
 }) => {
     if (view === "list") {

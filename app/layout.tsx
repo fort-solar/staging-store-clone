@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import Script from "next/script";
 import { SidebarInitializer } from "@/util/SidebarInitializer";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { getSessionSnapshotFromCookieStore } from "@/lib/auth/session";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,11 +65,13 @@ const organizationStructuredData = {
   logo: "https://www.fortsolar.ng/FortsolarLogo.png",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialSession = await getSessionSnapshotFromCookieStore(await cookies());
+
   return (
     <html lang="en">
       <body
@@ -82,7 +87,9 @@ export default function RootLayout({
         />
         <SidebarInitializer />
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-          {children}
+          <AuthProvider initialSession={initialSession} portal="customer">
+            {children}
+          </AuthProvider>
         </GoogleOAuthProvider>
       </body>
     </html>
