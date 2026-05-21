@@ -14,12 +14,14 @@ const initialState: GeneralStoreState = {
         packages: [],
     },
     addToCart: () => { },
+    replaceCart: () => { },
     setCategorySidebarOpen: () => { }, 
     updateCartQuantity: () => { },
     removeFromCart: () => { },
     clearCart: () => { },
     toggleFavoriteProduct: () => { },
     toggleFavoritePackage: () => { },
+    replaceFavorites: () => { },
     syncState: {
         cartPending: false,
         favoritesPending: false,
@@ -90,6 +92,21 @@ export const useGeneralStore = create<GeneralStoreState>()(
                 });
             },
 
+            replaceCart: (items, options) => {
+                set((state) => {
+                    state.cartItems = items;
+
+                    if (options?.pending) {
+                        state.syncState.cartPending = true;
+                        state.syncState.lastCartSyncAt = null;
+                        return;
+                    }
+
+                    state.syncState.cartPending = false;
+                    state.syncState.lastCartSyncAt = new Date().toISOString();
+                });
+            },
+
             setCategorySidebarOpen: (value) => {
                 set((state) => {
                     state.isCategorySidebarOpen = value;
@@ -156,6 +173,21 @@ export const useGeneralStore = create<GeneralStoreState>()(
 
                     state.syncState.favoritesPending = true;
                     state.syncState.lastFavoritesSyncAt = null;
+                });
+            },
+
+            replaceFavorites: (favorites, options) => {
+                set((state) => {
+                    state.favorites = favorites;
+
+                    if (options?.pending) {
+                        state.syncState.favoritesPending = true;
+                        state.syncState.lastFavoritesSyncAt = null;
+                        return;
+                    }
+
+                    state.syncState.favoritesPending = false;
+                    state.syncState.lastFavoritesSyncAt = new Date().toISOString();
                 });
             },
         })),

@@ -6,11 +6,13 @@ import type {
   RegisterApiResponse,
   SessionSnapshot,
 } from "@/types/api.types";
+import { serverEnv } from "@/lib/env";
 
 const SESSION_SECRET =
-  process.env.FORTSOLAR_STORE_SESSION_SECRET ??
-  process.env.FORTSOLAR_SESSION_SECRET ??
-  process.env.NEXT_PUBLIC_FORTSOLAR_SESSION_SECRET;
+  serverEnv.sessionSecret ??
+  (process.env.NODE_ENV !== "production"
+    ? "fortsolar-store-development-session-secret"
+    : undefined);
 const ACCESS_MAX_AGE_FALLBACK = 60 * 15;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -68,6 +70,10 @@ function readCookieValue(store: CookieReader, name: string) {
 }
 
 async function getSigningKey() {
+  if (!SESSION_SECRET) {
+    throw new Error("FORTSOLAR_STORE_SESSION_SECRET is not configured.");
+  }
+
   if (!signingKeyPromise) {
     signingKeyPromise = crypto.subtle.importKey(
       "raw",

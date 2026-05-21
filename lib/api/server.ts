@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractApiMessage } from "@/lib/api/errors";
-import { readNonEmptyEnv } from "@/lib/env";
+import { serverEnv } from "@/lib/env";
 import {
   createSessionSnapshotFromProfile,
   setAuthCookies,
@@ -16,11 +16,7 @@ import type {
   SessionSnapshot,
 } from "@/types/api.types";
 
-export const FORTSOLAR_API_BASE_URL = readNonEmptyEnv(
-  process.env.FORTSOLAR_API_BASE_URL,
-  process.env.NEXT_PUBLIC_FORTSOLAR_API_BASE_URL,
-  process.env.NEXT_PUBLIC_BASE_URL,
-);
+export const FORTSOLAR_API_BASE_URL = serverEnv.fortsolarApiBaseUrl;
 
 type ServerPayload =
   | LoginApiResponse
@@ -60,6 +56,16 @@ export async function parseServerPayload<T = ServerPayload>(response: Response) 
 }
 
 export async function fetchFortsolar(path: string, init: RequestInit = {}) {
+  if (!FORTSOLAR_API_BASE_URL) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "FORTSOLAR_API_BASE_URL is not configured.",
+      },
+      { status: 500 },
+    );
+  }
+
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
 

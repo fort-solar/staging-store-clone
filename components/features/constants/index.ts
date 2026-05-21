@@ -1,4 +1,6 @@
-export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+import { publicEnv } from "@/lib/env";
+
+export const BASE_URL = publicEnv.fortsolarApiBaseUrl;
 import {
   our_packages_one,
   our_packages_two,

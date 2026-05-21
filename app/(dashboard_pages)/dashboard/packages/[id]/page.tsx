@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { FaTiktok, FaYoutube, FaInstagram, FaFacebook, FaLinkedin, FaShare } from 'react-icons/fa';
+import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import { useStoreCatalog, useStorePackageById } from "@/lib/store-catalog";
 
 const PackageDetailPage = () => {
@@ -25,6 +26,9 @@ const PackageDetailPage = () => {
 
   const favorites = useGeneralStore((state) => state.favorites.packages);
   const toggleFavorite = useGeneralStore((state) => state.toggleFavoritePackage);
+  const addToCart = useGeneralStore((state) => state.addToCart);
+  const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
+  const { requireCustomerLogin } = useCustomerLoginGate();
 
   if (isLoading && !data) {
     return (
@@ -169,11 +173,23 @@ const PackageDetailPage = () => {
             <p className="mt-2 text-sm text-[#5A646B]">{data.overview}</p>
 
             <div className="mt-4 text-xl font-semibold text-[#252C32]">
-              ₦{(data.price * 2930).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+              ₦{data.price.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
             </div>
 
             <div className="mt-4 flex items-center gap-3">
               <button
+                onClick={() => {
+                  addToCart({ id: data.id, itemType: "package" });
+                  updateCartQuantity({
+                    id: data.id,
+                    itemType: "package",
+                    quantity: 1,
+                  });
+                  requireCustomerLogin({
+                    redirectTo: "/store/checkout",
+                    onAuthenticated: () => router.push("/store/checkout"),
+                  });
+                }}
                 className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] py-3 text-sm font-semibold text-white"
               >
                 Get Package

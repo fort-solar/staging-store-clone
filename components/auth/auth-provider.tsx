@@ -94,6 +94,24 @@ export function AuthProvider({
   }, [clearSession]);
 
   useEffect(() => {
+    if (initialSession) {
+      hasHandledSessionExpiryRef.current = false;
+      syncClientAuthState(initialSession);
+      setSession(initialSession);
+      return;
+    }
+
+    setSession((currentSession) => {
+      if (!currentSession) {
+        return currentSession;
+      }
+
+      clearClientAuthState();
+      return null;
+    });
+  }, [initialSession]);
+
+  useEffect(() => {
     let cancelled = false;
 
     (async () => {

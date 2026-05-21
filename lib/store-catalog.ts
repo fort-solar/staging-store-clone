@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { packages_dummy, products_dummy } from "@/components/features/constants";
 import { appGet } from "@/lib/api/client";
 import type {
   ProductBatteryDetailApiResponse,
@@ -23,7 +22,7 @@ import type {
 type CatalogResult = {
   products: StoreCatalogProduct[];
   packages: StoreCatalogPackage[];
-  source: "api" | "fallback";
+  source: "api" | "unavailable";
 };
 
 const PRODUCT_IMAGE_FALLBACK = "/double_solar_panels.png";
@@ -64,30 +63,6 @@ function buildAvailability(stockQuantity: number | undefined, isActive = true) {
 function buildPowerRating(...values: Array<number | string | null | undefined>) {
   const firstValue = values.find((value) => value !== null && value !== undefined && value !== "");
   return firstValue ? String(firstValue) : "Standard";
-}
-
-function normalizeFallbackProducts(): StoreCatalogProduct[] {
-  return products_dummy.map((item) => ({
-    ...item,
-    image: toImageUrl(item.image),
-    images: item.images.map((image) => toImageUrl(image)),
-    sourceType:
-      item.productType.toLowerCase().includes("panel")
-        ? "panel"
-        : item.productType.toLowerCase().includes("inverter")
-          ? "inverter"
-          : "battery",
-    sourceId: String(item.id),
-  }));
-}
-
-function normalizeFallbackPackages(): StoreCatalogPackage[] {
-  return packages_dummy.map((item) => ({
-    ...item,
-    image: toImageUrl(item.image),
-    sourceType: "package",
-    sourceId: String(item.id),
-  }));
 }
 
 function normalizePanelProduct(panel: ProductPanelRecord): StoreCatalogProduct {
@@ -293,9 +268,9 @@ export async function getStoreCatalog() {
 
   catalogPromise = fetchCatalogFromApi()
     .catch(() => ({
-      products: normalizeFallbackProducts(),
-      packages: normalizeFallbackPackages(),
-      source: "fallback" as const,
+      products: [],
+      packages: [],
+      source: "unavailable" as const,
     }))
     .then((result) => {
       catalogCache = result;
@@ -310,9 +285,9 @@ export async function getStoreCatalog() {
 
 export function getFallbackCatalog() {
   return {
-    products: normalizeFallbackProducts(),
-    packages: normalizeFallbackPackages(),
-    source: "fallback" as const,
+    products: [],
+    packages: [],
+    source: "unavailable" as const,
   };
 }
 
@@ -332,7 +307,6 @@ export async function getStoreProductById(id: string) {
     (inverterPayload?.success ? normalizeInverterProduct(inverterPayload.data) : null) ??
     (batteryPayload?.success ? normalizeBatteryProduct(batteryPayload.data) : null) ??
     (await getStoreCatalog()).products.find((item) => String(item.id) === id) ??
-    getFallbackCatalog().products.find((item) => String(item.id) === id) ??
     null;
 
   productDetailCache.set(id, resolvedProduct);
@@ -353,7 +327,6 @@ export async function getStorePackageById(id: string) {
     (packagePayload?.success ? normalizePackage(packagePayload.data, "package") : null) ??
     (bundlePayload?.success ? normalizePackage(bundlePayload.data, "bundle") : null) ??
     (await getStoreCatalog()).packages.find((item) => String(item.id) === id) ??
-    getFallbackCatalog().packages.find((item) => String(item.id) === id) ??
     null;
 
   packageDetailCache.set(id, resolvedPackage);
@@ -391,9 +364,7 @@ export function useStoreCatalog() {
 }
 
 export function useStoreProductById(id: string | undefined) {
-  const [product, setProduct] = useState<StoreCatalogProduct | null>(() =>
-    id ? getFallbackCatalog().products.find((item) => String(item.id) === id) ?? null : null,
-  );
+  const [product, setProduct] = useState<StoreCatalogProduct | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(id));
 
   useEffect(() => {
@@ -427,9 +398,7 @@ export function useStoreProductById(id: string | undefined) {
 }
 
 export function useStorePackageById(id: string | undefined) {
-  const [pkg, setPackage] = useState<StoreCatalogPackage | null>(() =>
-    id ? getFallbackCatalog().packages.find((item) => String(item.id) === id) ?? null : null,
-  );
+  const [pkg, setPackage] = useState<StoreCatalogPackage | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(id));
 
   useEffect(() => {

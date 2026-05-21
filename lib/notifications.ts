@@ -15,7 +15,7 @@ export function getNotifications() {
 }
 
 export function markNotificationAsRead(id: string, metadata: Record<string, unknown> = {}) {
-  return appRequest(`/api/v1/admin/notifications/${id}`, {
+  return appRequest(`/api/v1/notifications/${id}`, {
     method: "PATCH",
     body: {
       is_read: true,

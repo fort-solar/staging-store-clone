@@ -6,13 +6,11 @@ import { useForm } from "react-hook-form";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
-import { submitFormClient } from "@/lib/submitFormClient";
+import { requestPasswordReset } from "@/lib/localAuth";
 
 type ForgotPasswordValues = {
   email: string;
 };
-
-const FORGOT_PASSWORD_ENDPOINT = "/auth/forgot-password";
 
 const ForgotPasswordForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
@@ -30,19 +28,20 @@ const ForgotPasswordForm = () => {
   const onSubmit = async (values: ForgotPasswordValues) => {
     setIsSubmitting(true);
     setStatus(null);
-    const { error } = await submitFormClient({
-      endpoint: FORGOT_PASSWORD_ENDPOINT,
-      values,
-    });
-    if (error) {
-      setStatus({ tone: "error", message: error });
-    } else {
+    try {
+      await requestPasswordReset(values.email, "customer");
       setStatus({
         tone: "success",
-        message: "Reset link sent. Check your email.",
+        message: "If that email exists, we’ve sent a password reset link.",
       });
+    } catch (error) {
+      setStatus({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Unable to request a password reset.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (

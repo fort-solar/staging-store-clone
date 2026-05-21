@@ -268,3 +268,195 @@ export type PendingEndpointSubmission = {
   portal: PortalRole;
   notes?: string;
 };
+
+export type CustomerSummaryRecord = {
+  packageRequests: number;
+  completedInstallations: number;
+};
+
+export type CustomerSummaryApiResponse = ApiDataResponse<CustomerSummaryRecord>;
+
+export type CustomerQuoteRecord = {
+  id: string;
+  createdAt: string;
+  status: string;
+  energySummary: {
+    totalLoad: string;
+    totalWattHoursPerDay: string;
+    dailyUsage: string;
+    monthlyUsage: string;
+  };
+  appliances: string[];
+  formExtras: Record<string, unknown>;
+};
+
+export type CustomerQuoteListApiResponse = ApiCollectionResponse<CustomerQuoteRecord>;
+
+export type CustomerOrderSummaryRecord = {
+  allOrders: number;
+  processingOrders: number;
+  deliveredOrders: number;
+};
+
+export type CustomerOrderSummaryApiResponse = ApiDataResponse<CustomerOrderSummaryRecord>;
+
+export type CustomerOrderListItem = {
+  id: string;
+  type: string;
+  orderNumber: string;
+  createdAt: string;
+  status: string;
+  displayStatus: string;
+  fulfillmentStatus: string;
+  qty: number;
+  unitPrice: string;
+  totalAmount: string;
+  currency: string;
+  primaryItemName: string;
+};
+
+export type CustomerOrderListApiResponse = ApiSuccessResponse & {
+  data: CustomerOrderListItem[];
+  summary: CustomerOrderSummaryRecord;
+  pagination: PaginationMeta;
+};
+
+export type CustomerOrderItemPayload = {
+  item_type: "product" | "package";
+  item_id: string;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type CustomerAddressPayload = Record<string, unknown>;
+
+export type CustomerOrderCreatePayload = {
+  items: CustomerOrderItemPayload[];
+  shipping_address: CustomerAddressPayload;
+  billing_address: CustomerAddressPayload;
+  notes?: string;
+  subtotal: number;
+  shipping_amount: number;
+  tax_amount: number;
+  discount_amount: number;
+  total_amount: number;
+  currency: string;
+  create_bundle_request?: {
+    bundle_id: string;
+    financing_requested: boolean;
+  };
+};
+
+export type CustomerOrderCreateResponse = ApiDataResponse<Record<string, unknown>>;
+export type CustomerOrderDetailApiResponse = ApiDataResponse<Record<string, unknown>>;
+
+export type CustomerInstallationSummaryRecord = {
+  activeInstallations: number;
+  pendingApproval: number;
+  completedInstallations: number;
+};
+
+export type CustomerInstallationSummaryApiResponse =
+  ApiDataResponse<CustomerInstallationSummaryRecord>;
+
+export type CustomerInstallationListItem = {
+  id: string;
+  packageLabel: string;
+  status: string;
+  displayStatus: string;
+  progressPercent: number;
+  installerName: string;
+  scheduledDate: string | null;
+  completedDate: string | null;
+  createdAt: string;
+  totalCost: string;
+  paymentStatus: string;
+  customerApprovalStatus: string;
+  requiresApproval: boolean;
+};
+
+export type CustomerInstallationListApiResponse = ApiSuccessResponse & {
+  data: CustomerInstallationListItem[];
+  summary: CustomerInstallationSummaryRecord;
+  pagination: PaginationMeta;
+};
+
+export type CustomerInstallationDetailApiResponse = ApiDataResponse<Record<string, unknown>>;
+export type CustomerInstallationApproveApiResponse = ApiDataResponse<Record<string, unknown>>;
+
+export type CustomerInstallationIssuePayload = {
+  description: string;
+  metadata?: Record<string, unknown>;
+};
+
+export type CustomerPackageRequestRecord = {
+  id: string;
+  requestId: string;
+  packageName: string;
+  date: string;
+  financing: string;
+  status: string;
+  displayStatus: string;
+  orderId: string | null;
+  bundleId: string | null;
+};
+
+export type CustomerPackageRequestListApiResponse = ApiSuccessResponse & {
+  data: CustomerPackageRequestRecord[];
+  pagination: PaginationMeta;
+};
+
+export type CustomerCartItemRecord = {
+  id: string;
+  itemType: "product" | "package";
+  quantity: number;
+};
+
+export type CustomerCartRecord = {
+  items: CustomerCartItemRecord[];
+  syncedAt: string;
+};
+
+export type CustomerCartApiResponse = ApiDataResponse<CustomerCartRecord>;
+
+export type CustomerCartReplacePayload = {
+  items: CustomerCartItemRecord[];
+};
+
+export type CustomerFavoriteRecord = {
+  products: string[];
+  packages: string[];
+  syncedAt: string;
+};
+
+export type CustomerFavoritesApiResponse = ApiDataResponse<CustomerFavoriteRecord>;
+
+export type CustomerFavoritesReplacePayload = {
+  products: string[];
+  packages: string[];
+};
+
+export type CustomerFavoriteTogglePayload = {
+  id: string;
+  itemType: "product" | "package";
+};
+
+export type PaystackInitializeResponse = ApiDataResponse<{
+  reference: string;
+  accessCode: string;
+  authorizationUrl: string;
+  amountKobo: number;
+  publicKey: string;
+  orderId: string;
+}>;
+
+export type PaymentVerifyPayload = {
+  reference: string;
+};
+
+export type PaymentVerifyResponse = ApiDataResponse<{
+  transaction: Record<string, unknown>;
+  order: Record<string, unknown>;
+}>;

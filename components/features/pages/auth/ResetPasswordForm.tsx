@@ -7,14 +7,12 @@ import { useForm } from "react-hook-form";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
-import { submitFormClient } from "@/lib/submitFormClient";
+import { resetPassword } from "@/lib/localAuth";
 
 type ResetPasswordValues = {
   password: string;
   confirmPassword: string;
 };
-
-const RESET_PASSWORD_ENDPOINT = "/auth/reset-password";
 
 const ResetPasswordForm = () => {
   const searchParams = useSearchParams();
@@ -47,23 +45,24 @@ const ResetPasswordForm = () => {
 
     setIsSubmitting(true);
     setStatus(null);
-    const { error } = await submitFormClient({
-      endpoint: RESET_PASSWORD_ENDPOINT,
-      values: {
+    try {
+      await resetPassword({
         token,
         password: values.password,
         confirmPassword: values.confirmPassword,
-      },
-    });
-    if (error) {
-      setStatus({ tone: "error", message: error });
-    } else {
+      });
       setStatus({
         tone: "success",
         message: "Password updated. You can now log in.",
       });
+    } catch (error) {
+      setStatus({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Unable to reset your password.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const isTokenMissing = !token;

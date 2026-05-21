@@ -6,6 +6,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import Script from "next/script";
 import { SidebarInitializer } from "@/util/SidebarInitializer";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { StoreSyncBridge } from "@/components/auth/store-sync-bridge";
+import { publicEnv } from "@/lib/env";
 import { getSessionSnapshotFromCookieStore } from "@/lib/auth/session";
 
 const geistSans = Geist({
@@ -71,6 +73,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialSession = await getSessionSnapshotFromCookieStore(await cookies());
+  const appTree = (
+    <AuthProvider initialSession={initialSession} portal="customer">
+      <StoreSyncBridge />
+      {children}
+    </AuthProvider>
+  );
 
   return (
     <html lang="en">
@@ -86,11 +94,13 @@ export default async function RootLayout({
           }}
         />
         <SidebarInitializer />
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-          <AuthProvider initialSession={initialSession} portal="customer">
-            {children}
-          </AuthProvider>
-        </GoogleOAuthProvider>
+        {publicEnv.googleClientId ? (
+          <GoogleOAuthProvider clientId={publicEnv.googleClientId}>
+            {appTree}
+          </GoogleOAuthProvider>
+        ) : (
+          appTree
+        )}
       </body>
     </html>
   );

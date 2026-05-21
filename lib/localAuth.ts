@@ -282,6 +282,27 @@ export async function requestEmailVerification() {
   });
 }
 
+export async function requestPasswordReset(email: string, portal: PortalRole = "customer") {
+  return appRequest("/api/v1/auth/forgot-password", {
+    method: "POST",
+    body: {
+      email,
+      portal,
+    },
+  });
+}
+
+export async function resetPassword(values: {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}) {
+  return appRequest("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: values,
+  });
+}
+
 export async function verifyEmailToken(token: string) {
   return appRequest<VerifyEmailApiResponse>("/api/v1/auth/verify-email", {
     method: "POST",

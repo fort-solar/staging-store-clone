@@ -8,6 +8,7 @@ import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import { useGeneralStore } from "@/store/GeneralStore";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import { useStoreCatalog } from "@/lib/store-catalog";
@@ -104,7 +105,7 @@ const CheckboxItem = ({
 );
 
 const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
-  const { products, packages } = useStoreCatalog();
+  const { products, packages, source, isLoading } = useStoreCatalog();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [productSection, setProductSection] = useState("All Products");
   const [productFilters, setProductFilters] = useState<FilterState>({
@@ -147,6 +148,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const toggleCategorySidebar = useGeneralStore(
     (state) => state.toggleCategorySidebar
   );
+  const { requireCustomerLogin } = useCustomerLoginGate();
 
   const toggleArrayValue = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((item) => item !== value) : [...arr, value];
@@ -260,7 +262,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     return sortItems(items, packageSort);
   }, [packageFilters, packageQuery, packageSort, packages]);
 
-  const activeFilters = activeTab === "packages" ? productFilters : packageFilters;
+  const activeFilters = activeTab === "products" ? productFilters : packageFilters;
   const setActiveFilters =
     activeTab === "products" ? setProductFilters : setPackageFilters;
   const activeSort = activeTab === "products" ? productSort : packageSort;
@@ -511,33 +513,58 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
               }`}
           >
             {activeTab === "products" ? (
-              <ProductsGrid
-                items={filteredProducts}
-                view={productView}
-                favorites={favorites.products}
-                onToggleFavorite={toggleFavoriteProduct}
-                onGetQuote={(item) =>
-                  setQuoteProduct({
-                    id: item.id,
-                    title: item.title,
-                    image: item.image,
-                    price: item.price,
-                  })
-                }
-              />
+              filteredProducts.length > 0 ? (
+                <ProductsGrid
+                  items={filteredProducts}
+                  view={productView}
+                  favorites={favorites.products}
+                  onToggleFavorite={toggleFavoriteProduct}
+                  onGetQuote={(item) =>
+                    requireCustomerLogin({
+                      onAuthenticated: () =>
+                        setQuoteProduct({
+                          id: item.id,
+                          title: item.title,
+                          image: item.image,
+                          price: item.price,
+                        }),
+                    })
+                  }
+                />
+              ) : (
+                <div className="rounded-2xl border border-[#E4E9EC] bg-[#FAFAFA] px-6 py-10 text-center text-[#5A646B]">
+                  {isLoading
+                    ? "Loading products..."
+                    : source === "unavailable"
+                      ? "Products are unavailable because the catalog API is not configured or reachable."
+                      : "No products matched your filters."}
+                </div>
+              )
             ) : (
               <>
-                <PackagesGrid
-                  items={filteredPackages}
-                  view={packageView}
-                  favorites={favorites.packages}
-                  onToggleFavorite={toggleFavoritePackage}
-                />
-                <div className="mt-8 flex justify-center">
-                  <Button className="bg-[#EBFAEB] text-[#058A05] hover:bg-[#DFF4DF] rounded-xl px-6">
-                    Load more
-                  </Button>
-                </div>
+                {filteredPackages.length > 0 ? (
+                  <>
+                    <PackagesGrid
+                      items={filteredPackages}
+                      view={packageView}
+                      favorites={favorites.packages}
+                      onToggleFavorite={toggleFavoritePackage}
+                    />
+                    <div className="mt-8 flex justify-center">
+                      <Button className="bg-[#EBFAEB] text-[#058A05] hover:bg-[#DFF4DF] rounded-xl px-6">
+                        Load more
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-[#E4E9EC] bg-[#FAFAFA] px-6 py-10 text-center text-[#5A646B]">
+                    {isLoading
+                      ? "Loading packages..."
+                      : source === "unavailable"
+                        ? "Packages are unavailable because the catalog API is not configured or reachable."
+                        : "No packages matched your filters."}
+                  </div>
+                )}
               </>
             )}
           </section>

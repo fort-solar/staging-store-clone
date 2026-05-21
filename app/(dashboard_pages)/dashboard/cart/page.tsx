@@ -4,21 +4,25 @@ import React, { useMemo, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useGeneralStore } from "@/store/GeneralStore";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { TrashIcon } from "@/components/features/icons/TrashIcon";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
+import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import { useStoreCatalog } from "@/lib/store-catalog";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
 const CartPage = () => {
+  const router = useRouter();
   const { products, packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const cartItems = useGeneralStore((state) => state.cartItems);
   const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
   const removeFromCart = useGeneralStore((state) => state.removeFromCart);
+  const { requireCustomerLogin } = useCustomerLoginGate();
 
   const cartDetails = useMemo(() => {
     return cartItems
@@ -31,7 +35,7 @@ const CartPage = () => {
         return {
           ...item,
           title: product.title,
-          price: product.price * 2930,
+          price: product.price,
           image: product.image,
         };
       })
@@ -61,7 +65,7 @@ const CartPage = () => {
       id: item.id,
       title: item.title,
       image: typeof item.image === "string" ? item.image : item.image.src,
-      price: item.price / 2930,
+      price: item.price,
       quantity: item.quantity,
     }));
   }, [cartDetails]);
@@ -177,7 +181,11 @@ const CartPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setIsQuoteModalOpen(true)}
+                    onClick={() =>
+                      requireCustomerLogin({
+                        onAuthenticated: () => setIsQuoteModalOpen(true),
+                      })
+                    }
                     disabled={quoteProducts.length === 0}
                     className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center text-white font-semibold"
                   >
@@ -190,12 +198,18 @@ const CartPage = () => {
                     Continue Shopping
                   </Link>
                 </div>
-                <Link
-                  href="/store/checkout"
+                <button
+                  type="button"
+                  onClick={() =>
+                    requireCustomerLogin({
+                      redirectTo: "/store/checkout",
+                      onAuthenticated: () => router.push("/store/checkout"),
+                    })
+                  }
                   className="block w-full rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
                 >
                   Checkout
-                </Link>
+                </button>
               </div>
 
               <div className="mt-20 text-sm text-[#5A646B]">

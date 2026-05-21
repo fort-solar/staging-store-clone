@@ -1,8 +1,11 @@
-import SettingsContent from '../SettingsContent'
+import SettingsContent from "../SettingsContent";
+import { requireCustomerSession } from "@/lib/auth/guards";
 
-const page = () => {
+const page = async () => {
+  await requireCustomerSession("/store/settings/quotes");
+
   return (
-    <SettingsContent page='quotes'/>
+    <SettingsContent page="quotes" />
   )
 }
 

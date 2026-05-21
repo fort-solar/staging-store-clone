@@ -8,8 +8,11 @@ import { GoogleIcon } from "../../icons/GoogleIcon";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
+import { useAuth } from "@/components/auth/auth-provider";
+import { sanitizeRedirectPath } from "@/lib/auth/redirect";
+import { publicEnv } from "@/lib/env";
 import { loginMockUser } from "@/lib/localAuth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type LoginFormValues = {
   email: string;
@@ -21,6 +24,9 @@ const LoginForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { refreshSession } = useAuth();
+  const isGoogleAuthEnabled = Boolean(publicEnv.googleClientId);
   const {
     register,
     handleSubmit,
@@ -34,6 +40,8 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
+    const redirectTo = sanitizeRedirectPath(searchParams.get("redirect"));
+
     setIsSubmitting(true);
     setStatus(null);
     const { error } = await loginMockUser({
@@ -44,8 +52,10 @@ const LoginForm = () => {
     if (error) {
       setStatus({ tone: "error", message: error });
     } else {
+      await refreshSession().catch(() => null);
       setStatus({ tone: "success", message: "Login successful. Redirecting..." });
-      router.push("/store/dashboard");
+      router.push(redirectTo);
+      router.refresh();
     }
     setIsSubmitting(false);
   };
@@ -60,19 +70,20 @@ const LoginForm = () => {
         </p>
       </div>
 
-      <div className="space-y-5">
-        <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#fafafac8]">
-        
-          <GoogleIcon />
-          Continue With Google
-        </div>
+      {isGoogleAuthEnabled ? (
+        <div className="space-y-5">
+          <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#fafafac8]">
+            <GoogleIcon />
+            Continue With Google
+          </div>
 
-        <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">
-          <span className="h-px flex-1 bg-[#E2E8F0]" />
-          Or
-          <span className="h-px flex-1 bg-[#E2E8F0]" />
+          <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">
+            <span className="h-px flex-1 bg-[#E2E8F0]" />
+            Or
+            <span className="h-px flex-1 bg-[#E2E8F0]" />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <AuthInput

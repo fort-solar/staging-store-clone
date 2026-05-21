@@ -13,6 +13,7 @@ import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { useRouter } from "next/navigation";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import { FaTiktok, FaYoutube, FaInstagram, FaFacebook, FaLinkedin, FaShare } from 'react-icons/fa';
+import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import { useStoreCatalog, useStoreProductById } from "@/lib/store-catalog";
 import type { CatalogId } from "@/types/common.types";
 
@@ -40,6 +41,7 @@ const ProductDetailPage = () => {
   );
   const favorites = useGeneralStore((state) => state.favorites.products);
   const toggleFavorite = useGeneralStore((state) => state.toggleFavoriteProduct);
+  const { requireCustomerLogin } = useCustomerLoginGate();
 
   if (isLoading && !product) {
     return (
@@ -184,10 +186,10 @@ const ProductDetailPage = () => {
 
             <div className="mt-4 flex items-center gap-3">
               <span className="text-xl font-semibold text-[#252C32]">
-                ₦{(product.price * 2930).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+                ₦{product.price.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
               </span>
               <span className="text-sm text-[#9AA5AC] line-through">
-                ₦{(product.priceOriginal * 2930).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+                ₦{product.priceOriginal.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
               </span>
             </div>
 
@@ -196,12 +198,15 @@ const ProductDetailPage = () => {
                 type="button"
                 onClick={(event) => {
                   event.preventDefault();
-                  setQuoteProduct({
-                    id: product.id,
-                    title: product.title,
-                    image: product.image,
-                    price: product.price,
-                  })
+                  requireCustomerLogin({
+                    onAuthenticated: () =>
+                      setQuoteProduct({
+                        id: product.id,
+                        title: product.title,
+                        image: product.image,
+                        price: product.price,
+                      }),
+                  });
                 }}
                 className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center text-white font-semibold"
               >
@@ -212,7 +217,18 @@ const ProductDetailPage = () => {
             <div className="mt-2 flex items-center gap-3">
               <button
                 disabled={product.availability === "Out Of Stock" ? true : false}
-
+                onClick={() => {
+                  addToCart({ id: product.id, itemType: "product" });
+                  updateCartQuantity({
+                    id: product.id,
+                    itemType: "product",
+                    quantity,
+                  });
+                  requireCustomerLogin({
+                    redirectTo: "/store/checkout",
+                    onAuthenticated: () => router.push("/store/checkout"),
+                  });
+                }}
                 className="disabled:opacity-50 disabled:cursor-not-allowed flex-1 rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
               >
                 Buy Now
