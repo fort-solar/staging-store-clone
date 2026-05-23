@@ -97,6 +97,8 @@ export type ProductPackageRecord = {
   category_id: string | null;
   system_size_kw: number;
   price: number;
+  discount_percentage?: number | null;
+  solar_finance_enabled?: boolean;
   number_of_panels: number;
   panel_type: string;
   inverter_type: string;
@@ -105,6 +107,14 @@ export type ProductPackageRecord = {
   estimated_savings_monthly: number;
   payback_period_years: number;
   image_url: string | null;
+  thumbnail_url?: string | null;
+  package_image_url?: string | null;
+  overview?: string | null;
+  items?: StorePackageItemRecord[];
+  what_it_powers?: string[];
+  system_details?: StorePackageSystemDetails | null;
+  datasheets?: StoreAssetRecord[];
+  product_images?: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -115,6 +125,8 @@ export type ProductPanelRecord = {
   slug: string;
   name: string;
   brand: string;
+  category_id?: string | null;
+  category_name?: string | null;
   wattage: number;
   efficiency: number;
   voltage: number;
@@ -123,6 +135,9 @@ export type ProductPanelRecord = {
   price: number;
   stock_quantity: number;
   image_url: string | null;
+  datasheet_url?: string | null;
+  overview?: string | null;
+  section_values?: Array<{ section_name: string; value: string; unit?: string | null }>;
   specifications: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
@@ -134,6 +149,8 @@ export type ProductInverterRecord = {
   slug: string;
   name: string;
   brand: string;
+  category_id?: string | null;
+  category_name?: string | null;
   type: string;
   capacity_kva: number;
   efficiency: number;
@@ -141,6 +158,9 @@ export type ProductInverterRecord = {
   price: number;
   stock_quantity: number;
   image_url: string | null;
+  datasheet_url?: string | null;
+  overview?: string | null;
+  section_values?: Array<{ section_name: string; value: string; unit?: string | null }>;
   specifications: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
@@ -152,6 +172,8 @@ export type ProductBatteryRecord = {
   slug: string;
   name: string;
   brand: string;
+  category_id?: string | null;
+  category_name?: string | null;
   capacity_ah: number;
   voltage: number;
   type: string;
@@ -159,6 +181,9 @@ export type ProductBatteryRecord = {
   price: number;
   stock_quantity: number;
   image_url: string | null;
+  datasheet_url?: string | null;
+  overview?: string | null;
+  section_values?: Array<{ section_name: string; value: string; unit?: string | null }>;
   specifications: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
@@ -211,15 +236,44 @@ export type FormProps = {
   values: unknown;
 };
 
+export type StoreAssetRecord = {
+  id?: string;
+  name: string;
+  url: string;
+  mime_type?: string | null;
+  kind?: "image" | "pdf" | "file" | (string & {});
+};
+
+export type StorePackageItemRecord = {
+  id?: string;
+  category_id: string;
+  category_name?: string | null;
+  product_id: string;
+  product_name?: string | null;
+  quantity: number;
+  product?: ProductPanelRecord | ProductInverterRecord | ProductBatteryRecord | null;
+};
+
+export type StorePackageSystemDetails = {
+  inverter_size: string;
+  inverter_label?: string;
+  pv_size: string;
+  pv_label?: string;
+  battery_size: string;
+  battery_label?: string;
+};
+
 export type StoreCatalogProduct = {
   id: string | number;
   title: string;
   mini_description: string;
   image: string;
   images: string[];
+  datasheet?: StoreAssetRecord | null;
   price: number;
   priceOriginal: number;
   category: string;
+  categoryLabel?: string;
   productType: string;
   powerRating: string;
   features: string[];
@@ -231,6 +285,7 @@ export type StoreCatalogProduct = {
   reviewsCount: number;
   description: string;
   quickSpecs: Array<{ label: string; value: string }>;
+  sectionValues?: Array<{ label: string; value: string }>;
   sourceType: "panel" | "inverter" | "battery";
   sourceId: string;
 };
@@ -240,7 +295,12 @@ export type StoreCatalogPackage = {
   title: string;
   mini_description: string;
   image: string;
+  thumbnail?: string;
+  mainImage?: string;
+  galleryImages?: string[];
+  datasheets?: StoreAssetRecord[];
   price: number;
+  finalPrice?: number;
   category: string;
   packageType: string;
   powerRating: string;
@@ -254,6 +314,9 @@ export type StoreCatalogPackage = {
   packageIncludes: Array<{ label: string; qty: string }>;
   systemDetails: string[];
   powers: string[];
+  solarFinanceEnabled?: boolean;
+  discountPercentage?: number;
+  includedProducts?: Array<{ id: string; categoryLabel: string; productName: string; quantity: number; image?: string | null; datasheet?: StoreAssetRecord | null }>;
   sourceType: "package" | "bundle";
   sourceId: string;
 };
@@ -343,6 +406,10 @@ export type CustomerOrderCreatePayload = {
   discount_amount: number;
   total_amount: number;
   currency: string;
+  create_package_request?: {
+    package_id: string;
+    financing_requested: boolean;
+  };
   create_bundle_request?: {
     bundle_id: string;
     financing_requested: boolean;

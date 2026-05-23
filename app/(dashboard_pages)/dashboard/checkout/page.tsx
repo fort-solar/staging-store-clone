@@ -180,8 +180,8 @@ const CheckoutPage = () => {
       })) satisfies QuoteProduct[];
   }, [cartDetails]);
 
-  const primaryBundle = useMemo(
-    () => cartDetails.find((item) => item.itemType === "package" && item.sourceType === "bundle") ?? null,
+  const primaryPackage = useMemo(
+    () => cartDetails.find((item) => item.itemType === "package") ?? null,
     [cartDetails],
   );
 
@@ -253,9 +253,9 @@ const CheckoutPage = () => {
         discount_amount: discountAmount,
         total_amount: total,
         currency: "NGN",
-        create_bundle_request: primaryBundle
+        create_package_request: primaryPackage
           ? {
-              bundle_id: primaryBundle.sourceId,
+              package_id: primaryPackage.sourceId,
               financing_requested: requestFinancing,
             }
           : undefined,
@@ -456,7 +456,7 @@ const CheckoutPage = () => {
                 className="mt-4 min-h-28 w-full rounded-2xl border border-[#E4E9EC] px-4 py-3 text-sm outline-none"
               />
 
-              {primaryBundle ? (
+              {primaryPackage ? (
                 <label className="mt-4 flex items-center gap-2 text-sm text-[#252C32]">
                   <input
                     type="checkbox"
@@ -464,7 +464,7 @@ const CheckoutPage = () => {
                     onChange={(event) => setRequestFinancing(event.target.checked)}
                     className="h-4 w-4"
                   />
-                  Request financing for this bundle order
+                  Request financing for this package order
                 </label>
               ) : null}
             </section>
