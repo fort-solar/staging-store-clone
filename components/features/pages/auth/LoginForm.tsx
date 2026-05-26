@@ -3,15 +3,14 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-// import { GoogleLogin } from "@react-oauth/google";
-import { GoogleIcon } from "../../icons/GoogleIcon";
+import { GoogleLogin } from "@react-oauth/google";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
 import { useAuth } from "@/components/auth/auth-provider";
 import { sanitizeRedirectPath } from "@/lib/auth/redirect";
 import { publicEnv } from "@/lib/env";
-import { loginMockUser } from "@/lib/localAuth";
+import { authenticateWithGoogle, loginMockUser } from "@/lib/localAuth";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type LoginFormValues = {
@@ -60,6 +59,25 @@ const LoginForm = () => {
     setIsSubmitting(false);
   };
 
+  const handleGoogleAuth = async (idToken: string) => {
+    const redirectTo = sanitizeRedirectPath(searchParams.get("redirect"));
+
+    setIsSubmitting(true);
+    setStatus(null);
+    const { error } = await authenticateWithGoogle({ idToken });
+
+    if (error) {
+      setStatus({ tone: "error", message: error });
+    } else {
+      await refreshSession().catch(() => null);
+      setStatus({ tone: "success", message: "Login successful. Redirecting..." });
+      router.push(redirectTo);
+      router.refresh();
+    }
+
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="space-y-8 ">
       <div className="space-y-3">
@@ -72,9 +90,23 @@ const LoginForm = () => {
 
       {isGoogleAuthEnabled ? (
         <div className="space-y-5">
-          <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#fafafac8]">
-            <GoogleIcon />
-            Continue With Google
+          <div className="rounded-2xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3">
+            <GoogleLogin
+              onSuccess={(response) => {
+                if (!response.credential) {
+                  setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
+                  return;
+                }
+
+                void handleGoogleAuth(response.credential);
+              }}
+              onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
+              text="continue_with"
+              shape="rectangular"
+              theme="outline"
+              size="large"
+              width="320"
+            />
           </div>
 
           <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">

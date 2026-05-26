@@ -33,28 +33,6 @@ type FilterState = {
   warrantyMin: number;
 };
 
-const productSections = [
-  "All Products",
-  "New Releases",
-  "Panels",
-  "Batteries",
-  "Inverters",
-  "Accessories",
-];
-
-const productTypes = [
-  "All",
-  "Solar Panel",
-  "Inverter",
-  "Batteries",
-  "Streetlights/ floodlights",
-  "Solar CCTV",
-  "Solar Appliances",
-  "Charge Controllers",
-];
-
-const packageTypes = ["All", "Home", "SME", "Campus", "Office"];
-
 const powerRatingsProducts = ["1kVA - 5kVA", "6kVA - 10kVA", "10kVA+"];
 
 const powerRatingsPackages = ["1kVA - 2kVA", "3kVA - 5kVA", "6kVA - 10kVA", "10kVA+"];
@@ -149,6 +127,23 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     (state) => state.toggleCategorySidebar
   );
   const { requireCustomerLogin } = useCustomerLoginGate();
+  const productSections = useMemo(
+    () => [
+      "All Products",
+      ...Array.from(
+        new Set(products.map((product) => product.section).filter((section) => section && section !== "All Products"))
+      ),
+    ],
+    [products]
+  );
+  const productTypes = useMemo(
+    () => ["All", ...Array.from(new Set(products.map((product) => product.productType).filter(Boolean)))],
+    [products]
+  );
+  const packageTypes = useMemo(
+    () => ["All", ...Array.from(new Set(packages.map((pkg) => pkg.packageType).filter(Boolean)))],
+    [packages]
+  );
 
   const toggleArrayValue = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((item) => item !== value) : [...arr, value];

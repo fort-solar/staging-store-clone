@@ -4,15 +4,15 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter} from "next/navigation";
 import { useForm } from "react-hook-form";
-// import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/components/auth/auth-provider";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { PasswordInput } from "@/components/features/pages/auth/PasswordInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
-import { GoogleIcon } from "../../icons/GoogleIcon";
 import { publicEnv } from "@/lib/env";
 import {
+  authenticateWithGoogle,
   registerMockUser,
   requestEmailVerification,
   updateCurrentUserProfile,
@@ -103,6 +103,24 @@ const SignupForm = () => {
     setIsSubmitting(false);
   };
 
+  const handleGoogleAuth = async (idToken: string) => {
+    setIsSubmitting(true);
+    setStatus(null);
+    const { error } = await authenticateWithGoogle({ idToken });
+
+    if (error) {
+      setStatus({ tone: "error", message: error });
+      setIsSubmitting(false);
+      return;
+    }
+
+    await refreshSession().catch(() => null);
+    setStatus({ tone: "success", message: "Account created. Redirecting..." });
+    router.push("/store/dashboard");
+    router.refresh();
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="space-y-8">
       <div className="space-y-3">
@@ -117,17 +135,23 @@ const SignupForm = () => {
 
       {isGoogleAuthEnabled ? (
         <div className="space-y-5">
-          <div className="flex items-center justify-center gap-4 rounded-2xl border border-transparent px-4 h-14 text-[#737373] cursor-pointer bg-[#FAFAFA] hover:bg-[#fafafac8]">
-            {/* <GoogleLogin
-                      onSuccess={() => setStatus({ tone: "success", message: "Google sign-in success." })}
-                      onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
-                      size="large"
-                      width="100%"
-                      text="continue_with"
-                      shape="rectangular"
-                    /> */}
-            <GoogleIcon />
-            Continue With Google
+          <div className="rounded-2xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3">
+            <GoogleLogin
+              onSuccess={(response) => {
+                if (!response.credential) {
+                  setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
+                  return;
+                }
+
+                void handleGoogleAuth(response.credential);
+              }}
+              onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
+              text="continue_with"
+              shape="rectangular"
+              theme="outline"
+              size="large"
+              width="320"
+            />
           </div>
 
           <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">

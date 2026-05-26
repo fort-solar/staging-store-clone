@@ -3,22 +3,16 @@
 import { useEffect, useState } from "react";
 import { appGet } from "@/lib/api/client";
 import type {
-  ProductBatteryDetailApiResponse,
-  ProductBatteryListApiResponse,
-  ProductInverterDetailApiResponse,
-  ProductInverterListApiResponse,
   ProductPackageDetailApiResponse,
   ProductPackageListApiResponse,
-  ProductPanelDetailApiResponse,
-  ProductPanelListApiResponse,
-  ProductBatteryRecord,
-  ProductInverterRecord,
   ProductPackageRecord,
-  ProductPanelRecord,
   StoreAssetRecord,
   StoreCatalogPackage,
   StoreCatalogProduct,
   StorePackageItemRecord,
+  UnifiedProductDetailApiResponse,
+  UnifiedProductListApiResponse,
+  UnifiedProductRecord,
 } from "@/types/api.types";
 
 type CatalogResult = {
@@ -154,14 +148,12 @@ function normalizePackageItem(record: unknown, index: number): StorePackageItemR
     return null;
   }
 
-  const productRecord = isRecord(record.product)
-    ? (record.product as ProductPanelRecord | ProductInverterRecord | ProductBatteryRecord)
-    : null;
+  const productRecord = isRecord(record.product) ? (record.product as UnifiedProductRecord) : null;
 
   return {
     id: readString(record, ["id"]) || undefined,
     category_id: readString(record, ["category_id"]),
-    category_name: readString(record, ["category_name", "category"], productRecord?.category_name || undefined),
+    category_name: readString(record, ["category_name", "category"], productRecord?.category?.name || undefined),
     product_id: readString(record, ["product_id", "id"], productRecord?.id || ""),
     product_name: readString(record, ["product_name", "name"], productRecord?.name || `Product ${index + 1}`),
     quantity: readNumber(record, ["quantity"], 1),
@@ -169,7 +161,7 @@ function normalizePackageItem(record: unknown, index: number): StorePackageItemR
   };
 }
 
-function normalizeSectionValues(record: ProductPanelRecord | ProductInverterRecord | ProductBatteryRecord) {
+function normalizeSectionValues(record: UnifiedProductRecord) {
   if (record.section_values?.length) {
     return record.section_values.map((item) => ({
       label: item.section_name,
@@ -180,130 +172,48 @@ function normalizeSectionValues(record: ProductPanelRecord | ProductInverterReco
   return [];
 }
 
-function normalizePanelProduct(panel: ProductPanelRecord): StoreCatalogProduct {
-  const datasheet = normalizeAsset(panel.datasheet_url || null, `${panel.name} Datasheet`);
-  const sectionValues = normalizeSectionValues(panel);
-  const powerRating = panel.wattage ? `${panel.wattage}W` : panel.efficiency ? `${panel.efficiency}%` : "Standard";
+function inferPowerRating(product: UnifiedProductRecord, sectionValues: Array<{ label: string; value: string }>) {
+  const prioritizedMatch = sectionValues.find((item) =>
+    /(size|capacity|power|rating|watt|kw|kva|ah|voltage)/i.test(item.label),
+  );
+
+  return prioritizedMatch?.value || product.category?.name || "Standard";
+}
+
+export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCatalogProduct {
+  const datasheet = normalizeAsset(product.datasheet_url || null, `${product.name} Datasheet`);
+  const sectionValues = normalizeSectionValues(product);
+  const categoryLabel = product.category?.name || "Uncategorised";
 
   return {
-    id: panel.id,
-    title: panel.name,
-    mini_description: panel.overview || panel.brand || panel.slug || "Solar panel",
-    image: toImageUrl(panel.image_url),
-    images: [toImageUrl(panel.image_url)],
+    id: product.id,
+    title: product.name,
+    mini_description: product.overview || product.slug || categoryLabel,
+    image: toImageUrl(product.product_image_url || product.image_url || product.image),
+    images: [toImageUrl(product.product_image_url || product.image_url || product.image)],
     datasheet,
-    price: panel.price,
-    priceOriginal: Math.round(panel.price * 1.12),
+    price: product.price,
+    priceOriginal: Math.round(product.price * 1.12),
     category: "Solar Products",
-    categoryLabel: panel.category_name || "Panels",
-    productType: "Solar Panel",
-    powerRating,
-    features: panel.efficiency ? [`${panel.efficiency}% Efficiency`] : [],
-    availability: buildAvailability(panel.stock_quantity, panel.is_active),
+    categoryLabel,
+    productType: categoryLabel,
+    powerRating: inferPowerRating(product, sectionValues),
+    features: sectionValues.slice(0, 3).map((item) => `${item.label}: ${item.value}`),
+    availability: buildAvailability(product.stock_quantity, product.is_active),
     warrantyYears: 10,
-    createdAt: panel.created_at,
-    section: panel.category_name || "Panels",
+    createdAt: product.created_at,
+    section: categoryLabel,
     rating: 4.8,
     reviewsCount: 0,
-    description: panel.overview || panel.name,
-    quickSpecs: sectionValues.length
-      ? sectionValues
-      : [
-          { label: "Brand", value: panel.brand || "Fortsolar" },
-          { label: "Wattage", value: panel.wattage ? `${panel.wattage}W` : "N/A" },
-          { label: "Voltage", value: panel.voltage ? `${panel.voltage}V` : "N/A" },
-          { label: "Dimensions", value: panel.dimensions || "N/A" },
-          { label: "Weight", value: panel.weight_kg ? `${panel.weight_kg}kg` : "N/A" },
-        ],
+    description: product.overview || product.name,
+    quickSpecs: sectionValues.length ? sectionValues : [{ label: "Category", value: categoryLabel }],
     sectionValues,
-    sourceType: "panel",
-    sourceId: panel.id,
+    sourceType: "product",
+    sourceId: product.id,
   };
 }
 
-function normalizeInverterProduct(inverter: ProductInverterRecord): StoreCatalogProduct {
-  const datasheet = normalizeAsset(inverter.datasheet_url || null, `${inverter.name} Datasheet`);
-  const sectionValues = normalizeSectionValues(inverter);
-  const powerRating = inverter.capacity_kva ? `${inverter.capacity_kva}kVA` : inverter.type || "Standard";
-
-  return {
-    id: inverter.id,
-    title: inverter.name,
-    mini_description: inverter.overview || inverter.brand || inverter.type || "Solar inverter",
-    image: toImageUrl(inverter.image_url),
-    images: [toImageUrl(inverter.image_url)],
-    datasheet,
-    price: inverter.price,
-    priceOriginal: Math.round(inverter.price * 1.12),
-    category: "Solar Products",
-    categoryLabel: inverter.category_name || "Inverters",
-    productType: "Inverter",
-    powerRating,
-    features: inverter.efficiency ? [`${inverter.efficiency}% Efficiency`] : [],
-    availability: buildAvailability(inverter.stock_quantity, inverter.is_active),
-    warrantyYears: 8,
-    createdAt: inverter.created_at,
-    section: inverter.category_name || "Inverters",
-    rating: 4.7,
-    reviewsCount: 0,
-    description: inverter.overview || inverter.name,
-    quickSpecs: sectionValues.length
-      ? sectionValues
-      : [
-          { label: "Brand", value: inverter.brand || "Fortsolar" },
-          { label: "Type", value: inverter.type || "N/A" },
-          { label: "Capacity", value: inverter.capacity_kva ? `${inverter.capacity_kva}kVA` : "N/A" },
-          { label: "Efficiency", value: inverter.efficiency ? `${inverter.efficiency}%` : "N/A" },
-          { label: "Voltage Range", value: inverter.voltage_range || "N/A" },
-        ],
-    sectionValues,
-    sourceType: "inverter",
-    sourceId: inverter.id,
-  };
-}
-
-function normalizeBatteryProduct(battery: ProductBatteryRecord): StoreCatalogProduct {
-  const datasheet = normalizeAsset(battery.datasheet_url || null, `${battery.name} Datasheet`);
-  const sectionValues = normalizeSectionValues(battery);
-  const powerRating = battery.capacity_ah ? `${battery.capacity_ah}Ah` : battery.type || "Standard";
-
-  return {
-    id: battery.id,
-    title: battery.name,
-    mini_description: battery.overview || battery.brand || battery.type || "Solar battery",
-    image: toImageUrl(battery.image_url),
-    images: [toImageUrl(battery.image_url)],
-    datasheet,
-    price: battery.price,
-    priceOriginal: Math.round(battery.price * 1.12),
-    category: "Solar Products",
-    categoryLabel: battery.category_name || "Batteries",
-    productType: "Battery",
-    powerRating,
-    features: battery.cycle_life ? [`${battery.cycle_life} Cycle Life`] : [],
-    availability: buildAvailability(battery.stock_quantity, battery.is_active),
-    warrantyYears: 10,
-    createdAt: battery.created_at,
-    section: battery.category_name || "Batteries",
-    rating: 4.7,
-    reviewsCount: 0,
-    description: battery.overview || battery.name,
-    quickSpecs: sectionValues.length
-      ? sectionValues
-      : [
-          { label: "Brand", value: battery.brand || "Fortsolar" },
-          { label: "Type", value: battery.type || "N/A" },
-          { label: "Capacity", value: battery.capacity_ah ? `${battery.capacity_ah}Ah` : "N/A" },
-          { label: "Voltage", value: battery.voltage ? `${battery.voltage}V` : "N/A" },
-          { label: "Cycle Life", value: battery.cycle_life ? `${battery.cycle_life}` : "N/A" },
-        ],
-    sectionValues,
-    sourceType: "battery",
-    sourceId: battery.id,
-  };
-}
-
-function normalizePackage(item: ProductPackageRecord): StoreCatalogPackage {
+export function normalizePackage(item: ProductPackageRecord): StoreCatalogPackage {
   const raw = item as unknown as Record<string, unknown>;
   const includedProducts = (item.items ?? readArray(raw, ["items", "products"]))
     .map((candidate, index) => normalizePackageItem(candidate, index))
@@ -312,7 +222,9 @@ function normalizePackage(item: ProductPackageRecord): StoreCatalogPackage {
   const thumbnail = toImageUrl(item.thumbnail_url || item.image_url);
   const productImages = [
     ...((item.product_images ?? readArray(raw, ["product_images"])) as string[]),
-    ...includedProducts.map((product) => product.product?.image_url || null).filter((value): value is string => Boolean(value)),
+    ...includedProducts
+      .map((product) => product.product?.product_image_url || product.product?.image_url || null)
+      .filter((value): value is string => Boolean(value)),
   ].map((value) => toImageUrl(value)).filter((value, index, all) => all.indexOf(value) === index);
   const datasheetCandidates = [
     ...((item.datasheets ?? readArray(raw, ["datasheets"])) as unknown[]).map((asset, index) => normalizeAsset(asset, `Datasheet ${index + 1}`)),
@@ -367,10 +279,10 @@ function normalizePackage(item: ProductPackageRecord): StoreCatalogPackage {
     discountPercentage,
     includedProducts: includedProducts.map((product) => ({
       id: product.product_id,
-      categoryLabel: product.category_name || product.product?.category_name || "Product Category",
+      categoryLabel: product.category_name || product.product?.category?.name || "Product Category",
       productName: product.product_name || "Product",
       quantity: product.quantity,
-      image: product.product?.image_url || null,
+      image: product.product?.product_image_url || product.product?.image_url || null,
       datasheet: normalizeAsset(product.product?.datasheet_url || null, `${product.product_name || "Product"} Datasheet`),
     })),
     sourceType: "package",
@@ -387,25 +299,15 @@ async function safeAppGet<T>(path: string) {
 }
 
 async function fetchCatalogFromApi(): Promise<CatalogResult> {
-  const [packagesPayload, bundlesPayload, panelsPayload, invertersPayload, batteriesPayload] =
+  const [packagesPayload, productsPayload] =
     await Promise.all([
       appGet<ProductPackageListApiResponse>("/api/v1/products/packages"),
-      safeAppGet<ProductPackageListApiResponse>("/api/v1/products/bundles"),
-      appGet<ProductPanelListApiResponse>("/api/v1/products/panels"),
-      appGet<ProductInverterListApiResponse>("/api/v1/products/inverters"),
-      appGet<ProductBatteryListApiResponse>("/api/v1/products/batteries"),
+      appGet<UnifiedProductListApiResponse>("/api/v1/products/"),
     ]);
 
   return {
-    products: [
-      ...panelsPayload.data.map(normalizePanelProduct),
-      ...invertersPayload.data.map(normalizeInverterProduct),
-      ...batteriesPayload.data.map(normalizeBatteryProduct),
-    ],
-    packages: [
-      ...packagesPayload.data.map(normalizePackage),
-      ...(bundlesPayload?.success ? bundlesPayload.data.map(normalizePackage) : []),
-    ].filter((item, index, all) => all.findIndex((candidate) => String(candidate.id) === String(item.id)) === index),
+    products: productsPayload.data.map(normalizeUnifiedProduct),
+    packages: packagesPayload.data.map(normalizePackage),
     source: "api",
   };
 }
@@ -449,16 +351,10 @@ export async function getStoreProductById(id: string) {
     return productDetailCache.get(id) ?? null;
   }
 
-  const [panelPayload, inverterPayload, batteryPayload] = await Promise.all([
-    safeAppGet<ProductPanelDetailApiResponse>(`/api/v1/products/panels/${id}`),
-    safeAppGet<ProductInverterDetailApiResponse>(`/api/v1/products/inverters/${id}`),
-    safeAppGet<ProductBatteryDetailApiResponse>(`/api/v1/products/batteries/${id}`),
-  ]);
+  const productPayload = await safeAppGet<UnifiedProductDetailApiResponse>(`/api/v1/products/${id}`);
 
   const resolvedProduct =
-    (panelPayload?.success ? normalizePanelProduct(panelPayload.data) : null) ??
-    (inverterPayload?.success ? normalizeInverterProduct(inverterPayload.data) : null) ??
-    (batteryPayload?.success ? normalizeBatteryProduct(batteryPayload.data) : null) ??
+    (productPayload?.success ? normalizeUnifiedProduct(productPayload.data) : null) ??
     (await getStoreCatalog()).products.find((item) => String(item.id) === id) ??
     null;
 
@@ -471,14 +367,10 @@ export async function getStorePackageById(id: string) {
     return packageDetailCache.get(id) ?? null;
   }
 
-  const [packagePayload, bundlePayload] = await Promise.all([
-    safeAppGet<ProductPackageDetailApiResponse>(`/api/v1/products/packages/${id}`),
-    safeAppGet<ProductPackageDetailApiResponse>(`/api/v1/products/bundles/${id}`),
-  ]);
+  const packagePayload = await safeAppGet<ProductPackageDetailApiResponse>(`/api/v1/products/packages/${id}`);
 
   const resolvedPackage =
     (packagePayload?.success ? normalizePackage(packagePayload.data) : null) ??
-    (bundlePayload?.success ? normalizePackage(bundlePayload.data) : null) ??
     (await getStoreCatalog()).packages.find((item) => String(item.id) === id) ??
     null;
 

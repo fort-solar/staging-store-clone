@@ -120,6 +120,43 @@ export type ProductPackageRecord = {
   updated_at: string;
 };
 
+export type ProductCategorySummaryRecord = {
+  id: string;
+  name: string;
+};
+
+export type UnifiedProductSectionValueRecord = {
+  id?: string;
+  section_id?: string | null;
+  section_name: string;
+  value: string;
+  unit?: string | null;
+};
+
+export type UnifiedProductRecord = {
+  id: string;
+  slug: string;
+  name: string;
+  category_id: string | null;
+  category?: ProductCategorySummaryRecord | null;
+  price: number;
+  stock_quantity: number;
+  overview?: string | null;
+  section_values?: UnifiedProductSectionValueRecord[];
+  product_image_url?: string | null;
+  image_url?: string | null;
+  image?: string | null;
+  datasheet_url?: string | null;
+  specifications?: Record<string, unknown>;
+  is_active: boolean;
+  status?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UnifiedProductListApiResponse = ApiCollectionResponse<UnifiedProductRecord>;
+export type UnifiedProductDetailApiResponse = ApiDataResponse<UnifiedProductRecord>;
+
 export type ProductPanelRecord = {
   id: string;
   slug: string;
@@ -251,7 +288,7 @@ export type StorePackageItemRecord = {
   product_id: string;
   product_name?: string | null;
   quantity: number;
-  product?: ProductPanelRecord | ProductInverterRecord | ProductBatteryRecord | null;
+  product?: UnifiedProductRecord | null;
 };
 
 export type StorePackageSystemDetails = {
@@ -286,7 +323,7 @@ export type StoreCatalogProduct = {
   description: string;
   quickSpecs: Array<{ label: string; value: string }>;
   sectionValues?: Array<{ label: string; value: string }>;
-  sourceType: "panel" | "inverter" | "battery";
+  sourceType: "product";
   sourceId: string;
 };
 
@@ -317,7 +354,7 @@ export type StoreCatalogPackage = {
   solarFinanceEnabled?: boolean;
   discountPercentage?: number;
   includedProducts?: Array<{ id: string; categoryLabel: string; productName: string; quantity: number; image?: string | null; datasheet?: StoreAssetRecord | null }>;
-  sourceType: "package" | "bundle";
+  sourceType: "package";
   sourceId: string;
 };
 
