@@ -90,7 +90,7 @@ const LoginForm = () => {
 
       {isGoogleAuthEnabled ? (
         <div className="space-y-5">
-          <div className="rounded-2xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-3">
+          <div className="w-full">
             <GoogleLogin
               onSuccess={(response) => {
                 if (!response.credential) {
@@ -105,7 +105,7 @@ const LoginForm = () => {
               shape="rectangular"
               theme="outline"
               size="large"
-              width="320"
+              width="100%"
             />
           </div>
 
