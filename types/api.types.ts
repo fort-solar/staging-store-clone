@@ -148,7 +148,9 @@ export type UnifiedProductRecord = {
   overview?: string | null;
   section_values?: UnifiedProductSectionValueRecord[];
   product_image_url?: string | null;
+  product_image_urls?: string[];
   image_url?: string | null;
+  image_urls?: string[];
   image?: string | null;
   datasheet_url?: string | null;
   specifications?: Record<string, unknown>;

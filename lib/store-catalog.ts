@@ -71,6 +71,12 @@ function readArray(record: Record<string, unknown>, keys: string[]) {
   return [];
 }
 
+function readStringArray(record: Record<string, unknown>, keys: string[]) {
+  return readArray(record, keys)
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
+}
+
 function toImageUrl(value: string | { src?: string } | null | undefined) {
   if (!value) {
     return PRODUCT_IMAGE_FALLBACK;
@@ -81,6 +87,21 @@ function toImageUrl(value: string | { src?: string } | null | undefined) {
   }
 
   return value.src ?? PRODUCT_IMAGE_FALLBACK;
+}
+
+function collectProductImages(product: UnifiedProductRecord) {
+  const raw = product as unknown as Record<string, unknown>;
+  const mediaRecord = isRecord(raw.media) ? raw.media : null;
+  const mediaImageUrls = mediaRecord ? readStringArray(mediaRecord, ["image_urls"]) : [];
+  const explicitImages = readStringArray(raw, ["product_image_urls", "image_urls", "images"]);
+  const fallbackImage = readString(raw, ["product_image_url", "image_url", "image"]);
+
+  const imageUrls = [...explicitImages, ...mediaImageUrls, fallbackImage]
+    .filter(Boolean)
+    .map((value) => toImageUrl(value))
+    .filter((value, index, all) => all.indexOf(value) === index);
+
+  return imageUrls.length ? imageUrls : [PRODUCT_IMAGE_FALLBACK];
 }
 
 function buildAvailability(stockQuantity: number | undefined, isActive = true) {
@@ -184,13 +205,14 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
   const datasheet = normalizeAsset(product.datasheet_url || null, `${product.name} Datasheet`);
   const sectionValues = normalizeSectionValues(product);
   const categoryLabel = product.category?.name || "Uncategorised";
+  const productImages = collectProductImages(product);
 
   return {
     id: product.id,
     title: product.name,
     mini_description: product.overview || product.slug || categoryLabel,
-    image: toImageUrl(product.product_image_url || product.image_url || product.image),
-    images: [toImageUrl(product.product_image_url || product.image_url || product.image)],
+    image: productImages[0],
+    images: productImages,
     datasheet,
     price: product.price,
     priceOriginal: Math.round(product.price * 1.12),
