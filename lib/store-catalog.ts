@@ -89,8 +89,7 @@ function toImageUrl(value: string | { src?: string } | null | undefined) {
   return value.src ?? PRODUCT_IMAGE_FALLBACK;
 }
 
-function collectProductImages(product: UnifiedProductRecord) {
-  const raw = product as unknown as Record<string, unknown>;
+function collectProductImagesFromRecord(raw: Record<string, unknown>) {
   const mediaRecord = isRecord(raw.media) ? raw.media : null;
   const mediaImageUrls = mediaRecord ? readStringArray(mediaRecord, ["image_urls"]) : [];
   const explicitImages = readStringArray(raw, ["product_image_urls", "image_urls", "images"]);
@@ -102,6 +101,18 @@ function collectProductImages(product: UnifiedProductRecord) {
     .filter((value, index, all) => all.indexOf(value) === index);
 
   return imageUrls.length ? imageUrls : [PRODUCT_IMAGE_FALLBACK];
+}
+
+function collectProductImages(product: UnifiedProductRecord) {
+  return collectProductImagesFromRecord(product as unknown as Record<string, unknown>);
+}
+
+function getPrimaryProductImage(product: UnifiedProductRecord | null | undefined) {
+  if (!product) {
+    return null;
+  }
+
+  return collectProductImages(product)[0] ?? null;
 }
 
 function buildAvailability(stockQuantity: number | undefined, isActive = true) {
@@ -240,13 +251,14 @@ export function normalizePackage(item: ProductPackageRecord): StoreCatalogPackag
   const includedProducts = (item.items ?? readArray(raw, ["items", "products"]))
     .map((candidate, index) => normalizePackageItem(candidate, index))
     .filter((candidate): candidate is StorePackageItemRecord => Boolean(candidate));
+  const includedProductImages = includedProducts
+    .map((product) => getPrimaryProductImage(product.product))
+    .filter((value): value is string => Boolean(value));
   const packageImage = toImageUrl(item.package_image_url || item.image_url);
   const thumbnail = toImageUrl(item.thumbnail_url || item.image_url);
   const productImages = [
     ...((item.product_images ?? readArray(raw, ["product_images"])) as string[]),
-    ...includedProducts
-      .map((product) => product.product?.product_image_url || product.product?.image_url || null)
-      .filter((value): value is string => Boolean(value)),
+    ...includedProductImages,
   ].map((value) => toImageUrl(value)).filter((value, index, all) => all.indexOf(value) === index);
   const datasheetCandidates = [
     ...((item.datasheets ?? readArray(raw, ["datasheets"])) as unknown[]).map((asset, index) => normalizeAsset(asset, `Datasheet ${index + 1}`)),
@@ -304,7 +316,7 @@ export function normalizePackage(item: ProductPackageRecord): StoreCatalogPackag
       categoryLabel: product.category_name || product.product?.category?.name || "Product Category",
       productName: product.product_name || "Product",
       quantity: product.quantity,
-      image: product.product?.product_image_url || product.product?.image_url || null,
+      image: getPrimaryProductImage(product.product),
       datasheet: normalizeAsset(product.product?.datasheet_url || null, `${product.product_name || "Product"} Datasheet`),
     })),
     sourceType: "package",

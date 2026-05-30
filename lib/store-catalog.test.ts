@@ -13,7 +13,11 @@ describe("normalizeUnifiedProduct", () => {
       stock_quantity: 12,
       overview: "Three-phase hybrid inverter",
       section_values: [{ section_id: "sec-1", section_name: "Size", value: "12", unit: "kVA" }],
-      product_image_url: "https://cdn.example.com/products/prod-1/image.jpg",
+      product_image_urls: [
+        "https://cdn.example.com/products/prod-1/image-1.jpg",
+        "https://cdn.example.com/products/prod-1/image-2.jpg",
+      ],
+      product_image_url: "https://cdn.example.com/products/prod-1/image-1.jpg",
       datasheet_url: "https://cdn.example.com/products/prod-1/datasheet.pdf",
       specifications: {},
       is_active: true,
@@ -26,7 +30,11 @@ describe("normalizeUnifiedProduct", () => {
 
     expect(normalized.categoryLabel).toBe("Inverters");
     expect(normalized.productType).toBe("Inverters");
-    expect(normalized.image).toBe("https://cdn.example.com/products/prod-1/image.jpg");
+    expect(normalized.image).toBe("https://cdn.example.com/products/prod-1/image-1.jpg");
+    expect(normalized.images).toEqual([
+      "https://cdn.example.com/products/prod-1/image-1.jpg",
+      "https://cdn.example.com/products/prod-1/image-2.jpg",
+    ]);
     expect(normalized.sectionValues).toEqual([{ label: "Size", value: "12 kVA" }]);
   });
 });
@@ -69,7 +77,11 @@ describe("normalizePackage", () => {
             stock_quantity: 12,
             overview: "Three-phase hybrid inverter",
             section_values: [],
-            product_image_url: "https://cdn.example.com/products/prod-1/image.jpg",
+            product_image_urls: [
+              "https://cdn.example.com/products/prod-1/image-1.jpg",
+              "https://cdn.example.com/products/prod-1/image-2.jpg",
+            ],
+            product_image_url: "https://cdn.example.com/products/prod-1/image-1.jpg",
             datasheet_url: "https://cdn.example.com/products/prod-1/datasheet.pdf",
             specifications: {},
             is_active: true,
@@ -102,8 +114,12 @@ describe("normalizePackage", () => {
     expect(normalized.includedProducts).toEqual([
       expect.objectContaining({
         categoryLabel: "Inverters",
-        image: "https://cdn.example.com/products/prod-1/image.jpg",
+        image: "https://cdn.example.com/products/prod-1/image-1.jpg",
       }),
+    ]);
+    expect(normalized.galleryImages).toEqual([
+      "https://cdn.example.com/packages/pkg-1/hero.jpg",
+      "https://cdn.example.com/products/prod-1/image-1.jpg",
     ]);
     expect(normalized.datasheets).toEqual([
       expect.objectContaining({
