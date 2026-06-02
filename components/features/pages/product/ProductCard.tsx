@@ -36,7 +36,7 @@ const ProductCard
       <div className="group h-full bg-[#EBFAEB] p-2 rounded-xl overflow-hidden">
         <div className='bg-white flex flex-col h-full rounded-xl overflow-hidden'>
           <div
-            className="relative h-52 w-full overflow-hidden bg-cover max-w-[90%] mx-auto bg-center z-10"
+            className="relative z-10 w-full overflow-hidden rounded-[16px] bg-cover bg-center bg-no-repeat aspect-[4/3]"
             style={{ backgroundImage: `url(${image})` }}
           >
             <div className="hidden absolute lg:flex justify-between left-0 right-0 top-3 z-20  opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
@@ -106,7 +106,12 @@ const ProductCard
             <p className="text-lg font-semibold font-poppins text-[#000000]">{title}</p>
             <div className="flex items-center gap-2">
               <p className="text-xs rounded-ful text-[#000000] font-bold">
-                ₦{price.toLocaleString()} <span className='text-[8px] text-[#FF0000] line-through decoration-[#FF0000] decoration-1'>₦{priceOriginal.toLocaleString()}</span>
+                ₦{price.toLocaleString()}{" "}
+                {priceOriginal > price ? (
+                  <span className='text-[8px] text-[#FF0000] line-through decoration-[#FF0000] decoration-1'>
+                    ₦{priceOriginal.toLocaleString()}
+                  </span>
+                ) : null}
               </p>
             </div>
             <p className='text-xs text-[#50555C]'>{mini_description}</p>

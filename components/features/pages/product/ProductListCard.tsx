@@ -31,7 +31,7 @@ const ProductListCard = ({
   return (
     <div className="group overfow-hidden flex flex-col sm:flex-row gap-8 rounded-lg border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#058A05] transition-colors">
       <div
-        className="relative h-20 w-full sm:w-56 rounded-lg bg-contain bg-bottom"
+        className="relative aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat sm:w-44 sm:shrink-0"
         style={{ backgroundImage: `url(${image})` }}
       >
         <div className="absolute right-2 top-2 z-20 flex gap-2 opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">

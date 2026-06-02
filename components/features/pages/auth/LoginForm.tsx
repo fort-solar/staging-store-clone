@@ -3,10 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { GoogleLogin } from "@react-oauth/google";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
+import { GoogleAuthButton } from "@/components/features/pages/auth/GoogleAuthButton";
 import { useAuth } from "@/components/auth/auth-provider";
 import { sanitizeRedirectPath } from "@/lib/auth/redirect";
 import { publicEnv } from "@/lib/env";
@@ -90,8 +90,7 @@ const LoginForm = () => {
 
       {isGoogleAuthEnabled ? (
         <div className="space-y-5">
-          <div className="w-full">
-            <GoogleLogin
+          <GoogleAuthButton
               onSuccess={(response) => {
                 if (!response.credential) {
                   setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
@@ -101,13 +100,7 @@ const LoginForm = () => {
                 void handleGoogleAuth(response.credential);
               }}
               onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
-              text="continue_with"
-              shape="rectangular"
-              theme="outline"
-              size="large"
-              width="100%"
             />
-          </div>
 
           <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">
             <span className="h-px flex-1 bg-[#E2E8F0]" />

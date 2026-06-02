@@ -145,6 +145,9 @@ const GetQuoteModal = ({
   if (!primaryProduct) return null;
 
   const canSubmit =
+    form.fullName.trim().length > 0 &&
+    form.email.trim().length > 0 &&
+    form.phone.trim().length > 0 &&
     form.location.trim().length > 0 &&
     form.installationAddress.trim().length > 0 &&
     form.agreeToTerms;
@@ -306,15 +309,33 @@ const GetQuoteModal = ({
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm text-[#3E3F43]">Full Name</label>
-                  <Input value={form.fullName} readOnly  className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]" />
+                  <Input
+                    value={form.fullName}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, fullName: event.target.value }))
+                    }
+                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-[#3E3F43]">Email Address</label>
-                  <Input value={form.email} readOnly  className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]" />
+                  <Input
+                    value={form.email}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, email: event.target.value }))
+                    }
+                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-[#3E3F43]">Phone Number</label>
-                  <Input value={form.phone} readOnly  className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]" />
+                  <Input
+                    value={form.phone}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, phone: event.target.value }))
+                    }
+                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-[#3E3F43]">Whatsapp Number</label>

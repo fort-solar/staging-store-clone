@@ -29,20 +29,20 @@ import type {
 } from "@/types/api.types";
 
 const tabs = [
-  { key: "profile", label: "Profile", link: "/store/settings/profile", mobileLink: "/store/settings/profile#section" },
-  { key: "orders", label: "Orders", link: "/store/settings/orders", mobileLink: "/store/settings/orders#section" },
-  { key: "quotes", label: "Quotes", link: "/store/settings/quotes", mobileLink: "/store/settings/quotes#section" },
+  { key: "profile", label: "Profile", link: "/settings/profile", mobileLink: "/settings/profile#section" },
+  { key: "orders", label: "Orders", link: "/settings/orders", mobileLink: "/settings/orders#section" },
+  { key: "quotes", label: "Quotes", link: "/settings/quotes", mobileLink: "/settings/quotes#section" },
   {
     key: "installations",
     label: "Installations",
-    link: "/store/settings/installations",
-    mobileLink: "/store/settings/installations#section",
+    link: "/settings/installations",
+    mobileLink: "/settings/installations#section",
   },
   {
     key: "package_requests",
     label: "Package Requests",
-    link: "/store/settings/package-requests",
-    mobileLink: "/store/settings/package-requests#section",
+    link: "/settings/package-requests",
+    mobileLink: "/settings/package-requests#section",
   },
 ] as const;
 

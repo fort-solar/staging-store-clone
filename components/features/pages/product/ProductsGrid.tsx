@@ -40,7 +40,7 @@ const ProductsGrid = ({
                         image={p.image}
                         availability={p.availability}
                         warrantyYears={p.warrantyYears}
-                        href={`/store/products/${p.id}`}
+                        href={`/products/${p.id}`}
                         id={p.id}
                         isFavorite={favorites.includes(p.id)}
                         onToggleFavorite={() => onToggleFavorite(p.id)}
@@ -70,7 +70,7 @@ const ProductsGrid = ({
                              priceOriginal={p.priceOriginal}
                             image={p.image}
                             availability={p.availability}
-                            href={`/store/products/${p.id}`}
+                            href={`/products/${p.id}`}
                             isFavorite={favorites.includes(p.id)}
                             onToggleFavorite={() => onToggleFavorite(p.id)}
                             onGetQuote={() => onGetQuote?.(p)}

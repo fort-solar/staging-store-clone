@@ -7,8 +7,8 @@ import { ListViewIcon } from "@/components/features/icons/ListViewIcon";
 import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import { Button } from "@/components/ui/button";
+import EmptyStatePanel from "@/components/ui/empty-state-panel";
 import { Input } from "@/components/ui/input";
-import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import { useGeneralStore } from "@/store/GeneralStore";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import { useStoreCatalog } from "@/lib/store-catalog";
@@ -89,7 +89,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const [productFilters, setProductFilters] = useState<FilterState>({
     priceMin: "",
     priceMax: "",
-    category: "Solar Products",
+    category: "",
     type: "All",
     powerRatings: [],
     features: [],
@@ -99,7 +99,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const [packageFilters, setPackageFilters] = useState<FilterState>({
     priceMin: "",
     priceMax: "",
-    category: "Solar Packages",
+    category: "",
     type: "All",
     powerRatings: [],
     features: [],
@@ -126,7 +126,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const toggleCategorySidebar = useGeneralStore(
     (state) => state.toggleCategorySidebar
   );
-  const { requireCustomerLogin } = useCustomerLoginGate();
   const productSections = useMemo(
     () => [
       "All Products",
@@ -140,9 +139,17 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     () => ["All", ...Array.from(new Set(products.map((product) => product.productType).filter(Boolean)))],
     [products]
   );
+  const productCategories = useMemo(
+    () => ["All", ...Array.from(new Set(products.map((product) => product.category).filter(Boolean)))],
+    [products],
+  );
   const packageTypes = useMemo(
     () => ["All", ...Array.from(new Set(packages.map((pkg) => pkg.packageType).filter(Boolean)))],
     [packages]
+  );
+  const packageCategories = useMemo(
+    () => ["All", ...Array.from(new Set(packages.map((pkg) => pkg.category).filter(Boolean)))],
+    [packages],
   );
 
   const toggleArrayValue = (arr: string[], value: string) =>
@@ -286,10 +293,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   onClick={() => {
                     if (section === "Packages") {
                       setActiveTab("packages");
-                      setPackageFilters((prev) => ({
-                        ...prev,
-                        category: "Solar Packages",
-                      }));
                       return;
                     }
                     setProductSection(section);
@@ -312,10 +315,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 <button
                   onClick={() => {
                     setActiveTab("packages");
-                    setPackageFilters((prev) => ({
-                      ...prev,
-                      category: "Solar Packages",
-                    }));
                   }}
                   className={`px-4 py-3 lg:py-1.5 rounded-l-lg w-[50%] lg:w-fit text-sm ${activeTab === "packages"
                     ? "bg-[#058A05] text-white"
@@ -327,10 +326,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 <button
                   onClick={() => {
                     setActiveTab("products");
-                    setProductFilters((prev) => ({
-                      ...prev,
-                      category: "Solar Products",
-                    }));
                   }}
                   className={`px-4 py-3 lg:py-1.5 w-[50%] lg:w-fit rounded-r-lg text-sm ${activeTab === "products"
                     ? "bg-[#058A05] text-white"
@@ -448,15 +443,15 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             </FilterSection>
             <FilterSection title="Category">
               <div className="space-y-2">
-                {["Solar Products", "Solar Packages"].map((cat) => (
+                {(activeTab === "products" ? productCategories : packageCategories).map((cat) => (
                   <CheckboxItem
                     key={cat}
                     label={cat}
-                    checked={activeFilters.category === cat}
+                    checked={activeFilters.category === (cat === "All" ? "" : cat)}
                     onChange={() =>
                       setActiveFilters((prev) => ({
                         ...prev,
-                        category: cat,
+                        category: cat === "All" ? "" : cat,
                       }))
                     }
                   />
@@ -515,25 +510,32 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   favorites={favorites.products}
                   onToggleFavorite={toggleFavoriteProduct}
                   onGetQuote={(item) =>
-                    requireCustomerLogin({
-                      onAuthenticated: () =>
-                        setQuoteProduct({
-                          id: item.id,
-                          title: item.title,
-                          image: item.image,
-                          price: item.price,
-                        }),
+                    setQuoteProduct({
+                      id: item.id,
+                      title: item.title,
+                      image: item.image,
+                      price: item.price,
                     })
                   }
                 />
               ) : (
-                <div className="rounded-2xl border border-[#E4E9EC] bg-[#FAFAFA] px-6 py-10 text-center text-[#5A646B]">
-                  {isLoading
-                    ? "Loading products..."
-                    : source === "unavailable"
-                      ? "Products are unavailable because the catalog API is not configured or reachable."
-                      : "No products matched your filters."}
-                </div>
+                <EmptyStatePanel
+                  title={
+                    isLoading
+                      ? "Loading products"
+                      : source === "unavailable"
+                        ? "Products are unavailable right now"
+                        : "No products found"
+                  }
+                  description={
+                    isLoading
+                      ? "We are fetching the latest product catalog for this page."
+                      : source === "unavailable"
+                        ? "The product catalog could not be reached. Check the API configuration and try again."
+                        : "No products matched the current filters. Adjust your search or clear some filters to continue."
+                  }
+                  className="min-h-[22rem]"
+                />
               )
             ) : (
               <>
@@ -545,20 +547,25 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                       favorites={favorites.packages}
                       onToggleFavorite={toggleFavoritePackage}
                     />
-                    <div className="mt-8 flex justify-center">
-                      <Button className="bg-[#EBFAEB] text-[#058A05] hover:bg-[#DFF4DF] rounded-xl px-6">
-                        Load more
-                      </Button>
-                    </div>
                   </>
                 ) : (
-                  <div className="rounded-2xl border border-[#E4E9EC] bg-[#FAFAFA] px-6 py-10 text-center text-[#5A646B]">
-                    {isLoading
-                      ? "Loading packages..."
-                      : source === "unavailable"
-                        ? "Packages are unavailable because the catalog API is not configured or reachable."
-                        : "No packages matched your filters."}
-                  </div>
+                  <EmptyStatePanel
+                    title={
+                      isLoading
+                        ? "Loading packages"
+                        : source === "unavailable"
+                          ? "Packages are unavailable right now"
+                          : "No packages found"
+                    }
+                    description={
+                      isLoading
+                        ? "We are fetching the latest package catalog for this page."
+                        : source === "unavailable"
+                          ? "The package catalog could not be reached. Check the API configuration and try again."
+                          : "No packages matched the current filters. Adjust your search or clear some filters to continue."
+                    }
+                    className="min-h-[22rem]"
+                  />
                 )}
               </>
             )}

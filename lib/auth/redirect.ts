@@ -1,4 +1,4 @@
-const DEFAULT_REDIRECT_PATH = "/store/dashboard";
+const DEFAULT_REDIRECT_PATH = "/";
 
 export function sanitizeRedirectPath(
   value: string | null | undefined,

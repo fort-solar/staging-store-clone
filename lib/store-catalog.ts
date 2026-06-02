@@ -61,6 +61,53 @@ function readNumber(record: Record<string, unknown>, keys: string[], fallback = 
   return fallback;
 }
 
+function readNullableNumber(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key];
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === "string" && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
+function readBoolean(record: Record<string, unknown>, keys: string[], fallback = false) {
+  for (const key of keys) {
+    const value = record[key];
+
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "number") {
+      return value > 0;
+    }
+
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+
+      if (["true", "1", "yes"].includes(normalized)) {
+        return true;
+      }
+
+      if (["false", "0", "no"].includes(normalized)) {
+        return false;
+      }
+    }
+  }
+
+  return fallback;
+}
+
 function readArray(record: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     const value = record[key];
@@ -129,6 +176,22 @@ function buildAvailability(stockQuantity: number | undefined, isActive = true) {
   }
 
   return "In Stock";
+}
+
+function truncateWords(value: string, limit: number) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const words = normalized.split(/\s+/);
+
+  if (words.length <= limit) {
+    return normalized;
+  }
+
+  return `${words.slice(0, limit).join(" ")}...`;
 }
 
 function inferAssetKind(source: string, mimeType?: string | null) {
@@ -213,32 +276,44 @@ function inferPowerRating(product: UnifiedProductRecord, sectionValues: Array<{ 
 }
 
 export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCatalogProduct {
+  const raw = product as unknown as Record<string, unknown>;
   const datasheet = normalizeAsset(product.datasheet_url || null, `${product.name} Datasheet`);
   const sectionValues = normalizeSectionValues(product);
   const categoryLabel = product.category?.name || "Uncategorised";
   const productImages = collectProductImages(product);
+  const discountedPrice = readNullableNumber(raw, ["discounted_price", "sale_price", "offer_price"]);
+  const effectivePrice =
+    discountedPrice && discountedPrice > 0 && discountedPrice < product.price
+      ? discountedPrice
+      : product.price;
+  const deliveryWarrantyInfo =
+    readString(raw, ["delivery_warranty_info", "delivery_and_warranty_info"], "") || null;
+  const freeDelivery = readBoolean(raw, ["free_delivery", "is_free_delivery"]);
+  const description = product.overview || product.name;
 
   return {
     id: product.id,
     title: product.name,
-    mini_description: product.overview || product.slug || categoryLabel,
+    mini_description: truncateWords(description || product.slug || categoryLabel, 50),
     image: productImages[0],
     images: productImages,
     datasheet,
-    price: product.price,
-    priceOriginal: Math.round(product.price * 1.12),
-    category: "Solar Products",
+    price: effectivePrice,
+    priceOriginal: product.price,
+    category: categoryLabel,
     categoryLabel,
     productType: categoryLabel,
     powerRating: inferPowerRating(product, sectionValues),
     features: sectionValues.slice(0, 3).map((item) => `${item.label}: ${item.value}`),
     availability: buildAvailability(product.stock_quantity, product.is_active),
-    warrantyYears: 10,
+    warrantyYears: readNumber(raw, ["warranty_years"], 10),
     createdAt: product.created_at,
     section: categoryLabel,
     rating: 4.8,
     reviewsCount: 0,
-    description: product.overview || product.name,
+    description,
+    freeDelivery,
+    deliveryWarrantyInfo,
     quickSpecs: sectionValues.length ? sectionValues : [{ label: "Category", value: categoryLabel }],
     sectionValues,
     sourceType: "product",

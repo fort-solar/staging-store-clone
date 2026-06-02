@@ -1,26 +1,5 @@
-"use client";
+import DashboardProductsPackages from "@/components/features/pages/dashboard/DashboardProductsPackages";
 
-// import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-// import { getMockSession } from "@/lib/localAuth";
-
-function Home() {
-  const router = useRouter();
-
-  // useEffect(() => {
-  //   const session = getMockSession();
-  //   if (!session) {
-  //     router.replace("/login");
-  //     return;
-  //   }
-  //   router.replace(
-  //     session.role === "installer" ? "/installer/dashboard" : "/store"
-  //   );
-  // }, [router]);
-
-  router.replace("/store/dashboard")
-
-  return null;
+export default function StoreHomePage() {
+  return <DashboardProductsPackages initialTab="packages" />;
 }
-
-export default Home;

@@ -41,8 +41,8 @@ const DashboardHeader = ({
   const userFirstName = session?.user.fullName?.split(" ")[0] ?? "Customer";
   const userEmail = session?.user.email ?? "customer@email.com";
   const ordersHref = isCustomerLoggedIn
-    ? "/store/settings/orders"
-    : createLoginRedirectHref("/store/settings/orders");
+    ? "/settings/orders"
+    : createLoginRedirectHref("/settings/orders");
 
   const signOut = async () => {
     await logoutUser();
@@ -53,7 +53,7 @@ const DashboardHeader = ({
     <div className="fixed left-0 top-0 z-50 w-full border-b border-[#E9EEF0] bg-white">
       <div className="mx-auto w-full max-w-6xl px-4 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center justify-between lg:justify-start lg:mr-16 bg-white">
-          <Link href="/store/dashboard" className="bg-white">
+          <Link href="/" className="bg-white">
             <LogoFull className="h-7 w-auto bg-white" />
           </Link>
           <Button
@@ -106,7 +106,7 @@ const DashboardHeader = ({
 
           <div className="flex lg:hidden items-center gap-6 justify-end text-sm text-[#3B3B3B]">
             <Link
-              href="/store/favorites"
+              href="/favorites"
               className="relative flex h-9 w-9 items-center justify-center rounded-md"
             >
               {favoritesCount > 0 && (
@@ -115,7 +115,7 @@ const DashboardHeader = ({
               <HeartIcon className="text-[#3B3B3B]/60" />
               <span className="sr-only">Favorites</span>
             </Link>
-            <Link href="/store/cart" className="relative flex items-center gap-2 text-xs text-[#3B3B3B]">
+            <Link href="/cart" className="relative flex items-center gap-2 text-xs text-[#3B3B3B]">
               {cartCount > 0 && (
                 <span className="absolute -top-2 left-2 rounded-full bg-[#E11D48] text-white text-[10px] h-4 min-w-4 px-1.5 grid place-items-center">
                   {cartCount}
@@ -162,7 +162,7 @@ const DashboardHeader = ({
             </span>
           </Link>
           <Link
-            href="/store/favorites"
+            href="/favorites"
             className="relative flex h-9 w-9 items-center justify-center rounded-md"
           >
             {favoritesCount > 0 && (
@@ -171,7 +171,7 @@ const DashboardHeader = ({
             <HeartIcon className="text-[#3B3B3B]/60" />
             <span className="sr-only">Favorites</span>
           </Link>
-          <Link href="/store/cart" className="relative flex items-center gap-2 text-xs text-[#3B3B3B]">
+          <Link href="/cart" className="relative flex items-center gap-2 text-xs text-[#3B3B3B]">
             {cartCount > 0 && (
               <span className="absolute -top-2 left-2 rounded-full bg-[#E11D48] text-white text-[10px] h-4 min-w-4 px-1.5 grid place-items-center">
                 {cartCount}
@@ -235,49 +235,49 @@ const DashboardHeader = ({
 
             <div className="mt-4 border-t border-[#D8E0E8] pt-3">
               <Link
-                href="/store/settings/orders#section"
+                href="/settings/orders#section"
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
               >
                 <OrdersIcon className="h-5 w-5" />
                 Orders
               </Link>
               <Link
-                href="/store/settings/orders"
+                href="/settings/orders"
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
               >
                 <OrdersIcon className="h-5 w-5" />
                 Orders
               </Link>
               <Link
-                href="/store/settings/quotes#section"
+                href="/settings/quotes#section"
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
               >
                 <List className="h-5 w-5" />
                 Quotes
               </Link>
               <Link
-                href="/store/settings/quotes"
+                href="/settings/quotes"
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
               >
                 <List className="h-5 w-5" />
                 Quotes
               </Link>
               <Link
-                href="/store/settings/installations#section"
+                href="/settings/installations#section"
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
               >
                 <InspectionPanel className="h-5 w-5" />
                 Installations
               </Link>
               <Link
-                href="/store/settings/installations"
+                href="/settings/installations"
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
               >
                 <InspectionPanel className="h-5 w-5" />
                 Installations
               </Link>
               <Link
-                href="/store/settings/profile"
+                href="/settings/profile"
                 className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] hover:bg-[#F8FAFC]"
               >
                 <Settings className="h-5 w-5" />

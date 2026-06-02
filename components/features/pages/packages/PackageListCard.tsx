@@ -18,7 +18,7 @@ const PackageListCard = ({
 }) => {
   return (
     <div className="group flex flex-col sm:flex-row gap-4 rounded-xl border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#058A05] transition-colors">
-      <div className="relative h-20 w-full sm:w-56 overflow-hidden rounded-lg">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg sm:w-44 sm:shrink-0">
         <Image src={image} alt={title} fill className="object-cover" />
       </div>
       <div className="flex-1 flex flex-col gap-2 p-5 lg:p-2">

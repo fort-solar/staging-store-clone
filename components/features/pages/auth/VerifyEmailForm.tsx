@@ -47,7 +47,7 @@ const VerifyEmailForm = () => {
         message: response.message || "Email verified successfully. Redirecting...",
       });
       window.setTimeout(() => {
-        router.push("/store/dashboard");
+        router.push("/");
       }, 600);
     } catch (error) {
       setStatus({

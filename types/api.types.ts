@@ -144,8 +144,11 @@ export type UnifiedProductRecord = {
   category_id: string | null;
   category?: ProductCategorySummaryRecord | null;
   price: number;
+  discounted_price?: number | null;
   stock_quantity: number;
   overview?: string | null;
+  free_delivery?: boolean | null;
+  delivery_warranty_info?: string | null;
   section_values?: UnifiedProductSectionValueRecord[];
   product_image_url?: string | null;
   product_image_urls?: string[];
@@ -153,6 +156,7 @@ export type UnifiedProductRecord = {
   image_urls?: string[];
   image?: string | null;
   datasheet_url?: string | null;
+  warranty_years?: number | null;
   specifications?: Record<string, unknown>;
   is_active: boolean;
   status?: string | null;
@@ -327,6 +331,8 @@ export type StoreCatalogProduct = {
   rating: number;
   reviewsCount: number;
   description: string;
+  freeDelivery?: boolean;
+  deliveryWarrantyInfo?: string | null;
   quickSpecs: Array<{ label: string; value: string }>;
   sectionValues?: Array<{ label: string; value: string }>;
   sourceType: "product";

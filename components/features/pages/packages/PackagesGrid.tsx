@@ -13,6 +13,9 @@ type PackageItem = {
     image: string;
     price: number;
     availability: string;
+    finalPrice?: number;
+    packageIncludes?: Array<{ label: string; qty: string }>;
+    powers?: string[];
 };
 
 const PackagesGrid = ({
@@ -36,9 +39,9 @@ const PackagesGrid = ({
                             title={p.title}
                             mini_description={p.mini_description}
                             image={p.image}
-                            price={p.price}
+                            price={p.finalPrice ?? p.price}
                             availability={p.availability}
-                            href={`/store/packages/${p.id}`}
+                            href={`/packages/${p.id}`}
                         />
                     </div>
                 ))}
@@ -58,8 +61,15 @@ const PackagesGrid = ({
                     items.map((p) => (
                         <div key={p.id} className="relative">
                          
-                            <Link href={`/store/packages/${p.id}`}>
-                                <PackageCard title={p.title} mini_description={p.mini_description} image={p.image} />
+                            <Link href={`/packages/${p.id}`}>
+                                <PackageCard
+                                    title={p.title}
+                                    mini_description={p.mini_description}
+                                    image={p.image}
+                                    price={p.finalPrice ?? p.price}
+                                    packageIncludes={p.packageIncludes}
+                                    powers={p.powers}
+                                />
                             </Link>
                         </div>
                     ))
