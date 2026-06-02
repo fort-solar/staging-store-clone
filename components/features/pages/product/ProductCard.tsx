@@ -5,6 +5,16 @@ import { CartIcon } from '@/components/features/icons/CartIcon';
 import { useGeneralStore } from '@/store/GeneralStore';
 import type { CatalogId } from '@/types/common.types';
 
+function truncateCardDescription(value: string, limit = 200) {
+  const normalized = value.trim();
+
+  if (normalized.length <= limit) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, limit).trimEnd()}...`;
+}
+
 const ProductCard
   = ({
     id,
@@ -32,6 +42,7 @@ const ProductCard
     onGetQuote?: () => void;
   }) => {
     const addToCart = useGeneralStore((state) => state.addToCart);
+    const cardDescription = truncateCardDescription(mini_description);
     return (
       <div className="group h-full bg-[#EBFAEB] p-2 rounded-xl overflow-hidden">
         <div className='bg-white flex flex-col h-full rounded-xl overflow-hidden'>
@@ -114,7 +125,7 @@ const ProductCard
                 ) : null}
               </p>
             </div>
-            <p className='text-xs text-[#50555C]'>{mini_description}</p>
+            <p className='text-xs text-[#50555C]'>{cardDescription}</p>
             <div className="flex gap-3 w-full mt-auto pt-2">
               <Link
                 href={href}
