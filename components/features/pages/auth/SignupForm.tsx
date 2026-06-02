@@ -236,7 +236,7 @@ const SignupForm = () => {
           Are you an installer?
           <Link
             aria-disabled
-            href={""}
+            href={"https://installer.fortsolar.ng"}
             className="font-semibold text-[#16A34A] hover:underline"
           >
             Join as Installer

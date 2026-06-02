@@ -170,7 +170,7 @@ const LoginForm = () => {
         <p >
           Are you an installer?{" "}
           <Link
-            href=""
+             href={"https://installer.fortsolar.ng"}
             aria-disabled
             className="font-semibold text-[#16A34A] hover:underline"
           >
