@@ -26,7 +26,6 @@ type FilterState = {
   priceMin: string;
   priceMax: string;
   category: string;
-  type: string;
   powerRatings: string[];
   features: string[];
   availability: string[];
@@ -85,12 +84,10 @@ const CheckboxItem = ({
 const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const { products, packages, source, isLoading } = useStoreCatalog();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
-  const [productSection, setProductSection] = useState("All Products");
   const [productFilters, setProductFilters] = useState<FilterState>({
     priceMin: "",
     priceMax: "",
     category: "",
-    type: "All",
     powerRatings: [],
     features: [],
     availability: [],
@@ -100,7 +97,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     priceMin: "",
     priceMax: "",
     category: "",
-    type: "All",
     powerRatings: [],
     features: [],
     availability: [],
@@ -130,22 +126,18 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     () => [
       "All Products",
       ...Array.from(
-        new Set(products.map((product) => product.section).filter((section) => section && section !== "All Products"))
+        new Set(
+          products
+            .map((product) => product.category)
+            .filter((category) => category && category !== "All")
+        )
       ),
     ],
-    [products]
-  );
-  const productTypes = useMemo(
-    () => ["All", ...Array.from(new Set(products.map((product) => product.productType).filter(Boolean)))],
     [products]
   );
   const productCategories = useMemo(
     () => ["All", ...Array.from(new Set(products.map((product) => product.category).filter(Boolean)))],
     [products],
-  );
-  const packageTypes = useMemo(
-    () => ["All", ...Array.from(new Set(packages.map((pkg) => pkg.packageType).filter(Boolean)))],
-    [packages]
   );
   const packageCategories = useMemo(
     () => ["All", ...Array.from(new Set(packages.map((pkg) => pkg.category).filter(Boolean)))],
@@ -186,8 +178,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
         product.mini_description.toLowerCase().includes(productQuery.toLowerCase());
       const matchesCategory =
         !filters.category || product.category === filters.category;
-      const matchesType =
-        filters.type === "All" || product.productType === filters.type;
       const matchesPower =
         filters.powerRatings.length === 0 ||
         filters.powerRatings.includes(product.powerRating);
@@ -202,26 +192,21 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
       const matchesPriceMax =
         !filters.priceMax || product.price <= Number(filters.priceMax);
       const matchesWarranty = product.warrantyYears >= filters.warrantyMin;
-      const matchesSection =
-        productSection === "All Products" ||
-        product.section === productSection;
 
       return (
         matchesQuery &&
         matchesCategory &&
-        matchesType &&
         matchesPower &&
         matchesFeatures &&
         matchesAvailability &&
         matchesPriceMin &&
         matchesPriceMax &&
-        matchesWarranty &&
-        matchesSection
+        matchesWarranty
       );
     });
 
     return sortItems(items, productSort);
-  }, [productFilters, productQuery, productSection, productSort, products]);
+  }, [productFilters, productQuery, productSort, products]);
 
   const filteredPackages = useMemo(() => {
     const filters = packageFilters;
@@ -231,8 +216,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
         item.title.toLowerCase().includes(packageQuery.toLowerCase()) ||
         item.mini_description.toLowerCase().includes(packageQuery.toLowerCase());
       const matchesCategory = !filters.category || item.category === filters.category;
-      const matchesType =
-        filters.type === "All" || item.packageType === filters.type;
       const matchesPower =
         filters.powerRatings.length === 0 ||
         filters.powerRatings.includes(item.powerRating);
@@ -251,7 +234,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
       return (
         matchesQuery &&
         matchesCategory &&
-        matchesType &&
         matchesPower &&
         matchesFeatures &&
         matchesAvailability &&
@@ -278,6 +260,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
 
   const resultsCount =
     activeTab === "products" ? filteredProducts.length : filteredPackages.length;
+  const activeProductSection = productFilters.category || "All Products";
 
   return (
     <div className="min-h-screen bg-white py-22">
@@ -291,13 +274,12 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 <button
                   key={section}
                   onClick={() => {
-                    if (section === "Packages") {
-                      setActiveTab("packages");
-                      return;
-                    }
-                    setProductSection(section);
+                    setProductFilters((prev) => ({
+                      ...prev,
+                      category: section === "All Products" ? "" : section,
+                    }));
                   }}
-                  className={`rounded-full px-2 lg:px-3 py-1 transition-colors ${productSection === section
+                  className={`rounded-full px-2 lg:px-3 py-1 transition-colors ${activeProductSection === section
                     ? "text-[#058A05] font-semibold"
                     : "hover:text-[#252C32]"
                     }`}
@@ -456,27 +438,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                     }
                   />
                 ))}
-              </div>
-            </FilterSection>
-            <FilterSection
-              title={activeTab === "products" ? "Product Type" : "Package Type"}
-            >
-              <div className="space-y-2">
-                {(activeTab === "products" ? productTypes : packageTypes).map(
-                  (type) => (
-                    <CheckboxItem
-                      key={type}
-                      label={type}
-                      checked={activeFilters.type === type}
-                      onChange={() =>
-                        setActiveFilters((prev) => ({
-                          ...prev,
-                          type,
-                        }))
-                      }
-                    />
-                  )
-                )}
               </div>
             </FilterSection>
             <FilterSection title="Power Rating/ Capacity">
