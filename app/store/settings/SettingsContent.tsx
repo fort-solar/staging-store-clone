@@ -5,6 +5,7 @@ import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PaginationControls from "@/components/ui/pagination-controls";
 import { SmartTabs, type TabKey } from "@/lib/smartTabs";
 import {
   approveCustomerInstallation,
@@ -47,6 +48,9 @@ const tabs = [
 ] as const;
 
 const QUOTE_REQUESTS_KEY = "fortsolar_quote_requests_v1";
+const PAGE_SIZE = 20;
+const QUOTE_PAGE_SIZE = PAGE_SIZE;
+const LOCAL_QUOTE_PAGE_SIZE = PAGE_SIZE;
 
 type StoredQuoteRequest = {
   createdAt: string;
@@ -189,6 +193,11 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+function paginateItems<T>(items: T[], page: number, pageSize: number) {
+  const startIndex = (page - 1) * pageSize;
+  return items.slice(startIndex, startIndex + pageSize);
+}
+
 const SettingsContent = ({ page }: { page: TabKey }) => {
   const { session } = useAuth();
   const currentUser = useMemo(() => sessionSnapshotToMockUser(session), [session]);
@@ -212,6 +221,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   const [ordersPage, setOrdersPage] = useState(1);
   const [installationsPage, setInstallationsPage] = useState(1);
   const [packageRequestsPage, setPackageRequestsPage] = useState(1);
+  const [quotesPage, setQuotesPage] = useState(1);
+  const [localQuoteRequestsPage, setLocalQuoteRequestsPage] = useState(1);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [expandedInstallationId, setExpandedInstallationId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<AsyncStatus>(null);
@@ -323,7 +334,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     let cancelled = false;
     setIsLoadingOrders(true);
 
-    getCustomerOrders(ordersPage, 10)
+    getCustomerOrders(ordersPage, PAGE_SIZE)
       .then((payload) => {
         if (!cancelled) {
           setOrdersPayload(payload);
@@ -356,7 +367,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     let cancelled = false;
     setIsLoadingInstallations(true);
 
-    getCustomerInstallations(installationsPage, 10)
+    getCustomerInstallations(installationsPage, PAGE_SIZE)
       .then((payload) => {
         if (!cancelled) {
           setInstallationsPayload(payload);
@@ -389,7 +400,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     let cancelled = false;
     setIsLoadingPackageRequests(true);
 
-    getCustomerPackageRequests(packageRequestsPage, 10)
+    getCustomerPackageRequests(packageRequestsPage, PAGE_SIZE)
       .then((payload) => {
         if (!cancelled) {
           setPackageRequestsPayload(payload);
@@ -516,7 +527,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       });
       setInstallationsPayload(null);
       setInstallationsPage((current) => current);
-      const payload = await getCustomerInstallations(installationsPage, 10);
+      const payload = await getCustomerInstallations(installationsPage, PAGE_SIZE);
       setInstallationsPayload(payload);
       const summaryPayload = await getCustomerSummary();
       setSummary(summaryPayload.data);
@@ -565,6 +576,29 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     pendingApproval: 0,
     completedInstallations: 0,
   };
+  const quoteTotalPages = Math.max(1, Math.ceil(quotes.length / QUOTE_PAGE_SIZE));
+  const localQuoteRequestsTotalPages = Math.max(
+    1,
+    Math.ceil(localQuoteRequests.length / LOCAL_QUOTE_PAGE_SIZE),
+  );
+  const resolvedQuotesPage = Math.min(quotesPage, quoteTotalPages);
+  const resolvedLocalQuoteRequestsPage = Math.min(
+    localQuoteRequestsPage,
+    localQuoteRequestsTotalPages,
+  );
+  const paginatedQuotes = useMemo(
+    () => paginateItems(quotes, resolvedQuotesPage, QUOTE_PAGE_SIZE),
+    [quotes, resolvedQuotesPage],
+  );
+  const paginatedLocalQuoteRequests = useMemo(
+    () =>
+      paginateItems(
+        localQuoteRequests,
+        resolvedLocalQuoteRequestsPage,
+        LOCAL_QUOTE_PAGE_SIZE,
+      ),
+    [localQuoteRequests, resolvedLocalQuoteRequestsPage],
+  );
 
   return (
     <div className="min-h-screen bg-white py-20">
@@ -726,7 +760,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   {localQuoteRequests.length > 0 ? (
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-[#202020]">Pending Local Quote Requests</h3>
-                      {localQuoteRequests.map((quote) => (
+                      {paginatedLocalQuoteRequests.map((quote) => (
                         <div key={quote.createdAt} className="rounded-2xl border border-[#E7E7E7] bg-[#FAFAFA] p-5">
                           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                             <div>
@@ -749,6 +783,13 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                           </div>
                         </div>
                       ))}
+                      <PaginationControls
+                        className="pt-2"
+                        page={resolvedLocalQuoteRequestsPage}
+                        totalPages={localQuoteRequestsTotalPages}
+                        totalItems={localQuoteRequests.length}
+                        onPageChange={setLocalQuoteRequestsPage}
+                      />
                     </div>
                   ) : null}
 
@@ -758,7 +799,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                     <EmptyState message="No backend quote records were found for this account yet." />
                   ) : (
                     <div className="space-y-4">
-                      {quotes.map((quote) => (
+                      {paginatedQuotes.map((quote) => (
                         <div key={quote.id} className="rounded-2xl border border-[#E7E7E7] bg-[#FAFAFA] p-5">
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
@@ -796,6 +837,13 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                           </div>
                         </div>
                       ))}
+                      <PaginationControls
+                        className="pt-2"
+                        page={resolvedQuotesPage}
+                        totalPages={quoteTotalPages}
+                        totalItems={quotes.length}
+                        onPageChange={setQuotesPage}
+                      />
                     </div>
                   )}
                 </div>
@@ -877,25 +925,13 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         </div>
                       ))}
 
-                      <div className="flex items-center justify-between">
-                        <Button
-                          variant="outline"
-                          disabled={ordersPage <= 1}
-                          onClick={() => setOrdersPage((current) => Math.max(1, current - 1))}
-                        >
-                          Previous
-                        </Button>
-                        <p className="text-sm text-[#5B5B5B]">
-                          Page {ordersPayload?.pagination.page ?? 1} of {ordersPayload?.pagination.totalPages ?? 1}
-                        </p>
-                        <Button
-                          variant="outline"
-                          disabled={ordersPage >= (ordersPayload?.pagination.totalPages ?? 1)}
-                          onClick={() => setOrdersPage((current) => current + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
+                      <PaginationControls
+                        className="pt-2"
+                        page={ordersPayload?.pagination.page ?? ordersPage}
+                        totalPages={ordersPayload?.pagination.totalPages ?? 1}
+                        totalItems={ordersPayload.data.length}
+                        onPageChange={setOrdersPage}
+                      />
                     </div>
                   ) : (
                     <EmptyState message="No orders were found for this account." />
@@ -1026,30 +1062,13 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         </div>
                       ))}
 
-                      <div className="flex items-center justify-between">
-                        <Button
-                          variant="outline"
-                          disabled={installationsPage <= 1}
-                          onClick={() =>
-                            setInstallationsPage((current) => Math.max(1, current - 1))
-                          }
-                        >
-                          Previous
-                        </Button>
-                        <p className="text-sm text-[#5B5B5B]">
-                          Page {installationsPayload?.pagination.page ?? 1} of {installationsPayload?.pagination.totalPages ?? 1}
-                        </p>
-                        <Button
-                          variant="outline"
-                          disabled={
-                            installationsPage >=
-                            (installationsPayload?.pagination.totalPages ?? 1)
-                          }
-                          onClick={() => setInstallationsPage((current) => current + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
+                      <PaginationControls
+                        className="pt-2"
+                        page={installationsPayload?.pagination.page ?? installationsPage}
+                        totalPages={installationsPayload?.pagination.totalPages ?? 1}
+                        totalItems={installationsPayload.data.length}
+                        onPageChange={setInstallationsPage}
+                      />
                     </div>
                   ) : (
                     <EmptyState message="No installations were found for this account." />
@@ -1093,30 +1112,13 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         </div>
                       ))}
 
-                      <div className="flex items-center justify-between">
-                        <Button
-                          variant="outline"
-                          disabled={packageRequestsPage <= 1}
-                          onClick={() =>
-                            setPackageRequestsPage((current) => Math.max(1, current - 1))
-                          }
-                        >
-                          Previous
-                        </Button>
-                        <p className="text-sm text-[#5B5B5B]">
-                          Page {packageRequestsPayload?.pagination.page ?? 1} of {packageRequestsPayload?.pagination.totalPages ?? 1}
-                        </p>
-                        <Button
-                          variant="outline"
-                          disabled={
-                            packageRequestsPage >=
-                            (packageRequestsPayload?.pagination.totalPages ?? 1)
-                          }
-                          onClick={() => setPackageRequestsPage((current) => current + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
+                      <PaginationControls
+                        className="pt-2"
+                        page={packageRequestsPayload?.pagination.page ?? packageRequestsPage}
+                        totalPages={packageRequestsPayload?.pagination.totalPages ?? 1}
+                        totalItems={packageRequestsPayload.data.length}
+                        onPageChange={setPackageRequestsPage}
+                      />
                     </div>
                   ) : (
                     <EmptyState message="No package requests were found for this account." />

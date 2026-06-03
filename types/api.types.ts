@@ -129,6 +129,22 @@ export type ProductCategorySummaryRecord = {
   name: string;
 };
 
+export type ProductCategoryRecord = ProductCategorySummaryRecord & {
+  description?: string | null;
+  image?: string | null;
+  image_url?: string | null;
+  sections?: Array<{
+    id: string;
+    key: string;
+    name: string;
+    position: number;
+  }>;
+  requires_datasheet?: boolean;
+  requires_product_image?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type UnifiedProductSectionValueRecord = {
   id?: string;
   section_id?: string | null;
@@ -239,6 +255,7 @@ export type ProductBatteryRecord = {
 
 export type ProductPackageListApiResponse = ApiCollectionResponse<ProductPackageRecord>;
 export type ProductPackageDetailApiResponse = ApiDataResponse<ProductPackageRecord>;
+export type ProductCategoryListApiResponse = ApiCollectionResponse<ProductCategoryRecord>;
 export type ProductPanelListApiResponse = ApiCollectionResponse<ProductPanelRecord>;
 export type ProductPanelDetailApiResponse = ApiDataResponse<ProductPanelRecord>;
 export type ProductInverterListApiResponse = ApiCollectionResponse<ProductInverterRecord>;
@@ -319,6 +336,7 @@ export type StoreCatalogProduct = {
   datasheet?: StoreAssetRecord | null;
   price: number;
   priceOriginal: number;
+  categoryId?: string | null;
   category: string;
   categoryLabel?: string;
   productType: string;
@@ -335,6 +353,7 @@ export type StoreCatalogProduct = {
   deliveryWarrantyInfo?: string | null;
   quickSpecs: Array<{ label: string; value: string }>;
   sectionValues?: Array<{ label: string; value: string }>;
+  isActive?: boolean;
   sourceType: "product";
   sourceId: string;
 };
@@ -350,6 +369,7 @@ export type StoreCatalogPackage = {
   datasheets?: StoreAssetRecord[];
   price: number;
   finalPrice?: number;
+  isActive?: boolean;
   category: string;
   packageType: string;
   powerRating: string;
@@ -545,6 +565,7 @@ export type CustomerFavoriteRecord = {
   products: string[];
   packages: string[];
   syncedAt: string;
+  added?: boolean;
 };
 
 export type CustomerFavoritesApiResponse = ApiDataResponse<CustomerFavoriteRecord>;

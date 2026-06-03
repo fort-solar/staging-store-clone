@@ -10,6 +10,7 @@ import { PasswordInput } from "@/components/features/pages/auth/PasswordInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { GoogleAuthButton } from "@/components/features/pages/auth/GoogleAuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
+import GradientCheckbox from "@/components/ui/gradient-checkbox";
 import { publicEnv } from "@/lib/env";
 import {
   authenticateWithGoogle,
@@ -211,14 +212,11 @@ const SignupForm = () => {
           error={errors.confirmPassword?.message}
         />
 
-        <label className="flex items-center gap-3 text-sm text-[#475569]">
-          <input
-            type="checkbox"
-            className="h-5 w-5 rounded-md border-[#E2E8F0] text-[#16A34A] focus:ring-[#16A34A]/30"
-            {...register("acceptTerms")}
-          />
-          Accept Terms &amp; Conditions
-        </label>
+        <GradientCheckbox
+          label="Accept Terms & Conditions"
+          labelClassName="text-sm text-[#475569]"
+          {...register("acceptTerms")}
+        />
 
         <AuthMessage message={status?.message} tone={status?.tone} />
 

@@ -8,6 +8,7 @@ import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
 import { GoogleAuthButton } from "@/components/features/pages/auth/GoogleAuthButton";
 import { useAuth } from "@/components/auth/auth-provider";
+import GradientCheckbox from "@/components/ui/gradient-checkbox";
 import { sanitizeRedirectPath } from "@/lib/auth/redirect";
 import { publicEnv } from "@/lib/env";
 import { authenticateWithGoogle, loginMockUser } from "@/lib/localAuth";
@@ -146,14 +147,11 @@ const LoginForm = () => {
           />
         </div>
 
-        <label className="flex items-center gap-3 text-sm text-[#475569]">
-          <input
-            type="checkbox"
-            className="h-5 w-5 rounded-md border-[#E2E8F0] text-[#16A34A] focus:ring-[#16A34A]/30"
-            {...register("remember")}
-          />
-          Remember Me
-        </label>
+        <GradientCheckbox
+          label="Remember Me"
+          labelClassName="text-sm text-[#475569]"
+          {...register("remember")}
+        />
 
         <AuthMessage message={status?.message} tone={status?.tone} />
 

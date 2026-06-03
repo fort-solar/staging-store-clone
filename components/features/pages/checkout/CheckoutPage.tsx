@@ -6,6 +6,7 @@ import Script from "next/script";
 import { useRouter } from "next/navigation";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
+import GradientCheckbox from "@/components/ui/gradient-checkbox";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
@@ -16,7 +17,10 @@ import {
   verifyCustomerPayment,
 } from "@/lib/customer";
 import { sessionSnapshotToMockUser } from "@/lib/localAuth";
-import { useStoreCatalog } from "@/lib/store-catalog";
+import {
+  useStorePackagesByIds,
+  useStoreProductsByIds,
+} from "@/lib/store-catalog";
 import { useGeneralStore } from "@/store/GeneralStore";
 import type { CatalogId } from "@/types/common.types";
 
@@ -79,7 +83,6 @@ const CheckoutPage = () => {
   const { session } = useAuth();
   const { isRefreshing, requireCustomerLogin } = useCustomerLoginGate();
   const currentUser = useMemo(() => sessionSnapshotToMockUser(session), [session]);
-  const { products, packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isPaystackReady, setIsPaystackReady] = useState(false);
@@ -95,6 +98,24 @@ const CheckoutPage = () => {
 
   const cartItems = useGeneralStore((state) => state.cartItems);
   const replaceCart = useGeneralStore((state) => state.replaceCart);
+  const productIds = useMemo(
+    () => cartItems.filter((item) => item.itemType === "product").map((item) => item.id),
+    [cartItems],
+  );
+  const packageIds = useMemo(
+    () => cartItems.filter((item) => item.itemType === "package").map((item) => item.id),
+    [cartItems],
+  );
+  const { items: products } = useStoreProductsByIds(productIds);
+  const { items: packages } = useStorePackagesByIds(packageIds);
+  const productMap = useMemo(
+    () => new Map(products.map((item) => [String(item.id), item])),
+    [products],
+  );
+  const packageMap = useMemo(
+    () => new Map(packages.map((item) => [String(item.id), item])),
+    [packages],
+  );
 
   const [shippingAddress, setShippingAddress] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [billingAddress, setBillingAddress] = useState<AddressFormState>(EMPTY_ADDRESS);
@@ -136,8 +157,8 @@ const CheckoutPage = () => {
       .map((item) => {
         const product =
           item.itemType === "product"
-            ? products.find((candidate) => String(candidate.id) === String(item.id))
-            : packages.find((candidate) => String(candidate.id) === String(item.id));
+            ? productMap.get(String(item.id))
+            : packageMap.get(String(item.id));
 
         if (!product) {
           return null;
@@ -155,7 +176,7 @@ const CheckoutPage = () => {
         } satisfies CheckoutItem;
       })
       .filter(Boolean) as CheckoutItem[];
-  }, [cartItems, packages, products]);
+  }, [cartItems, packageMap, productMap]);
 
   const missingCartItems = cartItems.length - cartDetails.length;
 
@@ -427,15 +448,12 @@ const CheckoutPage = () => {
                     Match this to the cardholder or company billing details.
                   </p>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-[#252C32]">
-                  <input
-                    type="checkbox"
-                    checked={useShippingAsBilling}
-                    onChange={(event) => setUseShippingAsBilling(event.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  Same as shipping
-                </label>
+                <GradientCheckbox
+                  checked={useShippingAsBilling}
+                  onChange={(event) => setUseShippingAsBilling(event.target.checked)}
+                  label="Same as shipping"
+                  labelClassName="text-sm text-[#252C32]"
+                />
               </div>
 
               {!useShippingAsBilling ? (
@@ -457,15 +475,13 @@ const CheckoutPage = () => {
               />
 
               {primaryPackage ? (
-                <label className="mt-4 flex items-center gap-2 text-sm text-[#252C32]">
-                  <input
-                    type="checkbox"
-                    checked={requestFinancing}
-                    onChange={(event) => setRequestFinancing(event.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  Request financing for this package order
-                </label>
+                <GradientCheckbox
+                  className="mt-4"
+                  checked={requestFinancing}
+                  onChange={(event) => setRequestFinancing(event.target.checked)}
+                  label="Request financing for this package order"
+                  labelClassName="text-sm text-[#252C32]"
+                />
               ) : null}
             </section>
           </div>

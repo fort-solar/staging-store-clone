@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { appGet } from "@/lib/api/client";
 import type {
+  PaginationMeta,
+  ProductCategoryListApiResponse,
   ProductPackageDetailApiResponse,
   ProductPackageListApiResponse,
   ProductPackageRecord,
@@ -15,16 +17,40 @@ import type {
   UnifiedProductRecord,
 } from "@/types/api.types";
 
-type CatalogResult = {
-  products: StoreCatalogProduct[];
-  packages: StoreCatalogPackage[];
-  source: "api" | "unavailable";
+export type StoreCatalogSource = "api" | "unavailable";
+
+export type StoreCatalogCategoryOption = {
+  id: string;
+  label: string;
+};
+
+export const STORE_PAGE_SIZE = 20;
+
+type StoreCatalogListResult<TItem> = {
+  items: TItem[];
+  pagination: PaginationMeta;
+  source: StoreCatalogSource;
+};
+
+export type StoreProductListQuery = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+  categoryId?: string;
+};
+
+export type StorePackageListQuery = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+  status?: string;
 };
 
 const PRODUCT_IMAGE_FALLBACK = "/double_solar_panels.png";
-
-let catalogCache: CatalogResult | null = null;
-let catalogPromise: Promise<CatalogResult> | null = null;
+let productCategoryOptionsCache: StoreCatalogCategoryOption[] | null = null;
+let productCategoryOptionsPromise: Promise<StoreCatalogCategoryOption[]> | null = null;
 const productDetailCache = new Map<string, StoreCatalogProduct | null>();
 const packageDetailCache = new Map<string, StoreCatalogPackage | null>();
 
@@ -122,6 +148,60 @@ function readStringArray(record: Record<string, unknown>, keys: string[]) {
   return readArray(record, keys)
     .map((value) => (typeof value === "string" ? value.trim() : ""))
     .filter(Boolean);
+}
+
+function withQuery(
+  path: string,
+  params: Record<string, string | number | boolean | null | undefined>,
+) {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") {
+      return;
+    }
+
+    searchParams.set(key, String(value));
+  });
+
+  const query = searchParams.toString();
+  return query ? `${path}?${query}` : path;
+}
+
+function createPaginationMeta(
+  page: number,
+  limit: number,
+  total = 0,
+  totalPages = total > 0 ? Math.ceil(total / Math.max(limit, 1)) : 0,
+): PaginationMeta {
+  return {
+    page,
+    limit,
+    total,
+    totalPages,
+  };
+}
+
+function normalizePaginationMeta(
+  pagination: PaginationMeta | undefined,
+  page: number,
+  limit: number,
+  totalItems: number,
+) {
+  if (pagination) {
+    return {
+      page: Number.isFinite(pagination.page) ? pagination.page : page,
+      limit: Number.isFinite(pagination.limit) ? pagination.limit : limit,
+      total: Number.isFinite(pagination.total) ? pagination.total : totalItems,
+      totalPages: Number.isFinite(pagination.totalPages)
+        ? pagination.totalPages
+        : totalItems > 0
+          ? Math.ceil(totalItems / Math.max(limit, 1))
+          : 0,
+    };
+  }
+
+  return createPaginationMeta(page, limit, totalItems);
 }
 
 function toImageUrl(value: string | { src?: string } | null | undefined) {
@@ -300,6 +380,7 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
     datasheet,
     price: effectivePrice,
     priceOriginal: product.price,
+    categoryId: product.category_id,
     category: categoryLabel,
     categoryLabel,
     productType: categoryLabel,
@@ -316,6 +397,7 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
     deliveryWarrantyInfo,
     quickSpecs: sectionValues.length ? sectionValues : [{ label: "Category", value: categoryLabel }],
     sectionValues,
+    isActive: product.is_active,
     sourceType: "product",
     sourceId: product.id,
   };
@@ -354,6 +436,7 @@ export function normalizePackage(item: ProductPackageRecord): StoreCatalogPackag
     datasheets,
     price: item.price,
     finalPrice,
+    isActive: item.is_active,
     category: "Solar Packages",
     packageType: "Package",
     powerRating: item.system_details?.pv_label || item.system_details?.inverter_label || (item.system_size_kw ? `${item.system_size_kw}kW` : "Standard"),
@@ -407,52 +490,143 @@ async function safeAppGet<T>(path: string) {
   }
 }
 
-async function fetchCatalogFromApi(): Promise<CatalogResult> {
-  const [packagesPayload, productsPayload] =
-    await Promise.all([
-      appGet<ProductPackageListApiResponse>("/api/v1/products/packages"),
-      appGet<UnifiedProductListApiResponse>("/api/v1/products/"),
-    ]);
+function resolvePageNumber(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.floor(value));
+}
+
+function resolvePageSize(value: number | undefined, fallback = STORE_PAGE_SIZE) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.max(1, Math.floor(value));
+}
+
+export async function listStoreProducts(
+  query: StoreProductListQuery = {},
+): Promise<StoreCatalogListResult<StoreCatalogProduct>> {
+  const page = resolvePageNumber(query.page);
+  const limit = resolvePageSize(query.limit);
+  const payload = await appGet<UnifiedProductListApiResponse>(
+    withQuery("/api/v1/products/", {
+      page,
+      limit,
+      search: query.search?.trim(),
+      category_id: query.categoryId,
+      is_active:
+        typeof query.isActive === "boolean" ? String(query.isActive) : undefined,
+    }),
+  );
+  const items = payload.data.map(normalizeUnifiedProduct);
 
   return {
-    products: productsPayload.data.map(normalizeUnifiedProduct),
-    packages: packagesPayload.data.map(normalizePackage),
+    items,
+    pagination: normalizePaginationMeta(payload.pagination, page, limit, items.length),
     source: "api",
   };
 }
 
-export async function getStoreCatalog() {
-  if (catalogCache) {
-    return catalogCache;
+export async function listStorePackages(
+  query: StorePackageListQuery = {},
+): Promise<StoreCatalogListResult<StoreCatalogPackage>> {
+  const page = resolvePageNumber(query.page);
+  const limit = resolvePageSize(query.limit);
+  const payload = await appGet<ProductPackageListApiResponse>(
+    withQuery("/api/v1/products/packages", {
+      page,
+      limit,
+      search: query.search?.trim(),
+      status: query.status?.trim(),
+      is_active:
+        typeof query.isActive === "boolean" ? String(query.isActive) : undefined,
+    }),
+  );
+  const items = payload.data.map(normalizePackage);
+
+  return {
+    items,
+    pagination: normalizePaginationMeta(payload.pagination, page, limit, items.length),
+    source: "api",
+  };
+}
+
+async function fetchStoreProductCategoryOptions() {
+  const firstPage = await appGet<ProductCategoryListApiResponse>(
+    withQuery("/api/v1/product-categories", {
+      page: 1,
+      limit: STORE_PAGE_SIZE,
+    }),
+  );
+  const categories = new Map<string, StoreCatalogCategoryOption>();
+
+  firstPage.data.forEach((item) => {
+    if (!item.id || !item.name) {
+      return;
+    }
+
+    categories.set(item.id, {
+      id: item.id,
+      label: item.name,
+    });
+  });
+
+  const totalPages = Math.max(firstPage.pagination?.totalPages ?? 0, 1);
+
+  if (totalPages > 1) {
+    const remainingPages = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, index) =>
+        appGet<ProductCategoryListApiResponse>(
+          withQuery("/api/v1/product-categories", {
+            page: index + 2,
+            limit: STORE_PAGE_SIZE,
+          }),
+        ).catch(() => null),
+      ),
+    );
+
+    remainingPages.forEach((payload) => {
+      payload?.data.forEach((item) => {
+        if (!item.id || !item.name) {
+          return;
+        }
+
+        categories.set(item.id, {
+          id: item.id,
+          label: item.name,
+        });
+      });
+    });
   }
 
-  if (catalogPromise) {
-    return catalogPromise;
+  return Array.from(categories.values()).sort((left, right) =>
+    left.label.localeCompare(right.label),
+  );
+}
+
+export async function getStoreProductCategoryOptions() {
+  if (productCategoryOptionsCache) {
+    return productCategoryOptionsCache;
   }
 
-  catalogPromise = fetchCatalogFromApi()
-    .catch(() => ({
-      products: [],
-      packages: [],
-      source: "unavailable" as const,
-    }))
+  if (productCategoryOptionsPromise) {
+    return productCategoryOptionsPromise;
+  }
+
+  productCategoryOptionsPromise = fetchStoreProductCategoryOptions()
+    .catch(() => [])
     .then((result) => {
-      catalogCache = result;
+      productCategoryOptionsCache = result;
       return result;
     })
     .finally(() => {
-      catalogPromise = null;
+      productCategoryOptionsPromise = null;
     });
 
-  return catalogPromise;
-}
-
-export function getFallbackCatalog() {
-  return {
-    products: [],
-    packages: [],
-    source: "unavailable" as const,
-  };
+  return productCategoryOptionsPromise;
 }
 
 export async function getStoreProductById(id: string) {
@@ -460,12 +634,12 @@ export async function getStoreProductById(id: string) {
     return productDetailCache.get(id) ?? null;
   }
 
-  const productPayload = await safeAppGet<UnifiedProductDetailApiResponse>(`/api/v1/products/${id}`);
-
-  const resolvedProduct =
-    (productPayload?.success ? normalizeUnifiedProduct(productPayload.data) : null) ??
-    (await getStoreCatalog()).products.find((item) => String(item.id) === id) ??
-    null;
+  const productPayload = await safeAppGet<UnifiedProductDetailApiResponse>(
+    `/api/v1/products/${id}`,
+  );
+  const resolvedProduct = productPayload?.success
+    ? normalizeUnifiedProduct(productPayload.data)
+    : null;
 
   productDetailCache.set(id, resolvedProduct);
   return resolvedProduct;
@@ -476,28 +650,167 @@ export async function getStorePackageById(id: string) {
     return packageDetailCache.get(id) ?? null;
   }
 
-  const packagePayload = await safeAppGet<ProductPackageDetailApiResponse>(`/api/v1/products/packages/${id}`);
-
-  const resolvedPackage =
-    (packagePayload?.success ? normalizePackage(packagePayload.data) : null) ??
-    (await getStoreCatalog()).packages.find((item) => String(item.id) === id) ??
-    null;
+  const packagePayload = await safeAppGet<ProductPackageDetailApiResponse>(
+    `/api/v1/products/packages/${id}`,
+  );
+  const resolvedPackage = packagePayload?.success ? normalizePackage(packagePayload.data) : null;
 
   packageDetailCache.set(id, resolvedPackage);
   return resolvedPackage;
 }
 
-export function useStoreCatalog() {
-  const [catalog, setCatalog] = useState<CatalogResult>(catalogCache ?? getFallbackCatalog());
-  const [isLoading, setIsLoading] = useState(catalogCache === null);
+type StoreCatalogListHookState<TItem> = StoreCatalogListResult<TItem> & {
+  requestKey: string;
+};
+
+function createCatalogListHookState<TItem>(
+  page: number,
+  limit: number,
+  requestKey: string,
+): StoreCatalogListHookState<TItem> {
+  return {
+    items: [],
+    pagination: createPaginationMeta(page, limit),
+    source: "api",
+    requestKey,
+  };
+}
+
+export function useStoreProducts(query: StoreProductListQuery = {}) {
+  const page = resolvePageNumber(query.page);
+  const limit = resolvePageSize(query.limit);
+  const search = query.search?.trim() || undefined;
+  const categoryId = query.categoryId || undefined;
+  const isActive = query.isActive;
+  const requestKey = JSON.stringify({
+    page,
+    limit,
+    search: search ?? "",
+    categoryId: categoryId ?? "",
+    isActive: isActive === undefined ? "" : String(isActive),
+  });
+  const [state, setState] = useState<StoreCatalogListHookState<StoreCatalogProduct>>(
+    () => createCatalogListHookState(page, limit, ""),
+  );
 
   useEffect(() => {
     let cancelled = false;
 
-    getStoreCatalog()
+    listStoreProducts({
+      page,
+      limit,
+      search,
+      categoryId,
+      isActive,
+    })
       .then((result) => {
         if (!cancelled) {
-          setCatalog(result);
+          setState({
+            ...result,
+            requestKey,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({
+            items: [],
+            pagination: createPaginationMeta(page, limit),
+            source: "unavailable",
+            requestKey,
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryId, isActive, limit, page, requestKey, search]);
+
+  const isLoading = state.requestKey !== requestKey;
+
+  return {
+    items: isLoading ? [] : state.items,
+    pagination: isLoading ? createPaginationMeta(page, limit) : state.pagination,
+    source: isLoading ? "api" : state.source,
+    isLoading,
+  };
+}
+
+export function useStorePackages(query: StorePackageListQuery = {}) {
+  const page = resolvePageNumber(query.page);
+  const limit = resolvePageSize(query.limit);
+  const search = query.search?.trim() || undefined;
+  const isActive = query.isActive;
+  const status = query.status?.trim() || undefined;
+  const requestKey = JSON.stringify({
+    page,
+    limit,
+    search: search ?? "",
+    status: status ?? "",
+    isActive: isActive === undefined ? "" : String(isActive),
+  });
+  const [state, setState] = useState<StoreCatalogListHookState<StoreCatalogPackage>>(
+    () => createCatalogListHookState(page, limit, ""),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listStorePackages({
+      page,
+      limit,
+      search,
+      isActive,
+      status,
+    })
+      .then((result) => {
+        if (!cancelled) {
+          setState({
+            ...result,
+            requestKey,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({
+            items: [],
+            pagination: createPaginationMeta(page, limit),
+            source: "unavailable",
+            requestKey,
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive, limit, page, requestKey, search, status]);
+
+  const isLoading = state.requestKey !== requestKey;
+
+  return {
+    items: isLoading ? [] : state.items,
+    pagination: isLoading ? createPaginationMeta(page, limit) : state.pagination,
+    source: isLoading ? "api" : state.source,
+    isLoading,
+  };
+}
+
+export function useStoreProductCategoryOptions() {
+  const [categories, setCategories] = useState<StoreCatalogCategoryOption[]>(
+    productCategoryOptionsCache ?? [],
+  );
+  const [isLoading, setIsLoading] = useState(productCategoryOptionsCache === null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getStoreProductCategoryOptions()
+      .then((result) => {
+        if (!cancelled) {
+          setCategories(result);
         }
       })
       .finally(() => {
@@ -512,14 +825,20 @@ export function useStoreCatalog() {
   }, []);
 
   return {
-    ...catalog,
+    categories,
     isLoading,
   };
 }
 
 export function useStoreProductById(id: string | undefined) {
-  const [product, setProduct] = useState<StoreCatalogProduct | null>(null);
-  const [isLoading, setIsLoading] = useState(Boolean(id));
+  const requestKey = id ?? "";
+  const [state, setState] = useState<{
+    product: StoreCatalogProduct | null;
+    requestKey: string;
+  }>({
+    product: null,
+    requestKey: "",
+  });
 
   useEffect(() => {
     if (!id) {
@@ -531,29 +850,43 @@ export function useStoreProductById(id: string | undefined) {
     getStoreProductById(id)
       .then((result) => {
         if (!cancelled) {
-          setProduct(result);
+          setState({
+            product: result,
+            requestKey,
+          });
         }
       })
-      .finally(() => {
+      .catch(() => {
         if (!cancelled) {
-          setIsLoading(false);
+          setState({
+            product: null,
+            requestKey,
+          });
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, requestKey]);
+
+  const isLoading = Boolean(id) && state.requestKey !== requestKey;
 
   return {
-    product,
+    product: isLoading ? null : state.product,
     isLoading,
   };
 }
 
 export function useStorePackageById(id: string | undefined) {
-  const [pkg, setPackage] = useState<StoreCatalogPackage | null>(null);
-  const [isLoading, setIsLoading] = useState(Boolean(id));
+  const requestKey = id ?? "";
+  const [state, setState] = useState<{
+    package: StoreCatalogPackage | null;
+    requestKey: string;
+  }>({
+    package: null,
+    requestKey: "",
+  });
 
   useEffect(() => {
     if (!id) {
@@ -565,22 +898,142 @@ export function useStorePackageById(id: string | undefined) {
     getStorePackageById(id)
       .then((result) => {
         if (!cancelled) {
-          setPackage(result);
+          setState({
+            package: result,
+            requestKey,
+          });
         }
       })
-      .finally(() => {
+      .catch(() => {
         if (!cancelled) {
-          setIsLoading(false);
+          setState({
+            package: null,
+            requestKey,
+          });
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, requestKey]);
+
+  const isLoading = Boolean(id) && state.requestKey !== requestKey;
 
   return {
-    package: pkg,
+    package: isLoading ? null : state.package,
+    isLoading,
+  };
+}
+
+async function getStoreProductsByIds(ids: string[]) {
+  const records = await Promise.all(ids.map((id) => getStoreProductById(id).catch(() => null)));
+  return records.filter((item): item is StoreCatalogProduct => Boolean(item));
+}
+
+async function getStorePackagesByIds(ids: string[]) {
+  const records = await Promise.all(ids.map((id) => getStorePackageById(id).catch(() => null)));
+  return records.filter((item): item is StoreCatalogPackage => Boolean(item));
+}
+
+type StoreCatalogItemsByIdsState<TItem> = {
+  items: TItem[];
+  requestKey: string;
+};
+
+function createStoreCatalogItemsByIdsState<TItem>(
+  requestKey: string,
+): StoreCatalogItemsByIdsState<TItem> {
+  return {
+    items: [],
+    requestKey,
+  };
+}
+
+function normalizeIds(ids: Array<string | number>) {
+  return Array.from(new Set(ids.map((id) => String(id).trim()).filter(Boolean)));
+}
+
+export function useStoreProductsByIds(ids: Array<string | number>) {
+  const normalizedIds = useMemo(() => normalizeIds(ids), [ids]);
+  const requestKey = normalizedIds.join("|");
+  const [state, setState] = useState<StoreCatalogItemsByIdsState<StoreCatalogProduct>>(
+    () => createStoreCatalogItemsByIdsState(""),
+  );
+
+  useEffect(() => {
+    if (normalizedIds.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    getStoreProductsByIds(normalizedIds)
+      .then((items) => {
+        if (!cancelled) {
+          setState({
+            items,
+            requestKey,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState(createStoreCatalogItemsByIdsState(requestKey));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedIds, requestKey]);
+
+  const isLoading = normalizedIds.length > 0 && state.requestKey !== requestKey;
+
+  return {
+    items: requestKey ? (isLoading ? [] : state.items) : [],
+    isLoading,
+  };
+}
+
+export function useStorePackagesByIds(ids: Array<string | number>) {
+  const normalizedIds = useMemo(() => normalizeIds(ids), [ids]);
+  const requestKey = normalizedIds.join("|");
+  const [state, setState] = useState<StoreCatalogItemsByIdsState<StoreCatalogPackage>>(
+    () => createStoreCatalogItemsByIdsState(""),
+  );
+
+  useEffect(() => {
+    if (normalizedIds.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    getStorePackagesByIds(normalizedIds)
+      .then((items) => {
+        if (!cancelled) {
+          setState({
+            items,
+            requestKey,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState(createStoreCatalogItemsByIdsState(requestKey));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedIds, requestKey]);
+
+  const isLoading = normalizedIds.length > 0 && state.requestKey !== requestKey;
+
+  return {
+    items: requestKey ? (isLoading ? [] : state.items) : [],
     isLoading,
   };
 }

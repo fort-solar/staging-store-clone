@@ -1,20 +1,27 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { CardViewIcon } from "@/components/features/icons/CardViewIcon";
 import { ListViewIcon } from "@/components/features/icons/ListViewIcon";
-import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
-import { Button } from "@/components/ui/button";
-import EmptyStatePanel from "@/components/ui/empty-state-panel";
-import { Input } from "@/components/ui/input";
-import { useGeneralStore } from "@/store/GeneralStore";
+import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
-import { useStoreCatalog } from "@/lib/store-catalog";
+import EmptyStatePanel from "@/components/ui/empty-state-panel";
+import GradientCheckbox from "@/components/ui/gradient-checkbox";
+import PaginationControls from "@/components/ui/pagination-controls";
+import { useCustomerFavoriteToggle } from "@/hooks/use-customer-favorite-toggle";
+import {
+  STORE_PAGE_SIZE,
+  useStorePackages,
+  useStoreProductCategoryOptions,
+  useStoreProducts,
+} from "@/lib/store-catalog";
+import { useGeneralStore } from "@/store/GeneralStore";
 import type { CatalogId } from "@/types/common.types";
 
 type TabKey = "products" | "packages";
+
 type QuoteProduct = {
   id: CatalogId;
   title: string;
@@ -22,31 +29,16 @@ type QuoteProduct = {
   price: number;
 };
 
-type FilterState = {
-  priceMin: string;
-  priceMax: string;
-  category: string;
-  powerRatings: string[];
-  features: string[];
-  availability: string[];
-  warrantyMin: number;
+type ProductFilters = {
+  categoryId: string;
+  activeOnly: boolean;
 };
 
-const powerRatingsProducts = ["1kVA - 5kVA", "6kVA - 10kVA", "10kVA+"];
+type PackageFilters = {
+  activeOnly: boolean;
+};
 
-const powerRatingsPackages = ["1kVA - 2kVA", "3kVA - 5kVA", "6kVA - 10kVA", "10kVA+"];
-
-// const featureOptions = ["Battery Backup", "Smart Monitoring"];
-
-// const availabilityOptions = ["In Stock", "Pre-Order"];
-
-const sortOptions = [
-  "Newest",
-  "Price: Low to High",
-  "Price: High to Low",
-  "Warranty: High to Low",
-  "Name: A-Z",
-];
+const CATALOG_PAGE_SIZE = STORE_PAGE_SIZE;
 
 const FilterSection = ({
   title,
@@ -70,258 +62,188 @@ const CheckboxItem = ({
   checked: boolean;
   onChange: () => void;
 }) => (
-  <label className="flex items-center gap-2 text-sm text-[#3B3B3B] cursor-pointer">
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      className="h-4 w-4 rounded border border-[#B0BABF] accent-[#058A05]"
-    />
-    {label}
-  </label>
+  <GradientCheckbox
+    checked={checked}
+    onChange={onChange}
+    label={label}
+    labelClassName="text-sm text-[#3B3B3B]"
+  />
 );
 
+function useDebouncedValue<T>(value: T, delayMs = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [delayMs, value]);
+
+  return debouncedValue;
+}
+
 const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
-  const { products, packages, source, isLoading } = useStoreCatalog();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
-  const [productFilters, setProductFilters] = useState<FilterState>({
-    priceMin: "",
-    priceMax: "",
-    category: "",
-    powerRatings: [],
-    features: [],
-    availability: [],
-    warrantyMin: 1,
+  const [productFilters, setProductFilters] = useState<ProductFilters>({
+    categoryId: "",
+    activeOnly: false,
   });
-  const [packageFilters, setPackageFilters] = useState<FilterState>({
-    priceMin: "",
-    priceMax: "",
-    category: "",
-    powerRatings: [],
-    features: [],
-    availability: [],
-    warrantyMin: 1,
+  const [packageFilters, setPackageFilters] = useState<PackageFilters>({
+    activeOnly: false,
   });
-  const [productSort, setProductSort] = useState("Newest");
-  const [packageSort, setPackageSort] = useState("Newest");
   const [productView, setProductView] = useState<"grid" | "list">("grid");
   const [packageView, setPackageView] = useState<"grid" | "list">("grid");
   const [productQuery, setProductQuery] = useState("");
   const [packageQuery, setPackageQuery] = useState("");
+  const [productPage, setProductPage] = useState(1);
+  const [packagePage, setPackagePage] = useState(1);
   const [quoteProduct, setQuoteProduct] = useState<QuoteProduct | null>(null);
+  const debouncedProductQuery = useDebouncedValue(productQuery);
+  const debouncedPackageQuery = useDebouncedValue(packageQuery);
   const favorites = useGeneralStore((state) => state.favorites);
-  const toggleFavoriteProduct = useGeneralStore(
-    (state) => state.toggleFavoriteProduct
-  );
-  const toggleFavoritePackage = useGeneralStore(
-    (state) => state.toggleFavoritePackage
-  );
+  const { toggleProductFavorite, togglePackageFavorite } =
+    useCustomerFavoriteToggle();
   const isCategorySidebarOpen = useGeneralStore(
-    (state) => state.isCategorySidebarOpen
+    (state) => state.isCategorySidebarOpen,
   );
   const toggleCategorySidebar = useGeneralStore(
-    (state) => state.toggleCategorySidebar
+    (state) => state.toggleCategorySidebar,
   );
+
+  const {
+    items: products,
+    pagination: productPagination,
+    source: productSource,
+    isLoading: isLoadingProducts,
+  } = useStoreProducts({
+    page: productPage,
+    limit: CATALOG_PAGE_SIZE,
+    search: debouncedProductQuery,
+    categoryId: productFilters.categoryId || undefined,
+    isActive: productFilters.activeOnly ? true : undefined,
+  });
+  const {
+    items: packages,
+    pagination: packagePagination,
+    source: packageSource,
+    isLoading: isLoadingPackages,
+  } = useStorePackages({
+    page: packagePage,
+    limit: CATALOG_PAGE_SIZE,
+    search: debouncedPackageQuery,
+    isActive: packageFilters.activeOnly ? true : undefined,
+  });
+  const { categories: productCategoryOptions } = useStoreProductCategoryOptions();
+
   const productSections = useMemo(
     () => [
-      "All Products",
-      ...Array.from(
-        new Set(
-          products
-            .map((product) => product.category)
-            .filter((category) => category && category !== "All")
-        )
-      ),
+      { id: "", label: "All Products" },
+      ...productCategoryOptions.map((category) => ({
+        id: category.id,
+        label: category.label,
+      })),
     ],
-    [products]
-  );
-  const productCategories = useMemo(
-    () => ["All", ...Array.from(new Set(products.map((product) => product.category).filter(Boolean)))],
-    [products],
-  );
-  const packageCategories = useMemo(
-    () => ["All", ...Array.from(new Set(packages.map((pkg) => pkg.category).filter(Boolean)))],
-    [packages],
+    [productCategoryOptions],
   );
 
-  const toggleArrayValue = (arr: string[], value: string) =>
-    arr.includes(value) ? arr.filter((item) => item !== value) : [...arr, value];
+  const productCategoryLabelById = useMemo(
+    () =>
+      new Map(
+        productCategoryOptions.map((category) => [category.id, category.label]),
+      ),
+    [productCategoryOptions],
+  );
 
-  const sortItems = <T extends { createdAt: string; price: number; warrantyYears: number; title: string }>(
-    items: T[],
-    sortBy: string
-  ) => {
-    const sorted = [...items];
-    switch (sortBy) {
-      case "Price: Low to High":
-        return sorted.sort((a, b) => a.price - b.price);
-      case "Price: High to Low":
-        return sorted.sort((a, b) => b.price - a.price);
-      case "Warranty: High to Low":
-        return sorted.sort((a, b) => b.warrantyYears - a.warrantyYears);
-      case "Name: A-Z":
-        return sorted.sort((a, b) => a.title.localeCompare(b.title));
-      case "Newest":
-      default:
-        return sorted.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+  const activeProductSection =
+    productCategoryLabelById.get(productFilters.categoryId) || "All Products";
+  const activeQuery = activeTab === "products" ? productQuery : packageQuery;
+  const activeView = activeTab === "products" ? productView : packageView;
+  const resultsCount =
+    activeTab === "products" ? productPagination.total : packagePagination.total;
+
+  const handleActiveQueryChange = (value: string) => {
+    if (activeTab === "products") {
+      setProductQuery(value);
+      setProductPage(1);
+      return;
     }
+
+    setPackageQuery(value);
+    setPackagePage(1);
   };
 
-  const filteredProducts = useMemo(() => {
-    const filters = productFilters;
-    const items = products.filter((product) => {
-      const matchesQuery =
-        productQuery.trim().length === 0 ||
-        product.title.toLowerCase().includes(productQuery.toLowerCase()) ||
-        product.mini_description.toLowerCase().includes(productQuery.toLowerCase());
-      const matchesCategory =
-        !filters.category || product.category === filters.category;
-      const matchesPower =
-        filters.powerRatings.length === 0 ||
-        filters.powerRatings.includes(product.powerRating);
-      const matchesFeatures =
-        filters.features.length === 0 ||
-        filters.features.every((feature) => product.features.includes(feature));
-      const matchesAvailability =
-        filters.availability.length === 0 ||
-        filters.availability.includes(product.availability);
-      const matchesPriceMin =
-        !filters.priceMin || product.price >= Number(filters.priceMin);
-      const matchesPriceMax =
-        !filters.priceMax || product.price <= Number(filters.priceMax);
-      const matchesWarranty = product.warrantyYears >= filters.warrantyMin;
+  const handleProductCategorySelect = (categoryId: string) => {
+    setProductFilters((prev) => ({
+      ...prev,
+      categoryId,
+    }));
+    setProductPage(1);
+  };
 
-      return (
-        matchesQuery &&
-        matchesCategory &&
-        matchesPower &&
-        matchesFeatures &&
-        matchesAvailability &&
-        matchesPriceMin &&
-        matchesPriceMax &&
-        matchesWarranty
-      );
-    });
-
-    return sortItems(items, productSort);
-  }, [productFilters, productQuery, productSort, products]);
-
-  const filteredPackages = useMemo(() => {
-    const filters = packageFilters;
-    const items = packages.filter((item) => {
-      const matchesQuery =
-        packageQuery.trim().length === 0 ||
-        item.title.toLowerCase().includes(packageQuery.toLowerCase()) ||
-        item.mini_description.toLowerCase().includes(packageQuery.toLowerCase());
-      const matchesCategory = !filters.category || item.category === filters.category;
-      const matchesPower =
-        filters.powerRatings.length === 0 ||
-        filters.powerRatings.includes(item.powerRating);
-      const matchesFeatures =
-        filters.features.length === 0 ||
-        filters.features.every((feature) => item.features.includes(feature));
-      const matchesAvailability =
-        filters.availability.length === 0 ||
-        filters.availability.includes(item.availability);
-      const matchesPriceMin =
-        !filters.priceMin || item.price >= Number(filters.priceMin);
-      const matchesPriceMax =
-        !filters.priceMax || item.price <= Number(filters.priceMax);
-      const matchesWarranty = item.warrantyYears >= filters.warrantyMin;
-
-      return (
-        matchesQuery &&
-        matchesCategory &&
-        matchesPower &&
-        matchesFeatures &&
-        matchesAvailability &&
-        matchesPriceMin &&
-        matchesPriceMax &&
-        matchesWarranty
-      );
-    });
-
-    return sortItems(items, packageSort);
-  }, [packageFilters, packageQuery, packageSort, packages]);
-
-  const activeFilters = activeTab === "products" ? productFilters : packageFilters;
-  const setActiveFilters =
-    activeTab === "products" ? setProductFilters : setPackageFilters;
-  const activeSort = activeTab === "products" ? productSort : packageSort;
-  const setActiveSort = activeTab === "products" ? setProductSort : setPackageSort;
-  const activeView = activeTab === "products" ? productView : packageView;
-  const setActiveView =
-    activeTab === "products" ? setProductView : setPackageView;
-  const activeQuery = activeTab === "products" ? productQuery : packageQuery;
-  const setActiveQuery =
-    activeTab === "products" ? setProductQuery : setPackageQuery;
-
-  const resultsCount =
-    activeTab === "products" ? filteredProducts.length : filteredPackages.length;
-  const activeProductSection = productFilters.category || "All Products";
+  const activeItemCount = activeTab === "products" ? products.length : packages.length;
+  const activeIsLoading =
+    activeTab === "products" ? isLoadingProducts : isLoadingPackages;
+  const activeSource = activeTab === "products" ? productSource : packageSource;
 
   return (
     <div className="min-h-screen bg-white py-22">
-      <DashboardHeader query={activeQuery} onQueryChange={setActiveQuery} />
+      <DashboardHeader query={activeQuery} onQueryChange={handleActiveQueryChange} />
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-2  ">
-        <div className="flex flex-col w-full lg:flex-row mt-26 lg:mt-0 lg:justify-between lg:items-center">
+      <div className="mx-auto w-full max-w-6xl px-4 py-2">
+        <div className="mt-26 flex w-full flex-col lg:mt-0 lg:flex-row lg:items-center lg:justify-between">
           {activeTab === "products" ? (
-            <div className="order-2 lg:order-1 w-full flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm text-[#5A646B]">
+            <div className="order-2 flex w-full flex-wrap items-center justify-center gap-2 text-sm text-[#5A646B] lg:order-1 lg:justify-start">
               {productSections.map((section) => (
                 <button
-                  key={section}
-                  onClick={() => {
-                    setProductFilters((prev) => ({
-                      ...prev,
-                      category: section === "All Products" ? "" : section,
-                    }));
-                  }}
-                  className={`rounded-full px-2 lg:px-3 py-1 transition-colors ${activeProductSection === section
-                    ? "text-[#058A05] font-semibold"
-                    : "hover:text-[#252C32]"
-                    }`}
+                  key={section.id || section.label}
+                  onClick={() => handleProductCategorySelect(section.id)}
+                  className={`rounded-full px-2 py-1 transition-colors lg:px-3 ${
+                    activeProductSection === section.label
+                      ? "font-semibold text-[#058A05]"
+                      : "hover:text-[#252C32]"
+                  }`}
                 >
-                  {section}
+                  {section.label}
                 </button>
               ))}
             </div>
           ) : (
-            <div className=""/>
+            <div />
           )}
-          <div className="order-1 lg:order-2 flex flex-col gap-3 mb-5 lg:mb-0  lg:mt-0 ">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-              <div className="inline-flex w-full lg:w-fit  rounded-lg mt-5 lg:mt-0 bg-[#F3F4F6]">
+
+          <div className="order-1 mb-5 flex flex-col gap-3 lg:order-2 lg:mb-0">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="mt-5 inline-flex w-full rounded-lg bg-[#F3F4F6] lg:mt-0 lg:w-fit">
                 <button
-                  onClick={() => {
-                    setActiveTab("packages");
-                  }}
-                  className={`px-4 py-3 lg:py-1.5 rounded-l-lg w-[50%] lg:w-fit text-sm ${activeTab === "packages"
-                    ? "bg-[#058A05] text-white"
-                    : "text-[#3B3B3B]"
-                    }`}
+                  onClick={() => setActiveTab("packages")}
+                  className={`w-[50%] rounded-l-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
+                    activeTab === "packages"
+                      ? "bg-[#058A05] text-white"
+                      : "text-[#3B3B3B]"
+                  }`}
                 >
                   Packages
                 </button>
                 <button
-                  onClick={() => {
-                    setActiveTab("products");
-                  }}
-                  className={`px-4 py-3 lg:py-1.5 w-[50%] lg:w-fit rounded-r-lg text-sm ${activeTab === "products"
-                    ? "bg-[#058A05] text-white"
-                    : "text-[#3B3B3B]"
-                    }`}
+                  onClick={() => setActiveTab("products")}
+                  className={`w-[50%] rounded-r-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
+                    activeTab === "products"
+                      ? "bg-[#058A05] text-white"
+                      : "text-[#3B3B3B]"
+                  }`}
                 >
                   Products
                 </button>
-
               </div>
             </div>
           </div>
         </div>
-        <div className="flex flex-col mt-6 lg:flex-row lg:items-center lg:justify-between gap-3">
+
+        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             {activeQuery.trim().length > 0 ? (
               <p className="text-xl font-semibold text-[#252C32]">
@@ -335,27 +257,19 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             )}
           </div>
 
-          <div className="flex items-center justify-between lg:justify-start gap-3">
-            <div className="relative">
-              <select
-                value={activeSort}
-                onChange={(event) => setActiveSort(event.target.value)}
-                className="h-10 rounded-lg border border-[#E4E9EC] bg-white px-3 pr-4 text-sm text-[#3B3B3B] outline-none"
-              >
-                {sortOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    <span className="text-xs text-[#9AA6AC]">Sort by </span>{opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center  bg-gray-50 rounded-md">
+          <div className="flex items-center justify-between gap-3 lg:justify-start">
+            <div className="flex items-center rounded-md bg-gray-50">
               <button
-                onClick={() => setActiveView("grid")}
-                className={`h-9 w-9 rounded-l-md  grid place-items-center ${activeView === "grid"
-                  ? "border-[#BFE8BF] bg-[#EBFAEB] "
-                  : "border-[#E4E9EC]"
-                  }`}
+                onClick={() =>
+                  activeTab === "products"
+                    ? setProductView("grid")
+                    : setPackageView("grid")
+                }
+                className={`grid h-9 w-9 place-items-center rounded-l-md ${
+                  activeView === "grid"
+                    ? "border-[#BFE8BF] bg-[#EBFAEB]"
+                    : "border-[#E4E9EC]"
+                }`}
               >
                 <CardViewIcon
                   className={
@@ -366,11 +280,16 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 />
               </button>
               <button
-                onClick={() => setActiveView("list")}
-                className={`h-9 w-9 rounded-r-md  grid place-items-center ${activeView === "list"
-                  ? "border-[#BFE8BF] bg-[#EBFAEB] "
-                  : "border-[#E4E9EC]"
-                  }`}
+                onClick={() =>
+                  activeTab === "products"
+                    ? setProductView("list")
+                    : setPackageView("list")
+                }
+                className={`grid h-9 w-9 place-items-center rounded-r-md ${
+                  activeView === "list"
+                    ? "border-[#BFE8BF] bg-[#EBFAEB]"
+                    : "border-[#E4E9EC]"
+                }`}
               >
                 <ListViewIcon
                   className={
@@ -384,163 +303,171 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
           </div>
         </div>
 
-
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+          {isCategorySidebarOpen ? (
+            <div
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden"
+              onClick={toggleCategorySidebar}
+            />
+          ) : null}
 
-          {isCategorySidebarOpen && (
-            <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden" onClick={toggleCategorySidebar} />
-          )}
           <aside
-            className={`space-y-6 transition-all duration-300 ${isCategorySidebarOpen
-                ? "opacity-100 translate-x-0"
-                : "opacity-0 -translate-x-4 pointer-events-none lg:hidden"
-              } ${isCategorySidebarOpen
-                ? "fixed left-0 top-0 z-50 lg:z-2 h-full w-80 overflow-y-auto bg-white px-4 py-14 shadow-lg lg:static lg:h-auto lg:w-auto lg:overflow-visible lg:bg-transparent lg:px-0 lg:pt-0 lg:shadow-none"
+            className={`space-y-6 transition-all duration-300 ${
+              isCategorySidebarOpen
+                ? "translate-x-0 opacity-100"
+                : "pointer-events-none -translate-x-4 opacity-0 lg:hidden"
+            } ${
+              isCategorySidebarOpen
+                ? "fixed left-0 top-0 z-50 h-full w-80 overflow-y-auto bg-white px-4 py-14 shadow-lg lg:static lg:h-auto lg:w-auto lg:overflow-visible lg:bg-transparent lg:px-0 lg:pt-0 lg:shadow-none"
                 : "hidden lg:static"
-              }`}
+            }`}
           >
-            <FilterSection title="Price, ₦">
-              <div className="flex gap-3">
-                <Input
-                  placeholder="Min"
-                  value={activeFilters.priceMin}
-                  onChange={(event) =>
-                    setActiveFilters((prev) => ({
-                      ...prev,
-                      priceMin: event.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  placeholder="Max"
-                  value={activeFilters.priceMax}
-                  onChange={(event) =>
-                    setActiveFilters((prev) => ({
-                      ...prev,
-                      priceMax: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </FilterSection>
-            <FilterSection title="Category">
-              <div className="space-y-2">
-                {(activeTab === "products" ? productCategories : packageCategories).map((cat) => (
+            {activeTab === "products" ? (
+              <>
+                <FilterSection title="Category">
+                  <div className="space-y-2">
+                    {productSections.map((section) => (
+                      <CheckboxItem
+                        key={section.id || section.label}
+                        label={section.label}
+                        checked={productFilters.categoryId === section.id}
+                        onChange={() => handleProductCategorySelect(section.id)}
+                      />
+                    ))}
+                  </div>
+                </FilterSection>
+
+                <FilterSection title="Availability">
+                  <div className="space-y-2">
+                    <CheckboxItem
+                      label="Active listings only"
+                      checked={productFilters.activeOnly}
+                      onChange={() => {
+                        setProductFilters((prev) => ({
+                          ...prev,
+                          activeOnly: !prev.activeOnly,
+                        }));
+                        setProductPage(1);
+                      }}
+                    />
+                  </div>
+                </FilterSection>
+              </>
+            ) : (
+              <FilterSection title="Availability">
+                <div className="space-y-2">
                   <CheckboxItem
-                    key={cat}
-                    label={cat}
-                    checked={activeFilters.category === (cat === "All" ? "" : cat)}
-                    onChange={() =>
-                      setActiveFilters((prev) => ({
+                    label="Active listings only"
+                    checked={packageFilters.activeOnly}
+                    onChange={() => {
+                      setPackageFilters((prev) => ({
                         ...prev,
-                        category: cat === "All" ? "" : cat,
-                      }))
-                    }
+                        activeOnly: !prev.activeOnly,
+                      }));
+                      setPackagePage(1);
+                    }}
                   />
-                ))}
-              </div>
-            </FilterSection>
-            <FilterSection title="Power Rating/ Capacity">
-              <div className="space-y-2">
-                {(activeTab === "products" ? powerRatingsProducts : powerRatingsPackages).map((rating) => (
-                  <CheckboxItem
-                    key={rating}
-                    label={rating}
-                    checked={activeFilters.powerRatings.includes(rating)}
-                    onChange={() =>
-                      setActiveFilters((prev) => ({
-                        ...prev,
-                        powerRatings: toggleArrayValue(prev.powerRatings, rating),
-                      }))
-                    }
-                  />
-                ))}
-              </div>
-            </FilterSection>
+                </div>
+              </FilterSection>
+            )}
           </aside>
 
           <section
-            className={`transition-all duration-300 ${isCategorySidebarOpen ? "" : "lg:col-span-2"
-              }`}
+            className={`transition-all duration-300 ${
+              isCategorySidebarOpen ? "" : "lg:col-span-2"
+            }`}
           >
             {activeTab === "products" ? (
-              filteredProducts.length > 0 ? (
-                <ProductsGrid
-                  items={filteredProducts}
-                  view={productView}
-                  favorites={favorites.products}
-                  onToggleFavorite={toggleFavoriteProduct}
-                  onGetQuote={(item) =>
-                    setQuoteProduct({
-                      id: item.id,
-                      title: item.title,
-                      image: item.image,
-                      price: item.price,
-                    })
-                  }
-                />
+              activeItemCount > 0 ? (
+                <>
+                  <ProductsGrid
+                    items={products}
+                    view={productView}
+                    favorites={favorites.products}
+                    onToggleFavorite={toggleProductFavorite}
+                    onGetQuote={(item) =>
+                      setQuoteProduct({
+                        id: item.id,
+                        title: item.title,
+                        image: item.image,
+                        price: item.price,
+                      })
+                    }
+                  />
+                  <PaginationControls
+                    className="mt-8"
+                    page={productPagination.page}
+                    totalPages={Math.max(productPagination.totalPages, 1)}
+                    totalItems={productPagination.total}
+                    onPageChange={setProductPage}
+                  />
+                </>
               ) : (
                 <EmptyStatePanel
                   title={
-                    isLoading
+                    activeIsLoading
                       ? "Loading products"
-                      : source === "unavailable"
+                      : activeSource === "unavailable"
                         ? "Products are unavailable right now"
                         : "No products found"
                   }
                   description={
-                    isLoading
-                      ? "We are fetching the latest product catalog for this page."
-                      : source === "unavailable"
+                    activeIsLoading
+                      ? "We are fetching products directly from the catalog."
+                      : activeSource === "unavailable"
                         ? "The product catalog could not be reached. Check the API configuration and try again."
-                        : "No products matched the current filters. Adjust your search or clear some filters to continue."
+                        : "No products matched the current database filters. Adjust your search or clear a filter to continue."
                   }
                   className="min-h-[22rem]"
                 />
               )
-            ) : (
+            ) : activeItemCount > 0 ? (
               <>
-                {filteredPackages.length > 0 ? (
-                  <>
-                    <PackagesGrid
-                      items={filteredPackages}
-                      view={packageView}
-                      favorites={favorites.packages}
-                      onToggleFavorite={toggleFavoritePackage}
-                    />
-                  </>
-                ) : (
-                  <EmptyStatePanel
-                    title={
-                      isLoading
-                        ? "Loading packages"
-                        : source === "unavailable"
-                          ? "Packages are unavailable right now"
-                          : "No packages found"
-                    }
-                    description={
-                      isLoading
-                        ? "We are fetching the latest package catalog for this page."
-                        : source === "unavailable"
-                          ? "The package catalog could not be reached. Check the API configuration and try again."
-                          : "No packages matched the current filters. Adjust your search or clear some filters to continue."
-                    }
-                    className="min-h-[22rem]"
-                  />
-                )}
+                <PackagesGrid
+                  items={packages}
+                  view={packageView}
+                  favorites={favorites.packages}
+                  onToggleFavorite={togglePackageFavorite}
+                />
+                <PaginationControls
+                  className="mt-8"
+                  page={packagePagination.page}
+                  totalPages={Math.max(packagePagination.totalPages, 1)}
+                  totalItems={packagePagination.total}
+                  onPageChange={setPackagePage}
+                />
               </>
+            ) : (
+              <EmptyStatePanel
+                title={
+                  activeIsLoading
+                    ? "Loading packages"
+                    : activeSource === "unavailable"
+                      ? "Packages are unavailable right now"
+                      : "No packages found"
+                }
+                description={
+                  activeIsLoading
+                    ? "We are fetching packages directly from the catalog."
+                    : activeSource === "unavailable"
+                      ? "The package catalog could not be reached. Check the API configuration and try again."
+                      : "No packages matched the current database filters. Adjust your search or clear a filter to continue."
+                }
+                className="min-h-[22rem]"
+              />
             )}
           </section>
         </div>
       </div>
-      {quoteProduct && (
+
+      {quoteProduct ? (
         <GetQuoteModal
           key={quoteProduct.id}
-          open={!!quoteProduct}
+          open={Boolean(quoteProduct)}
           product={quoteProduct}
           onClose={() => setQuoteProduct(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 };

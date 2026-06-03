@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import GradientCheckbox from "@/components/ui/gradient-checkbox";
 import { getMockCurrentUser, getMockSession } from "@/lib/localAuth";
 import type { CatalogId } from "@/types/common.types";
 
@@ -389,28 +390,22 @@ const GetQuoteModal = ({
               </div>
 
               <div className="mt-4 space-y-3">
-                <label className="flex items-center gap-3 text-base text-[#3E3F43]">
-                  <input
-                    type="checkbox"
-                    checked={form.agreeToTerms}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, agreeToTerms: event.target.checked }))
-                    }
-                    className="h-5 w-5 rounded border-[#DADDE2]"
-                  />
-                  I agree to the terms of service to receive a call/email regarding my quote.
-                </label>
-                <label className="flex items-center gap-3 text-base text-[#3E3F43]">
-                  <input
-                    type="checkbox"
-                    checked={form.requestInstallation}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, requestInstallation: event.target.checked }))
-                    }
-                    className="h-5 w-5 rounded border-[#DADDE2]"
-                  />
-                  Request Installation
-                </label>
+                <GradientCheckbox
+                  checked={form.agreeToTerms}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, agreeToTerms: event.target.checked }))
+                  }
+                  label="I agree to the terms of service to receive a call/email regarding my quote."
+                  labelClassName="text-base text-[#3E3F43]"
+                />
+                <GradientCheckbox
+                  checked={form.requestInstallation}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, requestInstallation: event.target.checked }))
+                  }
+                  label="Request Installation"
+                  labelClassName="text-base text-[#3E3F43]"
+                />
               </div>
             </section>
 

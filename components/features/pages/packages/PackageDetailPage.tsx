@@ -11,12 +11,16 @@ import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import HeartIcon from "@/components/features/icons/HeartIcon";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import EmptyStatePanel from "@/components/ui/empty-state-panel";
+import { useCustomerFavoriteToggle } from "@/hooks/use-customer-favorite-toggle";
 import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import { useGeneralStore } from "@/store/GeneralStore";
-import { useStoreCatalog, useStorePackageById } from "@/lib/store-catalog";
+import {
+  STORE_PAGE_SIZE,
+  useStorePackageById,
+  useStorePackages,
+} from "@/lib/store-catalog";
 
 const PackageDetailPage = () => {
-  const { packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const params = useParams<{ id: string }>();
   const [showFeatures, setShowFeatures] = useState(true);
@@ -24,15 +28,24 @@ const PackageDetailPage = () => {
   const router = useRouter();
   const id = params?.id;
   const { package: data, isLoading } = useStorePackageById(id);
+  const { items: packageSuggestions } = useStorePackages({
+    page: 1,
+    limit: STORE_PAGE_SIZE,
+    isActive: true,
+  });
 
   const favorites = useGeneralStore((state) => state.favorites.packages);
-  const toggleFavorite = useGeneralStore((state) => state.toggleFavoritePackage);
+  const { togglePackageFavorite } = useCustomerFavoriteToggle();
   const addToCart = useGeneralStore((state) => state.addToCart);
   const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
   const { requireCustomerLogin } = useCustomerLoginGate();
 
   const activeImage = selectedImage || data?.mainImage || data?.image || "";
-  const relatedPackages = useMemo(() => packages.filter((item) => String(item.id) !== id).slice(0, 3), [id, packages]);
+  const relatedPackages = useMemo(
+    () =>
+      packageSuggestions.filter((item) => String(item.id) !== String(id)).slice(0, 3),
+    [id, packageSuggestions],
+  );
 
   if (isLoading && !data) {
     return (
@@ -224,7 +237,7 @@ const PackageDetailPage = () => {
               >
                 Get Package
               </button>
-              <button onClick={() => toggleFavorite(data.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC]">
+              <button onClick={() => togglePackageFavorite(data.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC]">
                 <HeartIcon filled={favorites.includes(data.id)} className={favorites.includes(data.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
               </button>
             </div>

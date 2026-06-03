@@ -9,28 +9,48 @@ import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { TrashIcon } from "@/components/features/icons/TrashIcon";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
-import { useStoreCatalog } from "@/lib/store-catalog";
+import {
+  useStorePackagesByIds,
+  useStoreProductsByIds,
+} from "@/lib/store-catalog";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
 const CartPage = () => {
   const router = useRouter();
-  const { products, packages } = useStoreCatalog();
   const [query, setQuery] = useState("");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const cartItems = useGeneralStore((state) => state.cartItems);
   const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
   const removeFromCart = useGeneralStore((state) => state.removeFromCart);
   const { requireCustomerLogin } = useCustomerLoginGate();
+  const productIds = useMemo(
+    () => cartItems.filter((item) => item.itemType === "product").map((item) => item.id),
+    [cartItems],
+  );
+  const packageIds = useMemo(
+    () => cartItems.filter((item) => item.itemType === "package").map((item) => item.id),
+    [cartItems],
+  );
+  const { items: products } = useStoreProductsByIds(productIds);
+  const { items: packages } = useStorePackagesByIds(packageIds);
+  const productMap = useMemo(
+    () => new Map(products.map((item) => [String(item.id), item])),
+    [products],
+  );
+  const packageMap = useMemo(
+    () => new Map(packages.map((item) => [String(item.id), item])),
+    [packages],
+  );
 
   const cartDetails = useMemo(() => {
     return cartItems
       .map((item) => {
         const product =
           item.itemType === "product"
-            ? products.find((p) => p.id === item.id)
-            : packages.find((p) => p.id === item.id);
+            ? productMap.get(String(item.id))
+            : packageMap.get(String(item.id));
         if (!product) return null;
         return {
           ...item,
@@ -47,7 +67,7 @@ const CartPage = () => {
         price: number;
         image: string | { src: string };
       }>;
-  }, [cartItems, packages, products]);
+  }, [cartItems, packageMap, productMap]);
 
   const subtotal = cartDetails.reduce(
     (sum, item) => sum + item.price * item.quantity,

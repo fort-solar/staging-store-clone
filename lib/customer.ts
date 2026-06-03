@@ -51,7 +51,7 @@ export function getCustomerOrderSummary() {
   return appGet<CustomerOrderSummaryApiResponse>("/api/v1/customer/me/orders/summary");
 }
 
-export function getCustomerOrders(page = 1, limit = 10) {
+export function getCustomerOrders(page = 1, limit = 20) {
   return appGet<CustomerOrderListApiResponse>(
     withQuery("/api/v1/customer/me/orders", { page, limit }),
   );
@@ -91,7 +91,7 @@ export function getCustomerInstallationSummary() {
   );
 }
 
-export function getCustomerInstallations(page = 1, limit = 10) {
+export function getCustomerInstallations(page = 1, limit = 20) {
   return appGet<CustomerInstallationListApiResponse>(
     withQuery("/api/v1/customer/me/installations", { page, limit }),
   );
@@ -126,7 +126,7 @@ export function reportCustomerInstallationIssue(
   );
 }
 
-export function getCustomerPackageRequests(page = 1, limit = 10) {
+export function getCustomerPackageRequests(page = 1, limit = 20) {
   return appGet<CustomerPackageRequestListApiResponse>(
     withQuery("/api/v1/customer/me/package-requests", { page, limit }),
   );

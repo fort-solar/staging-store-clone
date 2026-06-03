@@ -11,8 +11,13 @@ import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import EmptyStatePanel from "@/components/ui/empty-state-panel";
+import { useCustomerFavoriteToggle } from "@/hooks/use-customer-favorite-toggle";
 import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
-import { useStoreCatalog, useStoreProductById } from "@/lib/store-catalog";
+import {
+  STORE_PAGE_SIZE,
+  useStoreProductById,
+  useStoreProducts,
+} from "@/lib/store-catalog";
 import { useGeneralStore } from "@/store/GeneralStore";
 import type { CatalogId } from "@/types/common.types";
 
@@ -24,7 +29,6 @@ type QuoteProduct = {
 };
 
 const ProductDetailPage = () => {
-  const { products } = useStoreCatalog();
   const params = useParams<{ id: string }>();
   const [query, setQuery] = useState("");
   const [showFeatures, setShowFeatures] = useState(true);
@@ -35,15 +39,27 @@ const ProductDetailPage = () => {
   const router = useRouter();
   const id = params?.id;
   const { product, isLoading } = useStoreProductById(id);
+  const {
+    items: productSuggestions,
+  } = useStoreProducts({
+    page: 1,
+    limit: STORE_PAGE_SIZE,
+    isActive: true,
+    categoryId: product?.categoryId || undefined,
+  });
 
   const addToCart = useGeneralStore((state) => state.addToCart);
   const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
   const favorites = useGeneralStore((state) => state.favorites.products);
-  const toggleFavorite = useGeneralStore((state) => state.toggleFavoriteProduct);
+  const { toggleProductFavorite } = useCustomerFavoriteToggle();
   const { requireCustomerLogin } = useCustomerLoginGate();
 
   const activeImage = selectedImage || product?.image || "";
-  const relatedProducts = useMemo(() => products.filter((item) => String(item.id) !== id).slice(0, 3), [id, products]);
+  const relatedProducts = useMemo(
+    () =>
+      productSuggestions.filter((item) => String(item.id) !== String(id)).slice(0, 3),
+    [id, productSuggestions],
+  );
 
   if (isLoading && !product) {
     return (
@@ -266,7 +282,7 @@ const ProductDetailPage = () => {
               >
                 <CartIcon className="text-[#3B3B3B]/70" />
               </button>
-              <button onClick={() => toggleFavorite(product.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC]">
+              <button onClick={() => toggleProductFavorite(product.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC]">
                 <HeartIcon filled={favorites.includes(product.id)} className={favorites.includes(product.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
               </button>
             </div>
@@ -325,7 +341,7 @@ const ProductDetailPage = () => {
             items={relatedProducts}
             view="grid"
             favorites={favorites}
-            onToggleFavorite={toggleFavorite}
+            onToggleFavorite={toggleProductFavorite}
             onGetQuote={(item) =>
               setQuoteProduct({
                 id: item.id,

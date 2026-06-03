@@ -28,6 +28,7 @@ describe("normalizeUnifiedProduct", () => {
 
     const normalized = normalizeUnifiedProduct(product);
 
+    expect(normalized.categoryId).toBe("cat-1");
     expect(normalized.categoryLabel).toBe("Inverters");
     expect(normalized.productType).toBe("Inverters");
     expect(normalized.image).toBe("https://cdn.example.com/products/prod-1/image-1.jpg");
@@ -35,6 +36,7 @@ describe("normalizeUnifiedProduct", () => {
       "https://cdn.example.com/products/prod-1/image-1.jpg",
       "https://cdn.example.com/products/prod-1/image-2.jpg",
     ]);
+    expect(normalized.isActive).toBe(true);
     expect(normalized.sectionValues).toEqual([{ label: "Size", value: "12 kVA" }]);
   });
 });
@@ -111,6 +113,7 @@ describe("normalizePackage", () => {
 
     expect(normalized.mainImage).toBe("https://cdn.example.com/packages/pkg-1/hero.jpg");
     expect(normalized.thumbnail).toBe("https://cdn.example.com/packages/pkg-1/thumb.jpg");
+    expect(normalized.isActive).toBe(true);
     expect(normalized.includedProducts).toEqual([
       expect.objectContaining({
         categoryLabel: "Inverters",
