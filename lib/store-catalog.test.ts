@@ -1,5 +1,16 @@
-import { normalizePackage, normalizeUnifiedProduct } from "@/lib/store-catalog";
+import { appGet } from "@/lib/api/client";
+import {
+  getStorePackageById,
+  getStoreProductById,
+  normalizePackage,
+  normalizeUnifiedProduct,
+  resetStoreCatalogCaches,
+} from "@/lib/store-catalog";
 import type { ProductPackageRecord, UnifiedProductRecord } from "@/types/api.types";
+
+jest.mock("@/lib/api/client", () => ({
+  appGet: jest.fn(),
+}));
 
 describe("normalizeUnifiedProduct", () => {
   it("maps unified category-driven products into store cards", () => {
@@ -36,8 +47,44 @@ describe("normalizeUnifiedProduct", () => {
       "https://cdn.example.com/products/prod-1/image-1.jpg",
       "https://cdn.example.com/products/prod-1/image-2.jpg",
     ]);
+    expect(normalized.price).toBe(2500000);
+    expect(normalized.priceOriginal).toBe(2500000);
     expect(normalized.isActive).toBe(true);
+    expect(normalized.availability).toBe("In Stock");
     expect(normalized.sectionValues).toEqual([{ label: "Size", value: "12 kVA" }]);
+  });
+
+  it("prefers a valid discounted price and preserves image arrays without duplicates", () => {
+    const normalized = normalizeUnifiedProduct({
+      id: "prod-2",
+      slug: "5kwh-battery",
+      name: "5kWh Battery",
+      category_id: "cat-2",
+      category: { id: "cat-2", name: "Batteries" },
+      price: 950000,
+      discounted_price: 825000,
+      stock_quantity: 2,
+      overview: "Wall-mounted battery",
+      section_values: [],
+      product_image_urls: [
+        "https://cdn.example.com/products/prod-2/front.jpg",
+        "https://cdn.example.com/products/prod-2/front.jpg",
+      ],
+      product_image_url: "https://cdn.example.com/products/prod-2/front.jpg",
+      datasheet_url: null,
+      specifications: {},
+      is_active: true,
+      status: "published",
+      created_at: "2026-05-26T00:00:00.000Z",
+      updated_at: "2026-05-26T00:00:00.000Z",
+    } as UnifiedProductRecord);
+
+    expect(normalized.price).toBe(825000);
+    expect(normalized.priceOriginal).toBe(950000);
+    expect(normalized.images).toEqual([
+      "https://cdn.example.com/products/prod-2/front.jpg",
+    ]);
+    expect(normalized.availability).toBe("Limited Stock");
   });
 });
 
@@ -129,5 +176,93 @@ describe("normalizePackage", () => {
         url: "https://cdn.example.com/products/prod-1/datasheet.pdf",
       }),
     ]);
+  });
+});
+
+describe("store catalog cache fallback", () => {
+  const mockedAppGet = appGet as jest.MockedFunction<typeof appGet>;
+
+  beforeEach(() => {
+    resetStoreCatalogCaches();
+    mockedAppGet.mockReset();
+  });
+
+  it("reuses cached product details if the API later becomes unavailable", async () => {
+    mockedAppGet.mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: "prod-1",
+        slug: "12kva-hybrid-inverter",
+        name: "12kVA Hybrid Inverter",
+        category_id: "cat-1",
+        category: { id: "cat-1", name: "Inverters" },
+        price: 2500000,
+        stock_quantity: 12,
+        overview: "Three-phase hybrid inverter",
+        section_values: [],
+        product_image_urls: ["https://cdn.example.com/products/prod-1/image-1.jpg"],
+        product_image_url: "https://cdn.example.com/products/prod-1/image-1.jpg",
+        datasheet_url: "https://cdn.example.com/products/prod-1/datasheet.pdf",
+        specifications: {},
+        is_active: true,
+        status: "published",
+        created_at: "2026-05-26T00:00:00.000Z",
+        updated_at: "2026-05-26T00:00:00.000Z",
+      },
+    } as never);
+
+    const first = await getStoreProductById("prod-1");
+    mockedAppGet.mockRejectedValueOnce(new Error("API unavailable"));
+    const second = await getStoreProductById("prod-1");
+
+    expect(first?.title).toBe("12kVA Hybrid Inverter");
+    expect(second).toEqual(first);
+    expect(mockedAppGet).toHaveBeenCalledTimes(1);
+  });
+
+  it("reuses cached package details if the API later becomes unavailable", async () => {
+    mockedAppGet.mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: "pkg-1",
+        slug: "starter-solar-package",
+        name: "Starter Solar Package",
+        description: "Entry package",
+        overview: "Entry package",
+        category_id: null,
+        system_size_kw: 5,
+        price: 1000000,
+        number_of_panels: 4,
+        panel_type: "550W Mono",
+        inverter_type: "Hybrid Inverter",
+        battery_included: true,
+        warranty_years: 5,
+        estimated_savings_monthly: 10000,
+        payback_period_years: 3,
+        image_url: "https://cdn.example.com/packages/pkg-1/image.jpg",
+        thumbnail_url: "https://cdn.example.com/packages/pkg-1/thumb.jpg",
+        package_image_url: "https://cdn.example.com/packages/pkg-1/hero.jpg",
+        items: [],
+        what_it_powers: ["Lighting"],
+        system_details: {
+          inverter_label: "12kVA",
+          pv_label: "5kWp",
+          battery_label: "10kWh",
+        },
+        datasheets: [],
+        product_images: [],
+        is_active: true,
+        created_at: "2026-05-26T00:00:00.000Z",
+        updated_at: "2026-05-26T00:00:00.000Z",
+      },
+    } as never);
+
+    const first = await getStorePackageById("pkg-1");
+    mockedAppGet.mockRejectedValueOnce(new Error("API unavailable"));
+    const second = await getStorePackageById("pkg-1");
+
+    expect(first?.title).toBe("Starter Solar Package");
+    expect(second).toEqual(first);
+    expect(mockedAppGet).toHaveBeenCalledTimes(1);
   });
 });

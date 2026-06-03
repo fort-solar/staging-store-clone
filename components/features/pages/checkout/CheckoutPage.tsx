@@ -18,6 +18,13 @@ import {
 } from "@/lib/customer";
 import { sessionSnapshotToMockUser } from "@/lib/localAuth";
 import {
+  buildPaystackInlineOptions,
+  isCheckoutDisabledState,
+  verifyCheckoutPaymentFlow,
+  type CheckoutAddress,
+  type CheckoutItem,
+} from "@/lib/checkout";
+import {
   useStorePackagesByIds,
   useStoreProductsByIds,
 } from "@/lib/store-catalog";
@@ -32,26 +39,7 @@ type QuoteProduct = {
   quantity?: number;
 };
 
-type AddressFormState = {
-  fullName: string;
-  email: string;
-  phone: string;
-  addressLine1: string;
-  city: string;
-  state: string;
-  country: string;
-};
-
-type CheckoutItem = {
-  id: string;
-  itemType: "product" | "package";
-  quantity: number;
-  title: string;
-  price: number;
-  image: string;
-  sourceType: string;
-  sourceId: string;
-};
+type AddressFormState = CheckoutAddress;
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
@@ -175,7 +163,7 @@ const CheckoutPage = () => {
           sourceId: product.sourceId,
         } satisfies CheckoutItem;
       })
-      .filter(Boolean) as CheckoutItem[];
+      .filter((item): item is CheckoutItem => Boolean(item));
   }, [cartItems, packageMap, productMap]);
 
   const missingCartItems = cartItems.length - cartDetails.length;
@@ -206,15 +194,13 @@ const CheckoutPage = () => {
     [cartDetails],
   );
 
-  const isCheckoutDisabled =
-    isSubmitting ||
-    isVerifyingPayment ||
-    cartDetails.length === 0 ||
-    missingCartItems > 0 ||
-    !shippingAddress.fullName.trim() ||
-    !shippingAddress.email.trim() ||
-    !shippingAddress.phone.trim() ||
-    !shippingAddress.addressLine1.trim();
+  const isCheckoutDisabled = isCheckoutDisabledState({
+    isSubmitting,
+    isVerifyingPayment,
+    cartDetails,
+    missingCartItems,
+    shippingAddress,
+  });
 
   async function handlePaymentVerification(reference: string) {
     setIsVerifyingPayment(true);
@@ -224,19 +210,21 @@ const CheckoutPage = () => {
     });
 
     try {
-      await verifyCustomerPayment({ reference });
-      await clearCustomerCart().catch(() => null);
-      replaceCart([], { pending: false });
-      setCheckoutStatus({
-        tone: "success",
-        message: "Payment verified successfully. Your order is now awaiting approval.",
+      const nextStatus = await verifyCheckoutPaymentFlow({
+        reference,
+        verifyCustomerPayment,
+        clearCustomerCart,
+        replaceCart,
+        onVerified: async () => {
+          router.push("/settings/orders");
+          router.refresh();
+        },
       });
-      router.push("/settings/orders");
-      router.refresh();
-    } catch (error) {
+      setCheckoutStatus(nextStatus);
+    } catch {
       setCheckoutStatus({
         tone: "error",
-        message: error instanceof Error ? error.message : "Unable to verify your payment.",
+        message: "Unable to verify your payment.",
       });
     } finally {
       setIsVerifyingPayment(false);
@@ -294,23 +282,26 @@ const CheckoutPage = () => {
         paymentPayload.data;
 
       if (window.PaystackPop?.setup) {
-        const handler = window.PaystackPop.setup({
-          key: publicKey,
-          email: shippingAddress.email,
-          amount: amountKobo,
-          ref: reference,
-          access_code: accessCode,
-          currency: "NGN",
-          callback: (response: { reference: string }) => {
-            void handlePaymentVerification(response.reference);
-          },
-          onClose: () => {
-            setCheckoutStatus({
-              tone: "info",
-              message: "Payment window closed before completion.",
-            });
-          },
-        });
+        const handler = window.PaystackPop.setup(
+          buildPaystackInlineOptions({
+            payment: {
+              publicKey,
+              amountKobo,
+              reference,
+              accessCode,
+            },
+            email: shippingAddress.email,
+            onSuccess: (nextReference) => {
+              void handlePaymentVerification(nextReference);
+            },
+            onClose: () => {
+              setCheckoutStatus({
+                tone: "info",
+                message: "Payment window closed before completion.",
+              });
+            },
+          }),
+        );
 
         handler.openIframe();
         setCheckoutStatus({

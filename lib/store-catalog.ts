@@ -54,6 +54,13 @@ let productCategoryOptionsPromise: Promise<StoreCatalogCategoryOption[]> | null 
 const productDetailCache = new Map<string, StoreCatalogProduct | null>();
 const packageDetailCache = new Map<string, StoreCatalogPackage | null>();
 
+export function resetStoreCatalogCaches() {
+  productCategoryOptionsCache = null;
+  productCategoryOptionsPromise = null;
+  productDetailCache.clear();
+  packageDetailCache.clear();
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
