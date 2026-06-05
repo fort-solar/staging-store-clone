@@ -340,7 +340,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                 <FilterSection title="Availability">
                   <div className="space-y-2">
                     <CheckboxItem
-                      label="Active listings only"
+                      label="Active Products"
                       checked={productFilters.activeOnly}
                       onChange={() => {
                         setProductFilters((prev) => ({
@@ -357,7 +357,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
               <FilterSection title="Availability">
                 <div className="space-y-2">
                   <CheckboxItem
-                    label="Active listings only"
+                    label="Active Packages"
                     checked={packageFilters.activeOnly}
                     onChange={() => {
                       setPackageFilters((prev) => ({
