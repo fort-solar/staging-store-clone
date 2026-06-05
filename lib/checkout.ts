@@ -22,7 +22,7 @@ export type CheckoutItem = {
   title: string;
   price: number;
   image: string;
-  sourceType: string;
+  sourceType: "product" | "package";
   sourceId: string;
 };
 
