@@ -7,6 +7,7 @@ import {
   createSessionSnapshotFromUpdatedUser,
 } from "@/lib/auth/session";
 import { queuePendingPortalSubmission } from "@/lib/pending-submissions";
+import { clearPersistedGeneralStoreCatalogState } from "@/store/GeneralStore";
 import type {
   AuthMeApiResponse,
   AuthProfileUpdateApiResponse,
@@ -42,6 +43,8 @@ export type MockSession = {
 };
 
 const AUTH_STATE_KEY = "fortsolar_store_auth_state_v1";
+const QUOTE_REQUESTS_KEY = "fortsolar_quote_requests_v1";
+const PENDING_SUBMISSIONS_KEY = "fortsolar_store_pending_submissions_v1";
 
 function canUseStorage() {
   return typeof window !== "undefined";
@@ -135,6 +138,22 @@ export function clearClientAuthState() {
   window.localStorage.removeItem(AUTH_STATE_KEY);
 }
 
+function clearCustomerPersistedState() {
+  clearPersistedGeneralStoreCatalogState();
+
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.removeItem(QUOTE_REQUESTS_KEY);
+  window.localStorage.removeItem(PENDING_SUBMISSIONS_KEY);
+}
+
+export function clearCustomerClientState() {
+  clearClientAuthState();
+  clearCustomerPersistedState();
+}
+
 export function sessionSnapshotToMockSession(snapshot: SessionSnapshot | null) {
   if (!snapshot) {
     return null;
@@ -173,7 +192,7 @@ export const getMockSession = (): MockSession | null => {
 };
 
 export const clearMockSession = () => {
-  clearClientAuthState();
+  clearCustomerClientState();
 };
 
 export const getMockCurrentUser = (): MockUser | null => {
@@ -354,7 +373,7 @@ export async function logoutUser() {
       body: {},
     });
   } finally {
-    clearClientAuthState();
+    clearCustomerClientState();
   }
 }
 

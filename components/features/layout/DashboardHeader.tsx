@@ -10,7 +10,6 @@ import { SearchIcon } from "../icons/SearchIcon";
 import Link from "next/link";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { useRouter } from "next/navigation";
-import { createLoginRedirectHref } from "@/lib/auth/redirect";
 import { ChevronDown, ChevronUp, HelpCircle, LogOut, Settings, List, InspectionPanel  } from "lucide-react";
 import { OrdersIcon } from "../icons/OrdersIcon";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -40,13 +39,13 @@ const DashboardHeader = ({
   const userFullName = session?.user.fullName ?? "Customer User";
   const userFirstName = session?.user.fullName?.split(" ")[0] ?? "Customer";
   const userEmail = session?.user.email ?? "customer@email.com";
-  const ordersHref = isCustomerLoggedIn
-    ? "/settings/orders"
-    : createLoginRedirectHref("/settings/orders");
 
   const signOut = async () => {
-    await logoutUser();
-    router.refresh();
+    try {
+      await logoutUser();
+    } finally {
+      router.replace("/");
+    }
   };
 
   return (
@@ -155,12 +154,14 @@ const DashboardHeader = ({
         </div>
 
         <div className="hidden lg:flex items-center gap-4 justify-end text-sm text-[#3B3B3B]">
-          <Link href={ordersHref} className="flex items-center gap-2 text-xs text-[#3B3B3B]">
-            <OrdersIcon className="text-[#3B3B3B]/60" />
-            <span className="hidden lg:block">
-              Orders
-            </span>
-          </Link>
+          {isCustomerLoggedIn ? (
+            <Link href="/settings/orders" className="flex items-center gap-2 text-xs text-[#3B3B3B]">
+              <OrdersIcon className="text-[#3B3B3B]/60" />
+              <span className="hidden lg:block">
+                Orders
+              </span>
+            </Link>
+          ) : null}
           <Link
             href="/favorites"
             className="relative flex h-9 w-9 items-center justify-center rounded-md"

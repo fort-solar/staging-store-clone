@@ -1,22 +1,13 @@
-import { useGeneralStore } from "@/store/GeneralStore";
+import {
+  clearPersistedGeneralStoreCatalogState,
+  resetGeneralStoreCatalogState,
+  useGeneralStore,
+} from "@/store/GeneralStore";
 
 function resetGeneralStore() {
   localStorage.clear();
-  useGeneralStore.setState({
-    isHydrated: false,
-    isCategorySidebarOpen: false,
-    cartItems: [],
-    favorites: {
-      products: [],
-      packages: [],
-    },
-    syncState: {
-      cartPending: false,
-      favoritesPending: false,
-      lastCartSyncAt: null,
-      lastFavoritesSyncAt: null,
-    },
-  });
+  useGeneralStore.setState({ isHydrated: false });
+  resetGeneralStoreCatalogState();
 }
 
 describe("store cart actions", () => {
@@ -56,5 +47,29 @@ describe("store cart actions", () => {
 
     store.clearCart();
     expect(useGeneralStore.getState().cartItems).toEqual([]);
+  });
+
+  it("clears persisted catalog state without dropping hydration", () => {
+    const store = useGeneralStore.getState();
+
+    useGeneralStore.setState({ isHydrated: true, isCategorySidebarOpen: true });
+    store.addToCart({ id: "prod-1", itemType: "product" });
+    store.toggleFavoriteProduct("prod-1");
+
+    clearPersistedGeneralStoreCatalogState();
+
+    expect(useGeneralStore.getState().isHydrated).toBe(true);
+    expect(useGeneralStore.getState().isCategorySidebarOpen).toBe(false);
+    expect(useGeneralStore.getState().cartItems).toEqual([]);
+    expect(useGeneralStore.getState().favorites).toEqual({
+      products: [],
+      packages: [],
+    });
+    expect(useGeneralStore.getState().syncState).toEqual({
+      cartPending: false,
+      favoritesPending: false,
+      lastCartSyncAt: null,
+      lastFavoritesSyncAt: null,
+    });
   });
 });

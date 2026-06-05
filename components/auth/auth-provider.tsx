@@ -13,7 +13,7 @@ import {
 import { APP_SESSION_EXPIRED_EVENT, appGet, isAppSessionExpiredError } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
 import { createSessionSnapshotFromProfile } from "@/lib/auth/session";
-import { clearClientAuthState, syncClientAuthState } from "@/lib/localAuth";
+import { clearClientAuthState, clearCustomerClientState, syncClientAuthState } from "@/lib/localAuth";
 import type { AuthMeApiResponse, PortalRole, SessionSnapshot } from "@/types/api.types";
 
 type AuthContextValue = {
@@ -43,7 +43,7 @@ export function AuthProvider({
   const clearSession = useCallback(() => {
     hasHandledSessionExpiryRef.current = false;
     setSession(null);
-    clearClientAuthState();
+    clearCustomerClientState();
   }, []);
 
   const applySessionFromProfile = useCallback(
@@ -106,7 +106,7 @@ export function AuthProvider({
         return currentSession;
       }
 
-      clearClientAuthState();
+      clearCustomerClientState();
       return null;
     });
   }, [initialSession]);

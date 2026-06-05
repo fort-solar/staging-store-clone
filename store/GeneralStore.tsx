@@ -3,16 +3,25 @@ import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import { GeneralStoreState, type SyncResource } from "@/types/common.types";
 
+const EMPTY_FAVORITES = {
+    products: [],
+    packages: [],
+};
+
+const EMPTY_SYNC_STATE = {
+    cartPending: false,
+    favoritesPending: false,
+    lastCartSyncAt: null,
+    lastFavoritesSyncAt: null,
+};
+
 const initialState: GeneralStoreState = {
     isHydrated: false,
     setHydrated: () => { },
     isCategorySidebarOpen: false,
     toggleCategorySidebar: () => { },
     cartItems: [],
-    favorites: {
-        products: [],
-        packages: [],
-    },
+    favorites: EMPTY_FAVORITES,
     addToCart: () => { },
     replaceCart: () => { },
     setCategorySidebarOpen: () => { }, 
@@ -22,12 +31,7 @@ const initialState: GeneralStoreState = {
     toggleFavoriteProduct: () => { },
     toggleFavoritePackage: () => { },
     replaceFavorites: () => { },
-    syncState: {
-        cartPending: false,
-        favoritesPending: false,
-        lastCartSyncAt: null,
-        lastFavoritesSyncAt: null,
-    },
+    syncState: EMPTY_SYNC_STATE,
     markCatalogSyncPending: () => { },
     markCatalogSyncComplete: () => { },
 }
@@ -199,3 +203,23 @@ export const useGeneralStore = create<GeneralStoreState>()(
         }
     )
 )
+
+export function resetGeneralStoreCatalogState() {
+    useGeneralStore.setState({
+        isCategorySidebarOpen: false,
+        cartItems: [],
+        favorites: {
+            ...EMPTY_FAVORITES,
+            products: [],
+            packages: [],
+        },
+        syncState: {
+            ...EMPTY_SYNC_STATE,
+        },
+    });
+}
+
+export function clearPersistedGeneralStoreCatalogState() {
+    useGeneralStore.persist.clearStorage();
+    resetGeneralStoreCatalogState();
+}

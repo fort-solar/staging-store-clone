@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/auth-provider";
+import { createLoginRedirectHref } from "@/lib/auth/redirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaginationControls from "@/components/ui/pagination-controls";
@@ -199,7 +201,10 @@ function paginateItems<T>(items: T[], page: number, pageSize: number) {
 }
 
 const SettingsContent = ({ page }: { page: TabKey }) => {
-  const { session } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { session, isRefreshing } = useAuth();
   const currentUser = useMemo(() => sessionSnapshotToMockUser(session), [session]);
   const [activeTab, setActiveTab] = useState<TabKey>(page);
   const [query, setQuery] = useState("");
@@ -240,10 +245,19 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     phone: "",
     address: "",
   });
+  const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
   useEffect(() => {
     setActiveTab(page);
   }, [page]);
+
+  useEffect(() => {
+    if (isRefreshing || session) {
+      return;
+    }
+
+    router.replace(createLoginRedirectHref(currentPath));
+  }, [currentPath, isRefreshing, router, session]);
 
   useEffect(() => {
     const fullName = currentUser?.fullName ?? "";
@@ -599,6 +613,14 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       ),
     [localQuoteRequests, resolvedLocalQuoteRequestsPage],
   );
+
+  if (!session) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-white text-sm text-[#5A646B]">
+        Redirecting to sign in...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white py-20">
