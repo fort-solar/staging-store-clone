@@ -81,9 +81,10 @@ const writeQuoteRequests = (requests: StoredQuoteRequest[]) => {
 const createDefaultState = (product?: QuoteProduct): QuoteFormState => {
   const session = getMockSession();
   const user = getMockCurrentUser();
+  const quantity = Math.max(1, Number(product?.quantity) || 1);
 
   return {
-    quantity: 1,
+    quantity,
     projectType: "Residential",
     installationTimeline: "Within 2 Weeks",
     buildingType: "Bungalow",

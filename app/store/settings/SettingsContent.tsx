@@ -204,7 +204,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { session, isRefreshing } = useAuth();
+  const { session, isRefreshing, isSigningOut } = useAuth();
   const currentUser = useMemo(() => sessionSnapshotToMockUser(session), [session]);
   const [activeTab, setActiveTab] = useState<TabKey>(page);
   const [query, setQuery] = useState("");
@@ -252,12 +252,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   }, [page]);
 
   useEffect(() => {
-    if (isRefreshing || session) {
+    if (isRefreshing || isSigningOut || session) {
       return;
     }
 
     router.replace(createLoginRedirectHref(currentPath));
-  }, [currentPath, isRefreshing, router, session]);
+  }, [currentPath, isRefreshing, isSigningOut, router, session]);
 
   useEffect(() => {
     const fullName = currentUser?.fullName ?? "";
