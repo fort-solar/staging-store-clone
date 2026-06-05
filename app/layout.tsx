@@ -6,6 +6,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import Script from "next/script";
 import { SidebarInitializer } from "@/util/SidebarInitializer";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { CartCatalogBridge } from "@/components/auth/cart-catalog-bridge";
 import { StoreSyncBridge } from "@/components/auth/store-sync-bridge";
 import { publicEnv } from "@/lib/env";
 import { getSessionSnapshotFromCookieStore } from "@/lib/auth/session";
@@ -75,6 +76,7 @@ export default async function RootLayout({
   const initialSession = await getSessionSnapshotFromCookieStore(await cookies());
   const appTree = (
     <AuthProvider initialSession={initialSession} portal="customer">
+      <CartCatalogBridge />
       <StoreSyncBridge />
       {children}
     </AuthProvider>

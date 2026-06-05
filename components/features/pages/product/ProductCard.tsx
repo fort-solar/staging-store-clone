@@ -24,6 +24,7 @@ const ProductCard
     priceOriginal,
     image,
     availability,
+    stockQuantity,
     href,
     isFavorite = false,
     onToggleFavorite,
@@ -36,13 +37,21 @@ const ProductCard
     priceOriginal: number;
     image: string;
     availability: string;
+    stockQuantity: number;
     href: string;
     isFavorite?: boolean;
     onToggleFavorite?: () => void;
     onGetQuote?: () => void;
   }) => {
     const addToCart = useGeneralStore((state) => state.addToCart);
+    const cartQuantity = useGeneralStore(
+      (state) =>
+        state.cartItems.find((item) => item.itemType === "product" && String(item.id) === String(id))
+          ?.quantity ?? 0,
+    );
     const cardDescription = truncateCardDescription(mini_description);
+    const isAddToCartDisabled =
+      availability === "Out Of Stock" || (stockQuantity > 0 && cartQuantity >= stockQuantity);
     return (
       <div className="group h-full bg-[#EBFAEB] p-2 rounded-xl overflow-hidden">
         <div className='bg-white flex flex-col h-full rounded-xl overflow-hidden'>
@@ -68,7 +77,7 @@ const ProductCard
                   />
                 </button>
                 <button
-                  disabled={availability === "Out Of Stock" ? true : false}
+                  disabled={isAddToCartDisabled}
                   onClick={(event) => {
                     event.preventDefault();
                     addToCart({ id, itemType: "product" });
@@ -99,6 +108,7 @@ const ProductCard
                   />
                 </button>
                 <button
+                  disabled={isAddToCartDisabled}
                   onClick={(event) => {
                     event.preventDefault();
                     addToCart({ id, itemType: "product" });

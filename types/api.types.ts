@@ -336,6 +336,7 @@ export type StoreCatalogProduct = {
   datasheet?: StoreAssetRecord | null;
   price: number;
   priceOriginal: number;
+  stockQuantity: number;
   categoryId?: string | null;
   category: string;
   categoryLabel?: string;

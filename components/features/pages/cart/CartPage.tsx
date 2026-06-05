@@ -13,6 +13,7 @@ import {
   useStorePackagesByIds,
   useStoreProductsByIds,
 } from "@/lib/store-catalog";
+import { clampCartQuantity, getProductCartMaxQuantity } from "@/lib/cart";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
@@ -57,6 +58,8 @@ const CartPage = () => {
           title: product.title,
           price: product.price,
           image: product.image,
+          stockQuantity:
+            item.itemType === "product" ? getProductCartMaxQuantity(productMap.get(String(item.id))) : null,
         };
       })
       .filter(Boolean) as Array<{
@@ -66,6 +69,7 @@ const CartPage = () => {
         title: string;
         price: number;
         image: string | { src: string };
+        stockQuantity: number | null;
       }>;
   }, [cartItems, packageMap, productMap]);
 
@@ -118,23 +122,23 @@ const CartPage = () => {
                     <div className="flex lg:flex-col items-center lg:items-start justify-between lg:justify-start gap-5 lg:gap-1">
                       <p className="font-semibold text-[#252C32] truncate">{item.title}</p>
                       <div className="mt-2">
-                        <select
+                        <input
+                          type="number"
+                          min={1}
+                          max={item.stockQuantity ?? undefined}
                           value={item.quantity}
                           onChange={(event) =>
                             updateCartQuantity({
                               id: item.id,
                               itemType: item.itemType,
-                              quantity: Number(event.target.value),
+                              quantity: clampCartQuantity(
+                                Number(event.target.value),
+                                item.stockQuantity,
+                              ),
                             })
                           }
-                          className="h-8 w-16 rounded-md border border-[#E4E9EC] text-sm"
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((qty) => (
-                            <option key={qty} value={qty}>
-                              {qty}
-                            </option>
-                          ))}
-                        </select>
+                          className="h-8 w-20 rounded-md border border-[#E4E9EC] px-2 text-sm"
+                        />
                       </div>
                     </div>
 

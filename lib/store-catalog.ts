@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { appGet } from "@/lib/api/client";
+import { AppRequestError, appGet } from "@/lib/api/client";
 import type {
   PaginationMeta,
   ProductCategoryListApiResponse,
@@ -387,6 +387,7 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
     datasheet,
     price: effectivePrice,
     priceOriginal: product.price,
+    stockQuantity: Math.max(0, product.stock_quantity),
     categoryId: product.category_id,
     category: categoryLabel,
     categoryLabel,
@@ -487,14 +488,6 @@ export function normalizePackage(item: ProductPackageRecord): StoreCatalogPackag
     sourceType: "package",
     sourceId: item.id,
   };
-}
-
-async function safeAppGet<T>(path: string) {
-  try {
-    return await appGet<T>(path);
-  } catch {
-    return null;
-  }
 }
 
 function resolvePageNumber(value: number | undefined) {
@@ -636,34 +629,95 @@ export async function getStoreProductCategoryOptions() {
   return productCategoryOptionsPromise;
 }
 
-export async function getStoreProductById(id: string) {
+type StoreCatalogLookupResult<TItem> = {
+  item: TItem | null;
+  status: "found" | "missing" | "error";
+};
+
+async function getStoreProductLookupResult(id: string): Promise<StoreCatalogLookupResult<StoreCatalogProduct>> {
   if (productDetailCache.has(id)) {
-    return productDetailCache.get(id) ?? null;
+    const cachedProduct = productDetailCache.get(id) ?? null;
+
+    return {
+      item: cachedProduct,
+      status: cachedProduct ? "found" : "missing",
+    };
   }
 
-  const productPayload = await safeAppGet<UnifiedProductDetailApiResponse>(
-    `/api/v1/products/${id}`,
-  );
-  const resolvedProduct = productPayload?.success
-    ? normalizeUnifiedProduct(productPayload.data)
-    : null;
+  try {
+    const productPayload = await appGet<UnifiedProductDetailApiResponse>(`/api/v1/products/${id}`);
+    const resolvedProduct = productPayload.success
+      ? normalizeUnifiedProduct(productPayload.data)
+      : null;
 
-  productDetailCache.set(id, resolvedProduct);
-  return resolvedProduct;
+    productDetailCache.set(id, resolvedProduct);
+
+    return {
+      item: resolvedProduct,
+      status: resolvedProduct ? "found" : "missing",
+    };
+  } catch (error) {
+    if (error instanceof AppRequestError && error.status === 404) {
+      productDetailCache.set(id, null);
+
+      return {
+        item: null,
+        status: "missing",
+      };
+    }
+
+    return {
+      item: null,
+      status: "error",
+    };
+  }
+}
+
+export async function getStoreProductById(id: string) {
+  return (await getStoreProductLookupResult(id)).item;
+}
+
+async function getStorePackageLookupResult(id: string): Promise<StoreCatalogLookupResult<StoreCatalogPackage>> {
+  if (packageDetailCache.has(id)) {
+    const cachedPackage = packageDetailCache.get(id) ?? null;
+
+    return {
+      item: cachedPackage,
+      status: cachedPackage ? "found" : "missing",
+    };
+  }
+
+  try {
+    const packagePayload = await appGet<ProductPackageDetailApiResponse>(
+      `/api/v1/products/packages/${id}`,
+    );
+    const resolvedPackage = packagePayload.success ? normalizePackage(packagePayload.data) : null;
+
+    packageDetailCache.set(id, resolvedPackage);
+
+    return {
+      item: resolvedPackage,
+      status: resolvedPackage ? "found" : "missing",
+    };
+  } catch (error) {
+    if (error instanceof AppRequestError && error.status === 404) {
+      packageDetailCache.set(id, null);
+
+      return {
+        item: null,
+        status: "missing",
+      };
+    }
+
+    return {
+      item: null,
+      status: "error",
+    };
+  }
 }
 
 export async function getStorePackageById(id: string) {
-  if (packageDetailCache.has(id)) {
-    return packageDetailCache.get(id) ?? null;
-  }
-
-  const packagePayload = await safeAppGet<ProductPackageDetailApiResponse>(
-    `/api/v1/products/packages/${id}`,
-  );
-  const resolvedPackage = packagePayload?.success ? normalizePackage(packagePayload.data) : null;
-
-  packageDetailCache.set(id, resolvedPackage);
-  return resolvedPackage;
+  return (await getStorePackageLookupResult(id)).item;
 }
 
 type StoreCatalogListHookState<TItem> = StoreCatalogListResult<TItem> & {
@@ -934,17 +988,30 @@ export function useStorePackageById(id: string | undefined) {
 }
 
 async function getStoreProductsByIds(ids: string[]) {
-  const records = await Promise.all(ids.map((id) => getStoreProductById(id).catch(() => null)));
-  return records.filter((item): item is StoreCatalogProduct => Boolean(item));
+  const records = await Promise.all(ids.map((id) => getStoreProductLookupResult(id)));
+
+  return {
+    items: records
+      .map((record) => record.item)
+      .filter((item): item is StoreCatalogProduct => Boolean(item)),
+    hasError: records.some((record) => record.status === "error"),
+  };
 }
 
 async function getStorePackagesByIds(ids: string[]) {
-  const records = await Promise.all(ids.map((id) => getStorePackageById(id).catch(() => null)));
-  return records.filter((item): item is StoreCatalogPackage => Boolean(item));
+  const records = await Promise.all(ids.map((id) => getStorePackageLookupResult(id)));
+
+  return {
+    items: records
+      .map((record) => record.item)
+      .filter((item): item is StoreCatalogPackage => Boolean(item)),
+    hasError: records.some((record) => record.status === "error"),
+  };
 }
 
 type StoreCatalogItemsByIdsState<TItem> = {
   items: TItem[];
+  hasError: boolean;
   requestKey: string;
 };
 
@@ -953,6 +1020,7 @@ function createStoreCatalogItemsByIdsState<TItem>(
 ): StoreCatalogItemsByIdsState<TItem> {
   return {
     items: [],
+    hasError: false,
     requestKey,
   };
 }
@@ -976,10 +1044,11 @@ export function useStoreProductsByIds(ids: Array<string | number>) {
     let cancelled = false;
 
     getStoreProductsByIds(normalizedIds)
-      .then((items) => {
+      .then((result) => {
         if (!cancelled) {
           setState({
-            items,
+            items: result.items,
+            hasError: result.hasError,
             requestKey,
           });
         }
@@ -1000,6 +1069,7 @@ export function useStoreProductsByIds(ids: Array<string | number>) {
   return {
     items: requestKey ? (isLoading ? [] : state.items) : [],
     isLoading,
+    hasError: requestKey ? (isLoading ? false : state.hasError) : false,
   };
 }
 
@@ -1018,10 +1088,11 @@ export function useStorePackagesByIds(ids: Array<string | number>) {
     let cancelled = false;
 
     getStorePackagesByIds(normalizedIds)
-      .then((items) => {
+      .then((result) => {
         if (!cancelled) {
           setState({
-            items,
+            items: result.items,
+            hasError: result.hasError,
             requestKey,
           });
         }
@@ -1042,5 +1113,6 @@ export function useStorePackagesByIds(ids: Array<string | number>) {
   return {
     items: requestKey ? (isLoading ? [] : state.items) : [],
     isLoading,
+    hasError: requestKey ? (isLoading ? false : state.hasError) : false,
   };
 }

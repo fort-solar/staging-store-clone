@@ -49,6 +49,7 @@ describe("normalizeUnifiedProduct", () => {
     ]);
     expect(normalized.price).toBe(2500000);
     expect(normalized.priceOriginal).toBe(2500000);
+    expect(normalized.stockQuantity).toBe(12);
     expect(normalized.isActive).toBe(true);
     expect(normalized.availability).toBe("In Stock");
     expect(normalized.sectionValues).toEqual([{ label: "Size", value: "12 kVA" }]);
@@ -81,6 +82,7 @@ describe("normalizeUnifiedProduct", () => {
 
     expect(normalized.price).toBe(825000);
     expect(normalized.priceOriginal).toBe(950000);
+    expect(normalized.stockQuantity).toBe(2);
     expect(normalized.images).toEqual([
       "https://cdn.example.com/products/prod-2/front.jpg",
     ]);

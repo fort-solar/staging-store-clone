@@ -24,6 +24,8 @@ const ProductListCard = ({
   isFavorite = false,
   onToggleFavorite,
   onGetQuote,
+  availability,
+  stockQuantity,
 }: {
   id: CatalogId;
   title: string;
@@ -31,6 +33,7 @@ const ProductListCard = ({
   price: number;
   image: string;
   availability: string;
+  stockQuantity: number;
   warrantyYears: number;
   href: string;
   isFavorite?: boolean;
@@ -38,7 +41,14 @@ const ProductListCard = ({
   onGetQuote?: () => void;
 }) => {
   const addToCart = useGeneralStore((state) => state.addToCart);
+  const cartQuantity = useGeneralStore(
+    (state) =>
+      state.cartItems.find((item) => item.itemType === "product" && String(item.id) === String(id))
+        ?.quantity ?? 0,
+  );
   const cardDescription = truncateCardDescription(mini_description);
+  const isAddToCartDisabled =
+    availability === "Out Of Stock" || (stockQuantity > 0 && cartQuantity >= stockQuantity);
   return (
     <div className="group overfow-hidden flex flex-col sm:flex-row gap-8 rounded-lg border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#058A05] transition-colors">
       <div
@@ -59,11 +69,12 @@ const ProductListCard = ({
             />
           </button>
           <button
+            disabled={isAddToCartDisabled}
             onClick={(event) => {
               event.preventDefault();
               addToCart({ id, itemType: "product" });
             }}
-            className="h-8 w-8 rounded-md bg-white/90 shadow-sm grid place-items-center hover:bg-white"
+            className="grid h-8 w-8 place-items-center rounded-md bg-white/90 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#058A05]" />
           </button>

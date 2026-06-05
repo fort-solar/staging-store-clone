@@ -18,6 +18,7 @@ import {
   useStoreProductById,
   useStoreProducts,
 } from "@/lib/store-catalog";
+import { clampCartQuantity, getProductCartMaxQuantity } from "@/lib/cart";
 import { useGeneralStore } from "@/store/GeneralStore";
 import type { CatalogId } from "@/types/common.types";
 
@@ -55,6 +56,9 @@ const ProductDetailPage = () => {
   const { requireCustomerLogin } = useCustomerLoginGate();
 
   const activeImage = selectedImage || product?.image || "";
+  const maxProductQuantity = product ? getProductCartMaxQuantity(product) ?? 1 : 1;
+  const isOutOfStock = !product || product.availability === "Out Of Stock" || product.stockQuantity <= 0;
+  const normalizedQuantity = clampCartQuantity(quantity, maxProductQuantity);
   const relatedProducts = useMemo(
     () =>
       productSuggestions.filter((item) => String(item.id) !== String(id)).slice(0, 3),
@@ -93,8 +97,8 @@ const ProductDetailPage = () => {
 
   const datasheetKind = product.datasheet?.kind || null;
   const specRows = product.sectionValues?.length ? product.sectionValues : product.quickSpecs;
-  const totalPrice = product.price * quantity;
-  const totalOriginalPrice = product.priceOriginal * quantity;
+  const totalPrice = product.price * normalizedQuantity;
+  const totalOriginalPrice = product.priceOriginal * normalizedQuantity;
   const deliveryWarrantyInfo =
     product.deliveryWarrantyInfo ||
     (product.freeDelivery
@@ -212,16 +216,29 @@ const ProductDetailPage = () => {
 
             <div className="mt-4 flex w-fit items-center gap-3 overflow-hidden rounded-sm border">
               <button
-                disabled={product.availability === "Out Of Stock"}
-                onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                disabled={isOutOfStock}
+                onClick={() => setQuantity((prev) => clampCartQuantity(prev - 1, maxProductQuantity))}
                 className="h-9 w-9 border-r border-[#E4E9EC] text-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 -
               </button>
-              <span className="min-w-8 text-center">{quantity}</span>
+              <input
+                type="number"
+                min={1}
+                max={maxProductQuantity}
+                value={normalizedQuantity}
+                onChange={(event) =>
+                  setQuantity(
+                    clampCartQuantity(Number(event.target.value), maxProductQuantity),
+                  )
+                }
+                className="h-9 w-16 border-0 text-center outline-none"
+              />
               <button
-                disabled={product.availability === "Out Of Stock"}
-                onClick={() => setQuantity((prev) => prev + 1)}
+                disabled={isOutOfStock || normalizedQuantity >= maxProductQuantity}
+                onClick={() =>
+                  setQuantity((prev) => clampCartQuantity(prev + 1, maxProductQuantity))
+                }
                 className="h-9 w-9 border-l border-[#E4E9EC] bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] text-lg text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 +
@@ -259,10 +276,14 @@ const ProductDetailPage = () => {
 
             <div className="mt-2 flex items-center gap-3">
               <button
-                disabled={product.availability === "Out Of Stock"}
+                disabled={isOutOfStock}
                 onClick={() => {
                   addToCart({ id: product.id, itemType: "product" });
-                  updateCartQuantity({ id: product.id, itemType: "product", quantity });
+                  updateCartQuantity({
+                    id: product.id,
+                    itemType: "product",
+                    quantity: normalizedQuantity,
+                  });
                   requireCustomerLogin({
                     redirectTo: "/checkout",
                     onAuthenticated: () => router.push("/checkout"),
@@ -273,10 +294,14 @@ const ProductDetailPage = () => {
                 Buy Now
               </button>
               <button
-                disabled={product.availability === "Out Of Stock"}
+                disabled={isOutOfStock}
                 onClick={() => {
                   addToCart({ id: product.id, itemType: "product" });
-                  updateCartQuantity({ id: product.id, itemType: "product", quantity });
+                  updateCartQuantity({
+                    id: product.id,
+                    itemType: "product",
+                    quantity: normalizedQuantity,
+                  });
                 }}
                 className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC] disabled:cursor-not-allowed disabled:opacity-50"
               >

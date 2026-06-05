@@ -11,6 +11,7 @@ type ProductItem = {
     priceOriginal: number;
     image: string;
     availability: string;
+    stockQuantity: number;
     warrantyYears: number;
 };
 
@@ -39,6 +40,7 @@ const ProductsGrid = ({
                        
                         image={p.image}
                         availability={p.availability}
+                        stockQuantity={p.stockQuantity}
                         warrantyYears={p.warrantyYears}
                         href={`/products/${p.id}`}
                         id={p.id}
@@ -70,6 +72,7 @@ const ProductsGrid = ({
                              priceOriginal={p.priceOriginal}
                             image={p.image}
                             availability={p.availability}
+                            stockQuantity={p.stockQuantity}
                             href={`/products/${p.id}`}
                             isFavorite={favorites.includes(p.id)}
                             onToggleFavorite={() => onToggleFavorite(p.id)}
