@@ -694,7 +694,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   <div>
                     <h2 className="text-2xl font-semibold text-[#202020]">Personal Details</h2>
                     <p className="text-sm text-[#7C7C7C]">
-                      Keep your contact and delivery details current.
+                      Keep your contact and delivery details up to date.
                     </p>
                   </div>
 
