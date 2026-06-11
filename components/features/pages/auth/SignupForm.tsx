@@ -99,7 +99,12 @@ const SignupForm = () => {
     await requestEmailVerification().catch(() => null);
     await refreshSession().catch(() => null);
 
-    setStatus({ tone: "success", message: "Account created. Check your email to verify your address." });
+    setStatus({
+      tone: "success",
+      message: publicEnv.emailVerificationBypassEnabled
+        ? "Account created. If email delivery is disabled in this environment, use the sandbox bypass on the next screen."
+        : "Account created. Check your email to verify your address.",
+    });
     router.push(`/verify-email?email=${encodeURIComponent(values.email)}&requested=1`);
     setIsSubmitting(false);
   };
