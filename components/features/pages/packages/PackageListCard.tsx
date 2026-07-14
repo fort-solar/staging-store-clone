@@ -17,7 +17,7 @@ const PackageListCard = ({
   href: string;
 }) => {
   return (
-    <div className="group flex flex-col sm:flex-row gap-4 rounded-xl border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#058A05] transition-colors">
+    <div className="group flex flex-col sm:flex-row gap-4 rounded-xl border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#048A05] transition-colors">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg sm:w-44 sm:shrink-0">
         <Image src={image} alt={title} fill className="object-cover" />
       </div>
@@ -26,11 +26,11 @@ const PackageListCard = ({
           <p className="order-2  lg:order-1 text-lg font-bold text-[#252C32]">{title}</p>
           <Link
             href={href}
-            className="order-1 lg:order-2 inline-flex items-center gap-2 text-sm rounded-lg border border-[#BFE8BF] px-2 py-2 text-[#058A05] hover:bg-[#EBFAEB]"
+            className="order-1 lg:order-2 inline-flex items-center gap-2 text-sm rounded-lg border border-[#BFE8BF] px-2 py-2 text-[#048A05] hover:bg-[#EBFAEB]"
           >
             View Package
-            <span className="border border-[#D1D5DB] rounded-lg p-1 group-hover:bg-[#058A05] group-hover:border-[#058A05]">
-              <SlantedArrow className="text-[#058A05] group-hover:text-white" />
+            <span className="border border-[#D1D5DB] rounded-lg p-1 group-hover:bg-[#048A05] group-hover:border-[#048A05]">
+              <SlantedArrow className="text-[#048A05] group-hover:text-white" />
             </span>
           </Link>
         </div>

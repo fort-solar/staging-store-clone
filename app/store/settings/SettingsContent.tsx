@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Script from "next/script";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -18,8 +19,13 @@ import {
   getCustomerPackageRequests,
   getCustomerQuotes,
   getCustomerSummary,
+  submitCustomerQuoteFeedback,
   reportCustomerInstallationIssue,
+  acceptCustomerPackageRequest,
+  initializeCustomerOrderPayment,
+  verifyCustomerPayment,
 } from "@/lib/customer";
+import { buildPaystackInlineOptions } from "@/lib/checkout";
 import { sessionSnapshotToMockUser, updateCurrentUserProfile } from "@/lib/localAuth";
 import type {
   CustomerInstallationDetailApiResponse,
@@ -69,7 +75,7 @@ type StoredQuoteRequest = {
 };
 
 type AsyncStatus = {
-  tone: "success" | "error";
+  tone: "success" | "error" | "info";
   message: string;
 } | null;
 
@@ -238,6 +244,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   const [isLoadingInstallations, setIsLoadingInstallations] = useState(false);
   const [isLoadingPackageRequests, setIsLoadingPackageRequests] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [isPayingRequestId, setIsPayingRequestId] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState({
     firstName: "",
     lastName: "",
@@ -580,6 +588,234 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     }
   }
 
+  async function handlePaymentVerification(reference: string) {
+    if (isVerifyingPayment) return;
+    setIsVerifyingPayment(true);
+    setPageStatus({
+      tone: "info",
+      message: "Verifying payment reference...",
+    });
+    try {
+      await verifyCustomerPayment({ reference });
+      setPageStatus({
+        tone: "success",
+        message: "Payment verified successfully. Your order is now awaiting approval.",
+      });
+      setPackageRequestsPayload(null);
+      const prPayload = await getCustomerPackageRequests(packageRequestsPage, PAGE_SIZE);
+      setPackageRequestsPayload(prPayload);
+      const summaryPayload = await getCustomerSummary();
+      setSummary(summaryPayload.data);
+    } catch (error) {
+      setPageStatus({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Unable to verify your payment.",
+      });
+    } finally {
+      setIsVerifyingPayment(false);
+      setIsPayingRequestId(null);
+    }
+  }
+
+  async function handleAcceptAndPay(packageRequestId: string) {
+    if (isPayingRequestId) return;
+    setIsPayingRequestId(packageRequestId);
+    setPageStatus({
+      tone: "info",
+      message: "Accepting quote package request...",
+    });
+
+    try {
+      const acceptResult = await acceptCustomerPackageRequest(packageRequestId);
+      const orderId = acceptResult.orderId;
+      if (!orderId) {
+        throw new Error("Package request accepted, but failed to retrieve order ID.");
+      }
+
+      setPageStatus({
+        tone: "info",
+        message: "Initializing checkout payment details...",
+      });
+      const paymentPayload = await initializeCustomerOrderPayment(orderId);
+      const { accessCode, amountKobo, authorizationUrl, publicKey, reference } =
+        paymentPayload.data;
+
+      if (window.PaystackPop?.setup) {
+        const handler = window.PaystackPop.setup(
+          buildPaystackInlineOptions({
+            payment: {
+              publicKey,
+              amountKobo,
+              reference,
+              accessCode,
+            },
+            email: currentUser?.email || "",
+            onSuccess: (nextReference) => {
+              void handlePaymentVerification(nextReference);
+            },
+            onClose: () => {
+              setPageStatus({
+                tone: "info",
+                message: "Payment window closed before completion.",
+              });
+              setIsPayingRequestId(null);
+            },
+          })
+        );
+        handler.openIframe();
+        setPageStatus({
+          tone: "info",
+          message: "Order generated. Complete payment in the Paystack popup.",
+        });
+      } else {
+        setPageStatus({
+          tone: "info",
+          message: "Redirecting to Paystack to complete payment...",
+        });
+        window.location.assign(authorizationUrl);
+      }
+    } catch (error) {
+      setPageStatus({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Unable to process payment for this quote.",
+      });
+      setIsPayingRequestId(null);
+    }
+  }
+
+  const [isFeedbackSubmittingQuoteId, setIsFeedbackSubmittingQuoteId] = useState<string | null>(null);
+  const [rejectionNotes, setRejectionNotes] = useState<Record<string, string>>({});
+  const [showRejectionFormQuoteId, setShowRejectionFormQuoteId] = useState<string | null>(null);
+
+  async function handleQuoteFeedback(id: string, response: "approved" | "rejected") {
+    if (isFeedbackSubmittingQuoteId) return;
+    const note = rejectionNotes[id]?.trim();
+    if (response === "rejected" && !note) {
+      setPageStatus({ tone: "error", message: "Please supply rejection feedback notes." });
+      return;
+    }
+
+    setIsFeedbackSubmittingQuoteId(id);
+    setPageStatus({
+      tone: "info",
+      message: response === "approved"
+        ? "Accepting proposal and generating package request..."
+        : "Submitting rejection feedback...",
+    });
+
+    try {
+      await submitCustomerQuoteFeedback(id, { response, feedback: note });
+      setPageStatus({
+        tone: "success",
+        message: response === "approved"
+          ? "Proposal accepted! Check the 'Package Requests' tab to complete deposit payment."
+          : "Proposal rejected successfully. Our engineers will follow up soon.",
+      });
+      // Refresh quotes
+      const quotesData = await getCustomerQuotes();
+      setQuotes(quotesData.data);
+      // Try refresh package requests
+      try {
+        const prData = await getCustomerPackageRequests();
+        setPackageRequestsPayload(prData);
+      } catch (_) {}
+      
+      if (response === "approved") {
+        router.push("/settings/package-requests");
+      }
+    } catch (err) {
+      setPageStatus({
+        tone: "error",
+        message: err instanceof Error ? err.message : "Feedback submission failed.",
+      });
+    } finally {
+      setIsFeedbackSubmittingQuoteId(null);
+      setShowRejectionFormQuoteId(null);
+    }
+  }
+
+  const [isPayingOrderId, setIsPayingOrderId] = useState<string | null>(null);
+
+  async function handlePayOrder(orderId: string) {
+    if (isPayingOrderId) return;
+    setIsPayingOrderId(orderId);
+    setPageStatus({
+      tone: "info",
+      message: "Initializing payment details...",
+    });
+
+    try {
+      const paymentPayload = await initializeCustomerOrderPayment(orderId);
+      const { accessCode, amountKobo, authorizationUrl, publicKey, reference } =
+        paymentPayload.data;
+
+      if (window.PaystackPop?.setup) {
+        const handler = window.PaystackPop.setup(
+          buildPaystackInlineOptions({
+            payment: {
+              publicKey,
+              amountKobo,
+              reference,
+              accessCode,
+            },
+            email: currentUser?.email || "",
+            onSuccess: async (nextReference: string) => {
+              setPageStatus({
+                tone: "info",
+                message: "Payment successful. Verifying transaction...",
+              });
+              setIsVerifyingPayment(true);
+              try {
+                await verifyCustomerPayment({ reference: nextReference });
+                setPageStatus({
+                  tone: "success",
+                  message: "Your payment has been successfully verified! Order is now paid.",
+                });
+                // Refresh summary & orders
+                const summaryPayload = await getCustomerSummary();
+                setSummary(summaryPayload.data);
+                const orders = await getCustomerOrders(ordersPage, PAGE_SIZE);
+                setOrdersPayload(orders);
+              } catch (err) {
+                setPageStatus({
+                  tone: "error",
+                  message: err instanceof Error ? err.message : "Payment verification failed. Please contact support.",
+                });
+              } finally {
+                setIsVerifyingPayment(false);
+                setIsPayingOrderId(null);
+              }
+            },
+            onClose: () => {
+              setPageStatus({
+                tone: "info",
+                message: "Payment popup closed.",
+              });
+              setIsPayingOrderId(null);
+            },
+          })
+        );
+        handler.openIframe();
+        setPageStatus({
+          tone: "info",
+          message: "Complete payment in the Paystack popup.",
+        });
+      } else {
+        setPageStatus({
+          tone: "info",
+          message: "Redirecting to Paystack to complete payment...",
+        });
+        window.location.assign(authorizationUrl);
+      }
+    } catch (error) {
+      setPageStatus({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Unable to process payment for this order.",
+      });
+      setIsPayingOrderId(null);
+    }
+  }
+
   const orderSummary = ordersPayload?.summary ?? {
     allOrders: 0,
     processingOrders: 0,
@@ -624,6 +860,10 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
 
   return (
     <div className="min-h-screen bg-white py-20">
+      <Script
+        src="https://js.paystack.co/v1/inline.js"
+        strategy="afterInteractive"
+      />
       <DashboardHeader query={query} onQueryChange={setQuery} />
       <div className="mx-auto mt-20 w-full max-w-6xl px-6 py-6 lg:mt-0">
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
@@ -682,7 +922,9 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   className={`rounded-xl px-4 py-3 text-sm ${
                     pageStatus.tone === "success"
                       ? "bg-[#EAF7E8] text-[#168416]"
-                      : "bg-[#FDECEC] text-[#C73939]"
+                      : pageStatus.tone === "info"
+                        ? "bg-[#EEF5FF] text-[#1D4ED8]"
+                        : "bg-[#FDECEC] text-[#C73939]"
                   }`}
                 >
                   {pageStatus.message}
@@ -857,6 +1099,111 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               </div>
                             </div>
                           </div>
+
+                          {quote.status === "quoted" && (
+                            (() => {
+                              const validityDays = Number(quote.formExtras?.validity_days) || 7;
+                              const createdDate = new Date(quote.updatedAt);
+                              const expirationDate = new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
+                              const now = new Date();
+                              const isExpired = now.getTime() > expirationDate.getTime();
+                              const remainingMs = expirationDate.getTime() - now.getTime();
+                              const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+
+                              return (
+                                <div className="mt-4 p-4 border border-[#EAECF0] rounded-xl bg-white space-y-3">
+                                  <h4 className="text-sm font-semibold text-[#101828]">Proposal Details</h4>
+                                  <div className="grid grid-cols-2 gap-4 text-xs">
+                                    <div>
+                                      <span className="text-[#7C7C7C]">Custom System Sizing:</span>
+                                      <p className="font-semibold text-sm text-[#202020]">{quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "N/A"}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-[#7C7C7C]">Price Quote:</span>
+                                      <p className="font-semibold text-sm text-[#202020]">{quote.estimatedCost ? formatCurrency(quote.estimatedCost) : "N/A"}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-[#7C7C7C]">Est. Payback Period:</span>
+                                      <p className="font-semibold text-sm text-[#202020]">{quote.paybackPeriodYears ? `${quote.paybackPeriodYears} Years` : "N/A"}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-[#7C7C7C]">Quote Validity:</span>
+                                      <p className={`font-semibold text-sm ${isExpired ? "text-[#E11D48]" : "text-[#048A05]"}`}>
+                                        {isExpired ? "Expired" : `${remainingDays} days remaining`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {quote.adminNotes && (
+                                    <div className="mt-2 text-xs text-[#5A646B] bg-gray-50 p-2 rounded-lg">
+                                      <strong>Designer's Note: </strong> {quote.adminNotes}
+                                    </div>
+                                  )}
+                                  {quote.quoteAssetUrl && (
+                                    <a
+                                      href={quote.quoteAssetUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#048A05] hover:underline pt-1"
+                                    >
+                                      Download Official Proposal PDF / Document
+                                    </a>
+                                  )}
+
+                                  <div className="mt-4 pt-4 border-t border-[#EAECF0] flex flex-col gap-2 sm:flex-row sm:justify-end">
+                                    {isExpired ? (
+                                      <p className="text-xs text-[#B26B00] italic">This proposal is expired. Please contact support to request a reissue.</p>
+                                    ) : (
+                                      <>
+                                        {showRejectionFormQuoteId === quote.id ? (
+                                          <div className="w-full space-y-2 text-left">
+                                            <textarea
+                                              className="w-full text-xs p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#048A05]"
+                                              placeholder="Enter reason for rejection or request revisions..."
+                                              value={rejectionNotes[quote.id] || ""}
+                                              onChange={(e) => setRejectionNotes(prev => ({ ...prev, [quote.id]: e.target.value }))}
+                                            />
+                                            <div className="flex gap-2 justify-end">
+                                              <Button
+                                                onClick={() => setShowRejectionFormQuoteId(null)}
+                                                variant="outline"
+                                                className="px-3 py-1.5 text-xs rounded-lg bg-white text-gray-700"
+                                              >
+                                                Cancel
+                                              </Button>
+                                              <Button
+                                                onClick={() => handleQuoteFeedback(quote.id, "rejected")}
+                                                className="px-3 py-1.5 text-xs rounded-lg bg-[#E11D48] text-white hover:bg-[#BE123C]"
+                                                disabled={isFeedbackSubmittingQuoteId === quote.id}
+                                              >
+                                                Submit Rejection
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <Button
+                                              onClick={() => setShowRejectionFormQuoteId(quote.id)}
+                                              className="px-4 py-2 text-xs font-semibold border border-gray-200 text-[#475467] hover:bg-gray-50 bg-white rounded-lg w-full sm:w-fit"
+                                              disabled={isFeedbackSubmittingQuoteId === quote.id}
+                                            >
+                                              Reject & Request Revision
+                                            </Button>
+                                            <Button
+                                              onClick={() => handleQuoteFeedback(quote.id, "approved")}
+                                              className="px-4 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg w-full sm:w-fit"
+                                              disabled={isFeedbackSubmittingQuoteId === quote.id}
+                                            >
+                                              Accept Proposal
+                                            </Button>
+                                          </>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()
+                          )}
                         </div>
                       ))}
                       <PaginationControls
@@ -922,13 +1269,25 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             <p>Primary Item: {order.primaryItemName || "N/A"}</p>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => void toggleOrderDetail(order.id)}
-                            className="mt-4 text-sm font-semibold text-[#168416]"
-                          >
-                            {expandedOrderId === order.id ? "Hide Order Detail" : "View Order Detail"}
-                          </button>
+                          <div className="flex gap-4 items-center mt-4">
+                            <button
+                              type="button"
+                              onClick={() => void toggleOrderDetail(order.id)}
+                              className="text-sm font-semibold text-[#168416]"
+                            >
+                              {expandedOrderId === order.id ? "Hide Order Detail" : "View Order Detail"}
+                            </button>
+
+                            {order.status === "pending" && (
+                              <Button
+                                onClick={() => handlePayOrder(order.id)}
+                                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg"
+                                disabled={isPayingOrderId === order.id}
+                              >
+                                {isPayingOrderId === order.id ? "Processing Payment..." : "Pay Order Deposit"}
+                              </Button>
+                            )}
+                          </div>
 
                           {expandedOrderId === order.id && orderDetails[order.id] ? (
                             <div className="mt-4 rounded-2xl bg-[#FAFAFA] p-4">
@@ -1070,14 +1429,37 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                           installationDetails[installation.id] ? (
                             <div className="mt-4 rounded-2xl bg-[#FAFAFA] p-4">
                               <div className="grid gap-4 lg:grid-cols-2">
-                                {Object.entries(installationDetails[installation.id]).map(([key, value]) => (
-                                  <div key={key} className="space-y-2">
-                                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7C7C7C]">
-                                      {humanizeStatus(key)}
-                                    </p>
-                                    <DetailValue value={value} />
-                                  </div>
-                                ))}
+                                {Object.entries(installationDetails[installation.id])
+                                  .filter(([key]) => key !== "proofOfWork" && key !== "id" && key !== "requiresApproval")
+                                  .map(([key, value]) => (
+                                    <div key={key} className="space-y-2">
+                                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7C7C7C]">
+                                        {humanizeStatus(key)}
+                                      </p>
+                                      <DetailValue value={value} />
+                                    </div>
+                                  ))}
+
+                                {(() => {
+                                  const details = installationDetails[installation.id] as any;
+                                  const photos = details?.proofOfWork || [];
+                                  if (!photos.length) return null;
+                                  return (
+                                    <div className="mt-4 border-t border-gray-200 pt-4 col-span-2 space-y-3">
+                                      <p className="text-sm font-semibold text-[#202020]">Proof of Work Photos</p>
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                        {photos.map((p: any) => (
+                                          <div key={p.id} className="rounded-lg overflow-hidden border border-gray-200 bg-white p-1">
+                                            <img src={p.url} alt={p.type || "photo"} className="w-full h-24 object-cover rounded-md" />
+                                            <div className="p-1 mt-1 text-[10px] text-[#7C7C7C] text-center capitalize font-medium">
+                                              {p.type} Photo
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                           ) : null}
@@ -1126,11 +1508,56 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               {humanizeStatus(request.displayStatus || request.status)}
                             </span>
                           </div>
-                          <div className="mt-4 grid gap-3 text-sm text-[#404040] lg:grid-cols-3">
-                            <p>Financing: {request.financing || "N/A"}</p>
-                            <p>Order ID: {request.orderId || "N/A"}</p>
-                            <p>Bundle ID: {request.bundleId || "N/A"}</p>
-                          </div>
+                          {request.financing_requested && (
+                            <div className="mt-3 rounded-xl bg-gray-50 p-3 text-xs border border-[#E7E7E7] space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-[#5A646B]">Financing Status:</span>
+                                <span className={`font-bold uppercase ${
+                                  request.financing_status === "approved"
+                                    ? "text-[#048A05]"
+                                    : request.financing_status === "rejected"
+                                      ? "text-[#E11D48]"
+                                      : "text-amber-500"
+                                }`}>
+                                  {humanizeStatus(request.financing_status || "Pending assessment")}
+                                </span>
+                              </div>
+                              {request.financing_status === "approved" && request.financing_terms && (
+                                <div className="border-t border-gray-200 pt-2 grid grid-cols-3 gap-2">
+                                  <div>
+                                    <span className="text-[#7C7C7C]">Downpayment:</span>
+                                    <p className="font-semibold text-sm text-[#202020]">
+                                      {formatCurrency(request.financing_terms.downpayment_amount)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#7C7C7C]">Monthly Installment:</span>
+                                    <p className="font-semibold text-sm text-[#202020]">
+                                      {formatCurrency(request.financing_terms.installment)} / mo
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#7C7C7C]">Tenure:</span>
+                                    <p className="font-semibold text-sm text-[#202020]">
+                                      {request.financing_terms.tenure} Months
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {(request.status === "processing" || (request.financing_requested && request.financing_status === "approved" && request.status === "pending")) ? (
+                            <div className="mt-4 flex justify-end">
+                              <Button
+                                onClick={() => handleAcceptAndPay(request.id)}
+                                disabled={isPayingRequestId !== null || isVerifyingPayment}
+                                className="rounded-xl bg-[#1D9A1D] px-6 py-2 text-sm font-semibold text-white hover:bg-[#168416]"
+                              >
+                                {isPayingRequestId === request.id ? "Processing..." : "Accept & Pay"}
+                              </Button>
+                            </div>
+                          ) : null}
                         </div>
                       ))}
 

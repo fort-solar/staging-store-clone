@@ -27,7 +27,18 @@ function mergeCartItems(
 ) {
   const merged = new Map<string, CustomerCartItemRecord>();
 
-  [...serverItems, ...localItems].forEach((item) => {
+  const targetType =
+    localItems.length > 0
+      ? localItems[0].itemType
+      : serverItems.length > 0
+        ? serverItems[0].itemType
+        : null;
+
+  const filteredItems = [...serverItems, ...localItems].filter(
+    (item) => !targetType || item.itemType === targetType
+  );
+
+  filteredItems.forEach((item) => {
     const key = `${item.itemType}:${item.id}`;
     const current = merged.get(key);
 

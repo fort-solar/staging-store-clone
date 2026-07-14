@@ -176,6 +176,7 @@ export type UnifiedProductRecord = {
   specifications?: Record<string, unknown>;
   is_active: boolean;
   status?: string | null;
+  eligible_for_installation?: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -355,6 +356,7 @@ export type StoreCatalogProduct = {
   quickSpecs: Array<{ label: string; value: string }>;
   sectionValues?: Array<{ label: string; value: string }>;
   isActive?: boolean;
+  eligibleForInstallation?: boolean;
   sourceType: "product";
   sourceId: string;
 };
@@ -412,6 +414,7 @@ export type CustomerSummaryApiResponse = ApiDataResponse<CustomerSummaryRecord>;
 export type CustomerQuoteRecord = {
   id: string;
   createdAt: string;
+  updatedAt: string;
   status: string;
   energySummary: {
     totalLoad: string;
@@ -421,6 +424,13 @@ export type CustomerQuoteRecord = {
   };
   appliances: string[];
   formExtras: Record<string, unknown>;
+  recommendedSystemSize: number | null;
+  estimatedCost: number | null;
+  estimatedSavings: number | null;
+  paybackPeriodYears: number | null;
+  adminNotes: string | null;
+  quoteAssetUrl: string | null;
+  quoteAssetKind: string | null;
 };
 
 export type CustomerQuoteListApiResponse = ApiCollectionResponse<CustomerQuoteRecord>;
@@ -483,6 +493,13 @@ export type CustomerOrderCreatePayload = {
   create_bundle_request?: {
     bundle_id: string;
     financing_requested: boolean;
+    financing_id_upload_id?: string | null;
+    financing_statement_upload_id?: string | null;
+    financing_cac_upload_id?: string | null;
+    financing_utility_bill_upload_id?: string | null;
+    financing_bvn?: string | null;
+    financing_bvn_consent?: boolean;
+    financing_profile_type?: string | null;
   };
 };
 
@@ -538,6 +555,14 @@ export type CustomerPackageRequestRecord = {
   displayStatus: string;
   orderId: string | null;
   bundleId: string | null;
+  financing_requested?: boolean;
+  financing_status?: string | null;
+  financing_terms?: {
+    downpayment_amount?: number;
+    installment?: number;
+    tenure?: number;
+  } | null;
+  financing_profile_type?: string | null;
 };
 
 export type CustomerPackageRequestListApiResponse = ApiSuccessResponse & {

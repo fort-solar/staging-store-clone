@@ -10,5 +10,9 @@ export async function requireCustomerSession(redirectTo: string) {
     redirect(createLoginRedirectHref(redirectTo));
   }
 
+  if (!snapshot.user.emailVerified) {
+    redirect(`/verify-email?email=${encodeURIComponent(snapshot.user.email)}`);
+  }
+
   return snapshot;
 }

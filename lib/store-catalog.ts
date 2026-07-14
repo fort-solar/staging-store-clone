@@ -376,6 +376,7 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
   const deliveryWarrantyInfo =
     readString(raw, ["delivery_warranty_info", "delivery_and_warranty_info"], "") || null;
   const freeDelivery = readBoolean(raw, ["free_delivery", "is_free_delivery"]);
+  const eligibleForInstallation = readBoolean(raw, ["eligible_for_installation"]);
   const description = product.overview || product.name;
 
   return {
@@ -403,6 +404,7 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
     description,
     freeDelivery,
     deliveryWarrantyInfo,
+    eligibleForInstallation,
     quickSpecs: sectionValues.length ? sectionValues : [{ label: "Category", value: categoryLabel }],
     sectionValues,
     isActive: product.is_active,

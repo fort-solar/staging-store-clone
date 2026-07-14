@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -19,6 +19,9 @@ import {
 import GradientCheckbox from "@/components/ui/gradient-checkbox";
 import { getMockCurrentUser, getMockSession } from "@/lib/localAuth";
 import type { CatalogId } from "@/types/common.types";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { submitCustomerQuoteRequest } from "@/lib/customer";
 
 type QuoteProduct = {
   id: CatalogId;
@@ -47,36 +50,12 @@ type QuoteFormState = {
   requestInstallation: boolean;
 };
 
-type StoredQuoteRequest = QuoteFormState & {
-  createdAt: string;
-  product: QuoteProduct;
-  products: QuoteProduct[];
-};
-
-const QUOTE_REQUESTS_KEY = "fortsolar_quote_requests_v1";
-
 const CONTACT_METHODS: ContactMethod[] = [
   "Phone Call",
   "WhatsApp",
   "Email",
   "Office Visit",
 ];
-
-const readQuoteRequests = (): StoredQuoteRequest[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(QUOTE_REQUESTS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as StoredQuoteRequest[];
-  } catch {
-    return [];
-  }
-};
-
-const writeQuoteRequests = (requests: StoredQuoteRequest[]) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(QUOTE_REQUESTS_KEY, JSON.stringify(requests));
-};
 
 const createDefaultState = (product?: QuoteProduct): QuoteFormState => {
   const session = getMockSession();
@@ -114,6 +93,7 @@ const GetQuoteModal = ({
   products?: QuoteProduct[];
   onClose: () => void;
 }) => {
+  const router = useRouter();
   const quoteProducts = useMemo(() => {
     if (products && products.length > 0) return products;
     return product ? [product] : [];
@@ -122,19 +102,31 @@ const GetQuoteModal = ({
   const isMultiProductQuote = quoteProducts.length > 1;
   const primaryProduct = quoteProducts[0];
 
-  const [form, setForm] = useState<QuoteFormState>(() => {
-    const base = createDefaultState(primaryProduct);
-    if (isMultiProductQuote) {
-      return {
-        ...base,
-        additionalInfo: `Requesting quote for ${quoteProducts.length} products in my cart.`,
-      };
-    }
-    return base;
-  });
+  const [form, setForm] = useState<QuoteFormState>(() => createDefaultState(primaryProduct));
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Initialize and reset form when modal opens
+  useEffect(() => {
+    if (open && primaryProduct) {
+      setIsSubmitted(false);
+      setIsSubmitting(false);
+      setErrorMsg(null);
+      const base = createDefaultState(primaryProduct);
+      if (isMultiProductQuote) {
+        setForm({
+          ...base,
+          additionalInfo: `Requesting quote for ${quoteProducts.length} products in my cart.`,
+        });
+      } else {
+        setForm(base);
+      }
+    }
+  }, [open, primaryProduct, isMultiProductQuote, quoteProducts.length]);
 
   const totalPrice = useMemo(() => {
+    if (!primaryProduct) return 0;
     if (isMultiProductQuote) {
       return quoteProducts.reduce(
         (sum, item) => sum + item.price * Math.max(1, item.quantity ?? 1),
@@ -153,6 +145,69 @@ const GetQuoteModal = ({
     form.location.trim().length > 0 &&
     form.installationAddress.trim().length > 0 &&
     form.agreeToTerms;
+
+  if (isSubmitted) {
+    return (
+      <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+        <DialogContent
+          showCloseButton
+          className="p-8 sm:max-w-130 rounded-3xl overflow-hidden"
+        >
+          <div className="flex flex-col items-center text-center py-6 space-y-4">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand-soft text-brand ring-4 ring-brand-soft/50 mb-2">
+              <CheckCircle2 className="h-10 w-10 animate-bounce text-brand" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">Quote Request Submitted!</h3>
+            <p className="text-sm text-slate-500 max-w-sm">
+              We have received your request for a personalized solar quote. Here is what happens next:
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 space-y-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 text-left">
+              Next Steps Checklist
+            </h4>
+            <ul className="space-y-3 text-sm text-slate-600 text-left">
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-brand shrink-0 mt-0.5" />
+                <span className="line-through text-slate-400">Quote request received and logged</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 mt-0.5 bg-white text-[10px] text-slate-400 font-semibold flex-col justify-center">2</div>
+                <span>Solar design expert reviews building & load profile</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 mt-0.5 bg-white text-[10px] text-slate-400 font-semibold flex-col justify-center">3</div>
+                <span>Initial design and sizing calculations</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 mt-0.5 bg-white text-[10px] text-slate-400 font-semibold flex-col justify-center">4</div>
+                <span>Detailed pricing, savings and quote sent to your email</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-6">
+            <button
+              onClick={() => {
+                onClose();
+                router.push("/settings/quotes");
+              }}
+              className="flex h-12 w-full items-center justify-center rounded-xl bg-brand text-sm font-semibold text-white transition hover:bg-brand-dark"
+            >
+              View My Quotes
+            </button>
+            <button
+              onClick={onClose}
+              className="h-12 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              Close
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -281,27 +336,31 @@ const GetQuoteModal = ({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Location</label>
+                  <label className="text-sm text-[#3E3F43]">
+                    Location <span className="text-red-500 ml-0.5">*</span>
+                  </label>
                   <Input
                     value={form.location}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, location: event.target.value }))
                     }
                     placeholder="City"
-                     className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
                   />
                 </div>
               </div>
 
               <div className="mt-4 space-y-2">
-                <label className="text-sm text-[#3E3F43]">Installation Address</label>
+                <label className="text-sm text-[#3E3F43]">
+                  Installation Address <span className="text-red-500 ml-0.5">*</span>
+                </label>
                 <Input
                   value={form.installationAddress}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, installationAddress: event.target.value }))
                   }
                   placeholder="No 24,"
-                   className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                  className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
                 />
               </div>
             </section>
@@ -310,7 +369,9 @@ const GetQuoteModal = ({
               <h3 className="text-[18px] font-bold text-[#3E3F43]">Contact Information</h3>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Full Name</label>
+                  <label className="text-sm text-[#3E3F43]">
+                    Full Name <span className="text-red-500 ml-0.5">*</span>
+                  </label>
                   <Input
                     value={form.fullName}
                     onChange={(event) =>
@@ -320,7 +381,9 @@ const GetQuoteModal = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Email Address</label>
+                  <label className="text-sm text-[#3E3F43]">
+                    Email Address <span className="text-red-500 ml-0.5">*</span>
+                  </label>
                   <Input
                     value={form.email}
                     onChange={(event) =>
@@ -330,7 +393,9 @@ const GetQuoteModal = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Phone Number</label>
+                  <label className="text-sm text-[#3E3F43]">
+                    Phone Number <span className="text-red-500 ml-0.5">*</span>
+                  </label>
                   <Input
                     value={form.phone}
                     onChange={(event) =>
@@ -347,7 +412,7 @@ const GetQuoteModal = ({
                       setForm((prev) => ({ ...prev, whatsappNumber: event.target.value }))
                     }
                     placeholder="+234"
-                     className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
                   />
                 </div>
               </div>
@@ -364,7 +429,7 @@ const GetQuoteModal = ({
                       type="button"
                       onClick={() => setForm((prev) => ({ ...prev, preferredContactMethod: method }))}
                       className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left ${isActive
-                        ? "border-[#22A128] bg-[#EBFAEB] text-[#058A05]"
+                        ? "border-[#22A128] bg-[#EBFAEB] text-[#048A05]"
                         : "border-[#DADDE2] bg-[#F3F4F6] text-[#3E3F43]"
                         }`}
                     >
@@ -410,16 +475,9 @@ const GetQuoteModal = ({
               </div>
             </section>
 
-            <div className="rounded-2xl border border-[#C5E6C5] bg-[#EBFAEB] p-4">
-              <p className="text-2xl font-semibold text-[#058A05]">What happens Next??</p>
-              <p className="mt-2 text-sm text-[#556070]">
-                Our solar experts will review your request and give you a call back in 24 hours with a detailed quote, including pricing, installation timeline and financing options.
-              </p>
-            </div>
-
-            {isSubmitted && (
-              <p className="rounded-lg bg-[#EBFAEB] px-4 py-3 text-base text-[#058A05]">
-                Quote request submitted successfully. We saved it locally for now.
+            {errorMsg && (
+              <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+                {errorMsg}
               </p>
             )}
 
@@ -433,42 +491,72 @@ const GetQuoteModal = ({
               </button>
               <button
                 type="button"
-                disabled={!canSubmit}
-                onClick={() => {
-                  const requests = readQuoteRequests();
-                  writeQuoteRequests([
-                    ...requests,
-                    {
-                      ...form,
-                      product: {
-                        ...primaryProduct,
-                        quantity: isMultiProductQuote ? primaryProduct.quantity : form.quantity,
+                disabled={!canSubmit || isSubmitting}
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  setErrorMsg(null);
+                  try {
+                    const payload = {
+                      name: form.fullName,
+                      email: form.email,
+                      phone: form.phone,
+                      location: form.location,
+                      address: form.installationAddress,
+                      quantity: isMultiProductQuote ? undefined : form.quantity,
+                      projectType: form.projectType,
+                      installationTimeline: form.installationTimeline,
+                      buildingType: form.buildingType,
+                      whatsappNumber: form.whatsappNumber,
+                      preferredContactMethod: form.preferredContactMethod,
+                      additionalInfo: form.additionalInfo,
+                      agreeToTerms: form.agreeToTerms,
+                      requestInstallation: form.requestInstallation,
+                      product: isMultiProductQuote ? undefined : {
+                        id: primaryProduct.id,
+                        title: primaryProduct.title,
+                        image: primaryProduct.image,
+                        price: primaryProduct.price,
+                        quantity: form.quantity
                       },
                       products: quoteProducts.map((item, index) => ({
-                        ...item,
+                        id: item.id,
+                        title: item.title,
+                        image: item.image,
+                        price: item.price,
                         quantity: isMultiProductQuote
                           ? Math.max(1, item.quantity ?? 1)
                           : index === 0
                             ? form.quantity
                             : Math.max(1, item.quantity ?? 1),
-                      })),
-                      createdAt: new Date().toISOString(),
-                    },
-                  ]);
-                  setIsSubmitted(true);
-                  window.setTimeout(() => {
-                    onClose();
-                  }, 700);
+                      }))
+                    };
+
+                    await submitCustomerQuoteRequest(payload);
+                    setIsSubmitted(true);
+                  } catch (error) {
+                    setErrorMsg(
+                      error instanceof Error
+                        ? error.message
+                        : "Failed to submit quote request. Please check your network connection and try again."
+                    );
+                  } finally {
+                    setIsSubmitting(false);
+                  }
                 }}
-                className="h-12 rounded-2xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-8 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-12 rounded-2xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-8 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Get My Final Quote
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin animate-duration-1000" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Get My Final Quote"
+                )}
               </button>
             </div>
           </div>
         </div>
-
-
       </DialogContent>
     </Dialog>
   );

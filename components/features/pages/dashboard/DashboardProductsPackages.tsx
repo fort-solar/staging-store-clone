@@ -203,7 +203,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   onClick={() => handleProductCategorySelect(section.id)}
                   className={`rounded-full px-2 py-1 transition-colors lg:px-3 ${
                     activeProductSection === section.label
-                      ? "font-semibold text-[#058A05]"
+                      ? "font-semibold text-[#048A05]"
                       : "hover:text-[#252C32]"
                   }`}
                 >
@@ -222,7 +222,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   onClick={() => setActiveTab("packages")}
                   className={`w-[50%] rounded-l-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
                     activeTab === "packages"
-                      ? "bg-[#058A05] text-white"
+                      ? "bg-[#048A05] text-white"
                       : "text-[#3B3B3B]"
                   }`}
                 >
@@ -232,7 +232,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   onClick={() => setActiveTab("products")}
                   className={`w-[50%] rounded-r-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
                     activeTab === "products"
-                      ? "bg-[#058A05] text-white"
+                      ? "bg-[#048A05] text-white"
                       : "text-[#3B3B3B]"
                   }`}
                 >
@@ -248,7 +248,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             {activeQuery.trim().length > 0 ? (
               <p className="text-xl font-semibold text-[#252C32]">
                 Found {resultsCount} results for{" "}
-                <span className="text-[#058A05]">{activeQuery}</span>
+                <span className="text-[#048A05]">{activeQuery}</span>
               </p>
             ) : (
               <p className="text-xl font-semibold text-[#252C32]">
