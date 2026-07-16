@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaginationControls from "@/components/ui/pagination-controls";
 import { SmartTabs, type TabKey } from "@/lib/smartTabs";
+import { getNotifications } from "@/lib/notifications";
 import {
   approveCustomerInstallation,
   getCustomerInstallations,
@@ -253,6 +254,49 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     phone: "",
     address: "",
   });
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    getNotifications()
+      .then((payload) => {
+        if (payload?.data) {
+          setNotifications(payload.data);
+        }
+      })
+      .catch((err) => console.error("Error loading notifications:", err));
+  }, []);
+
+  const getUnreadCountForTab = (tabKey: TabKey) => {
+    if (!notifications || !notifications.length) return 0;
+    return notifications.filter((notif) => {
+      if (notif.is_read) return false;
+      if (!notif.link) return false;
+
+      const link = notif.link.toLowerCase();
+      
+      if (tabKey === "orders") {
+        return link.includes("/orders") && !link.includes("/package-requests") && !link.includes("/quotes");
+      }
+      if (tabKey === "quotes") {
+        return link.includes("/quotes");
+      }
+      if (tabKey === "installations") {
+        return link.includes("/installations");
+      }
+      if (tabKey === "package_requests") {
+        return link.includes("/package-requests") || link.includes("/package_requests");
+      }
+      return false;
+    }).length;
+  };
+
+  const tabsWithUnread = useMemo(() => {
+    return tabs.map((tab) => ({
+      ...tab,
+      unreadCount: getUnreadCountForTab(tab.key),
+    }));
+  }, [notifications]);
+
   const currentPath = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
   useEffect(() => {
@@ -915,7 +959,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
             id="section"
           >
             <div className="flex flex-col gap-6">
-              <SmartTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+              <SmartTabs tabs={tabsWithUnread} activeTab={activeTab} onChange={setActiveTab} />
 
               {pageStatus ? (
                 <div

@@ -139,22 +139,29 @@ const CheckoutPage = () => {
   const [bvnConsent, setBvnConsent] = useState(false);
   const [legalConsent, setLegalConsent] = useState(false);
 
-  // Document Uploads states
   const [govIdFile, setGovIdFile] = useState<File | null>(null);
   const [govIdUploadId, setGovIdUploadId] = useState<string | null>(null);
   const [isUploadingGovId, setIsUploadingGovId] = useState(false);
+  const [govIdProgress, setGovIdProgress] = useState<number | null>(null);
+  const [govIdError, setGovIdError] = useState<string | null>(null);
 
   const [utilityBillFile, setUtilityBillFile] = useState<File | null>(null);
   const [utilityBillUploadId, setUtilityBillUploadId] = useState<string | null>(null);
   const [isUploadingUtilityBill, setIsUploadingUtilityBill] = useState(false);
+  const [utilityBillProgress, setUtilityBillProgress] = useState<number | null>(null);
+  const [utilityBillError, setUtilityBillError] = useState<string | null>(null);
 
   const [bankStatementFile, setBankStatementFile] = useState<File | null>(null);
   const [bankStatementUploadId, setBankStatementUploadId] = useState<string | null>(null);
   const [isUploadingBankStatement, setIsUploadingBankStatement] = useState(false);
+  const [bankStatementProgress, setBankStatementProgress] = useState<number | null>(null);
+  const [bankStatementError, setBankStatementError] = useState<string | null>(null);
 
   const [cacDocumentFile, setCacDocumentFile] = useState<File | null>(null);
   const [cacDocumentUploadId, setCacDocumentUploadId] = useState<string | null>(null);
   const [isUploadingCacDocument, setIsUploadingCacDocument] = useState(false);
+  const [cacDocumentProgress, setCacDocumentProgress] = useState<number | null>(null);
+  const [cacDocumentError, setCacDocumentError] = useState<string | null>(null);
 
   // Financing configuration loaded from backend
   const [financingSettings, setFinancingSettings] = useState<{
@@ -181,60 +188,170 @@ const CheckoutPage = () => {
       .catch((err) => console.error("Error loading financing settings:", err));
   }, []);
 
+  const performUploadWithProgress = (
+    file: File,
+    onProgress: (percent: number) => void,
+    onSuccess: (uploadId: string) => void,
+    onError: (errMessage: string) => void
+  ) => {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress(percent);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (res.success && res.data?.id) {
+            onSuccess(res.data.id);
+          } else {
+            onError(res.message || "Failed to upload file.");
+          }
+        } catch (e) {
+          onError("Invalid response from server.");
+        }
+      } else {
+        let errMsg = "File upload failed.";
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (res.message) errMsg = res.message;
+        } catch (e) {}
+        onError(errMsg);
+      }
+    };
+
+    xhr.onerror = () => {
+      onError("Network error. Check your connection.");
+    };
+
+    xhr.ontimeout = () => {
+      onError("Upload timed out (120s limit exceeded). Please try a smaller file or faster connection.");
+    };
+
+    xhr.timeout = 120000; // 120 seconds (2 minutes)
+    xhr.open("POST", "/api/proxy/api/v1/uploads");
+    xhr.send(formData);
+
+    return () => {
+      xhr.abort();
+    };
+  };
+
   // Document upload handler
   const handleDocumentChange = async (file: File, docType: 'govId' | 'utilityBill' | 'bankStatement' | 'cac') => {
+    const MAX_SIZE = 5242880; // 5MB
+
     if (docType === 'govId') {
       setGovIdFile(file);
-      setIsUploadingGovId(true);
-      try {
-        const res = await uploadFile(file);
-        if (res?.success && res.data?.id) {
-          setGovIdUploadId(res.data.id);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsUploadingGovId(false);
+      setGovIdUploadId(null);
+      setGovIdProgress(0);
+      setGovIdError(null);
+      
+      if (file.size > MAX_SIZE) {
+        setGovIdError("File exceeds the 5MB size limit.");
+        return;
       }
+      
+      setIsUploadingGovId(true);
+      performUploadWithProgress(
+        file,
+        (pct) => setGovIdProgress(pct),
+        (id) => {
+          setGovIdUploadId(id);
+          setIsUploadingGovId(false);
+          setGovIdProgress(100);
+        },
+        (errMsg) => {
+          setGovIdError(errMsg);
+          setIsUploadingGovId(false);
+          setGovIdProgress(null);
+        }
+      );
     } else if (docType === 'utilityBill') {
       setUtilityBillFile(file);
-      setIsUploadingUtilityBill(true);
-      try {
-        const res = await uploadFile(file);
-        if (res?.success && res.data?.id) {
-          setUtilityBillUploadId(res.data.id);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsUploadingUtilityBill(false);
+      setUtilityBillUploadId(null);
+      setUtilityBillProgress(0);
+      setUtilityBillError(null);
+      
+      if (file.size > MAX_SIZE) {
+        setUtilityBillError("File exceeds the 5MB size limit.");
+        return;
       }
+      
+      setIsUploadingUtilityBill(true);
+      performUploadWithProgress(
+        file,
+        (pct) => setUtilityBillProgress(pct),
+        (id) => {
+          setUtilityBillUploadId(id);
+          setIsUploadingUtilityBill(false);
+          setUtilityBillProgress(100);
+        },
+        (errMsg) => {
+          setUtilityBillError(errMsg);
+          setIsUploadingUtilityBill(false);
+          setUtilityBillProgress(null);
+        }
+      );
     } else if (docType === 'bankStatement') {
       setBankStatementFile(file);
-      setIsUploadingBankStatement(true);
-      try {
-        const res = await uploadFile(file);
-        if (res?.success && res.data?.id) {
-          setBankStatementUploadId(res.data.id);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsUploadingBankStatement(false);
+      setBankStatementUploadId(null);
+      setBankStatementProgress(0);
+      setBankStatementError(null);
+      
+      if (file.size > MAX_SIZE) {
+        setBankStatementError("File exceeds the 5MB size limit.");
+        return;
       }
+      
+      setIsUploadingBankStatement(true);
+      performUploadWithProgress(
+        file,
+        (pct) => setBankStatementProgress(pct),
+        (id) => {
+          setBankStatementUploadId(id);
+          setIsUploadingBankStatement(false);
+          setBankStatementProgress(100);
+        },
+        (errMsg) => {
+          setBankStatementError(errMsg);
+          setIsUploadingBankStatement(false);
+          setBankStatementProgress(null);
+        }
+      );
     } else if (docType === 'cac') {
       setCacDocumentFile(file);
-      setIsUploadingCacDocument(true);
-      try {
-        const res = await uploadFile(file);
-        if (res?.success && res.data?.id) {
-          setCacDocumentUploadId(res.data.id);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsUploadingCacDocument(false);
+      setCacDocumentUploadId(null);
+      setCacDocumentProgress(0);
+      setCacDocumentError(null);
+      
+      if (file.size > MAX_SIZE) {
+        setCacDocumentError("File exceeds the 5MB size limit.");
+        return;
       }
+      
+      setIsUploadingCacDocument(true);
+      performUploadWithProgress(
+        file,
+        (pct) => setCacDocumentProgress(pct),
+        (id) => {
+          setCacDocumentUploadId(id);
+          setIsUploadingCacDocument(false);
+          setCacDocumentProgress(100);
+        },
+        (errMsg) => {
+          setCacDocumentError(errMsg);
+          setIsUploadingCacDocument(false);
+          setCacDocumentProgress(null);
+        }
+      );
     }
   };
 
@@ -904,12 +1021,14 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
     onFileChange: (file: File) => void,
     accept = "image/*,application/pdf",
     hasError = false,
+    progress: number | null = null,
+    errorMsg: string | null = null,
   ) => {
     return (
       <div
         className={cn(
           "flex flex-col gap-2 rounded-xl border border-dashed p-4 transition-all duration-200",
-          hasError
+          hasError || errorMsg
             ? "border-red-500 bg-red-50/30 shadow-sm"
             : "border-[#B0BABF] bg-gray-50/50",
         )}
@@ -951,12 +1070,33 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
             {file ? file.name : "No file chosen"}
           </span>
         </div>
+        
         {isUploading && (
-          <span className="text-xs text-[#1FA21B] font-medium animate-pulse">Uploading file...</span>
+          <div className="space-y-1 mt-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-[#1FA21B] font-medium animate-pulse">
+                {progress === 100 ? "Processing file..." : "Uploading..."}
+              </span>
+              <span className="text-[#1FA21B] font-bold">{progress ?? 0}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+              <div 
+                className="bg-[#1FA21B] h-1.5 rounded-full transition-all duration-200" 
+                style={{ width: `${progress ?? 0}%` }}
+              ></div>
+            </div>
+          </div>
         )}
+        
         {!isUploading && uploadId && (
-          <span className="text-xs text-[#048A05] font-semibold flex items-center gap-1">
+          <span className="text-xs text-[#048A05] font-semibold flex items-center gap-1 mt-1">
             ✓ Upload complete
+          </span>
+        )}
+        
+        {errorMsg && (
+          <span className="text-xs text-red-500 font-semibold mt-1">
+            ⚠ {errorMsg}
           </span>
         )}
       </div>
@@ -1027,11 +1167,7 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
               </div>
             ) : null}
 
-            {!isPaystackReady ? (
-              <div className="rounded-2xl border border-[#E9EEF0] bg-[#FAFAFA] px-4 py-3 text-sm text-[#5A646B]">
-                Loading Paystack checkout...
-              </div>
-            ) : null}
+
 
             <section id="shipping-section" className="rounded-2xl border border-[#E9EEF0] p-5">
               <h1 className="text-2xl font-semibold text-[#252C32]">Shipping Address</h1>
@@ -1298,6 +1434,8 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                     (file) => handleDocumentChange(file, "govId"),
                     "image/*,application/pdf",
                     !!validationErrors.uploadsGovId,
+                    govIdProgress,
+                    govIdError,
                   )}
                   {renderDocumentUpload(
                     "Utility Bill *",
@@ -1307,6 +1445,8 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                     (file) => handleDocumentChange(file, "utilityBill"),
                     "image/*,application/pdf",
                     !!validationErrors.uploadsUtilityBill,
+                    utilityBillProgress,
+                    utilityBillError,
                   )}
                   {renderDocumentUpload(
                     "6-Month Bank Statement *",
@@ -1316,6 +1456,8 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                     (file) => handleDocumentChange(file, "bankStatement"),
                     "image/*,application/pdf",
                     !!validationErrors.uploadsBankStatement,
+                    bankStatementProgress,
+                    bankStatementError,
                   )}
                   {profileType === "business" &&
                     renderDocumentUpload(
@@ -1326,6 +1468,8 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                       (file) => handleDocumentChange(file, "cac"),
                       "image/*,application/pdf",
                       !!validationErrors.uploadsCac,
+                      cacDocumentProgress,
+                      cacDocumentError,
                     )}
                 </div>
 
