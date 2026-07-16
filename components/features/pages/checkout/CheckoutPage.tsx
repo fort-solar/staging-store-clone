@@ -135,6 +135,7 @@ const CheckoutPage = () => {
   // Profile type and BVN/Legal consent
   const [profileType, setProfileType] = useState<"individual" | "salary_earner" | "business">("individual");
   const [bvn, setBvn] = useState("");
+  const [nin, setNin] = useState("");
   const [bvnConsent, setBvnConsent] = useState(false);
   const [legalConsent, setLegalConsent] = useState(false);
 
@@ -161,6 +162,9 @@ const CheckoutPage = () => {
     short_term_rate: number;
     long_term_rate: number;
     tenures: number[];
+    individual_rate: number;
+    salary_earner_rate: number;
+    business_rate: number;
   } | null>(null);
 
   useEffect(() => {
@@ -252,6 +256,7 @@ const CheckoutPage = () => {
       tenureMonths,
       profileType,
       bvn,
+      nin,
       bvnConsent,
       legalConsent,
       govIdUploadId,
@@ -289,6 +294,7 @@ const CheckoutPage = () => {
     tenureMonths,
     profileType,
     bvn,
+    nin,
     bvnConsent,
     legalConsent,
     govIdUploadId,
@@ -341,6 +347,7 @@ const CheckoutPage = () => {
     if (draftPayload.tenureMonths) setTenureMonths(draftPayload.tenureMonths);
     if (draftPayload.profileType) setProfileType(draftPayload.profileType);
     if (draftPayload.bvn) setBvn(draftPayload.bvn);
+    if (draftPayload.nin) setNin(draftPayload.nin);
     if (draftPayload.bvnConsent !== undefined) setBvnConsent(draftPayload.bvnConsent);
     if (draftPayload.legalConsent !== undefined) setLegalConsent(draftPayload.legalConsent);
     if (draftPayload.govIdUploadId) setGovIdUploadId(draftPayload.govIdUploadId);
@@ -463,13 +470,16 @@ const CheckoutPage = () => {
     let apr = 0;
 
     if (financingSettings) {
-      apr = tenureMonths <= 12 ? financingSettings.short_term_rate : financingSettings.long_term_rate;
       if (profileType === "individual") {
+        apr = financingSettings.individual_rate ?? financingSettings.short_term_rate ?? 25.20;
         const tenureInYears = tenureMonths / 12;
         interest = financedAmount * (apr / 100) * tenureInYears;
         const totalRepayable = financedAmount + interest;
         monthlyInstallment = totalRepayable / tenureMonths;
       } else {
+        apr = profileType === "salary_earner" 
+          ? (financingSettings.salary_earner_rate ?? 20.00) 
+          : (financingSettings.business_rate ?? 18.00);
         const r = (apr / 100) / 12;
         const n = tenureMonths;
         if (r > 0) {
@@ -562,6 +572,7 @@ const CheckoutPage = () => {
     // 3. Validate Financing (if requestFinancing is true and hasPackage is true)
     if (hasPackage && requestFinancing) {
       if (!bvn || bvn.trim().length < 11) errors.bvn = true;
+      if (!nin || nin.trim().length < 11) errors.nin = true;
       if (!bvnConsent) errors.bvnConsent = true;
       if (!govIdUploadId) errors.uploadsGovId = true;
       if (!utilityBillUploadId) errors.uploadsUtilityBill = true;
@@ -583,6 +594,8 @@ const CheckoutPage = () => {
       } else if (hasPackage && requestFinancing) {
         if (errors.bvn) {
           primaryErrorMessage = "Please enter a valid 11-digit BVN.";
+        } else if (errors.nin) {
+          primaryErrorMessage = "Please enter a valid 11-digit NIN.";
         } else if (errors.bvnConsent) {
           primaryErrorMessage = "You must consent to BVN verification to apply for financing.";
         } else if (errors.uploadsGovId || errors.uploadsUtilityBill || errors.uploadsBankStatement || errors.uploadsCac) {
@@ -723,6 +736,7 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
               financing_cac_upload_id: profileType === "business" ? cacDocumentUploadId : null,
               financing_utility_bill_upload_id: utilityBillUploadId,
               financing_bvn: bvn,
+              financing_nin: nin,
               financing_bvn_consent: bvnConsent,
               financing_profile_type: profileType,
             }
@@ -1157,7 +1171,7 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                 </div>
 
                 {financingSettings && calculatorResults && (() => {
-                  const tenuresList = [3, 6, 12, 15, 18, 24];
+                  const tenuresList = [3, 6, 9, 12, 15, 18, 21, 24];
                   const currentTenureIndex = tenuresList.indexOf(tenureMonths) !== -1 ? tenuresList.indexOf(tenureMonths) : 2;
                   
                   return (
@@ -1317,27 +1331,55 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
 
                 <div className="border-t border-[#E9EEF0] pt-5 space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Bank Verification Number (BVN) *</label>
-                    <Input
-                      type="text"
-                      maxLength={11}
-                      placeholder="Enter 11-digit BVN"
-                      value={bvn}
-                      onChange={(e) => {
-                        setBvn(e.target.value.replace(/\D/g, ""));
-                        if (validationErrors.bvn) {
-                          setValidationErrors((prev) => {
-                            const next = { ...prev };
-                            delete next.bvn;
-                            return next;
-                          });
-                        }
-                      }}
-                      className={cn(
-                        "h-11 rounded-xl max-w-xs transition-all duration-200",
-                        validationErrors.bvn && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
-                      )}
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#5A646B] mb-2">Bank Verification Number (BVN) *</label>
+                      <Input
+                        type="text"
+                        maxLength={11}
+                        placeholder="Enter 11-digit BVN"
+                        value={bvn}
+                        onChange={(e) => {
+                          setBvn(e.target.value.replace(/\D/g, ""));
+                          if (validationErrors.bvn) {
+                            setValidationErrors((prev) => {
+                              const next = { ...prev };
+                              delete next.bvn;
+                              return next;
+                            });
+                          }
+                        }}
+                        className={cn(
+                          "h-11 rounded-xl w-full transition-all duration-200",
+                          validationErrors.bvn && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
+                        )}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#5A646B] mb-2">National Identification Number (NIN) *</label>
+                      <Input
+                        type="text"
+                        maxLength={11}
+                        placeholder="Enter 11-digit NIN"
+                        value={nin}
+                        onChange={(e) => {
+                          setNin(e.target.value.replace(/\D/g, ""));
+                          if (validationErrors.nin) {
+                            setValidationErrors((prev) => {
+                              const next = { ...prev };
+                              delete next.nin;
+                              return next;
+                            });
+                          }
+                        }}
+                        className={cn(
+                          "h-11 rounded-xl w-full transition-all duration-200",
+                          validationErrors.nin && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
+                        )}
+                      />
+                    </div>
+                  </div>
                   </div>
 
                   <div
