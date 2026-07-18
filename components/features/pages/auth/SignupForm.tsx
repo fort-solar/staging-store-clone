@@ -23,7 +23,6 @@ type SignupFormValues = {
   fullName: string;
   email: string;
   phone: string;
-  address: string;
   password: string;
   confirmPassword: string;
   acceptTerms: boolean;
@@ -52,7 +51,6 @@ const SignupForm = () => {
       fullName: initialName,
       email: initialEmail,
       phone: initialPhone,
-      address: "",
       password: "",
       confirmPassword: "",
       acceptTerms: false,
@@ -65,7 +63,6 @@ const SignupForm = () => {
         fullName: initialName,
         email: initialEmail,
         phone: initialPhone,
-        address: "",
         password: "",
         confirmPassword: "",
         acceptTerms: false,
@@ -93,7 +90,7 @@ const SignupForm = () => {
       fullName: values.fullName,
       email: values.email,
       phone: values.phone,
-      address: values.address,
+      address: "",
       password: values.password,
       role: "customer",
     });
@@ -113,7 +110,7 @@ const SignupForm = () => {
     await updateCurrentUserProfile({
       name: values.fullName,
       phone: values.phone,
-      address: values.address,
+      address: "",
     }).catch(() => null);
 
     await requestEmailVerification().catch(() => null);
@@ -203,14 +200,6 @@ const SignupForm = () => {
           required
           {...register("phone", { required: "Phone is required" })}
           error={errors.phone?.message}
-        />
-
-        <AuthInput
-          label="Address (Optional)"
-          placeholder="suite 5 ..."
-          autoComplete="street-address"
-          {...register("address")}
-          error={errors.address?.message}
         />
 
         <PasswordInput
