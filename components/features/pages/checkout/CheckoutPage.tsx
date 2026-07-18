@@ -8,6 +8,7 @@ import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import GradientCheckbox from "@/components/ui/gradient-checkbox";
 import { Input } from "@/components/ui/input";
+import { NigeriaLocationFields } from "@/components/ui/nigeria-location-fields";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
@@ -121,6 +122,7 @@ const CheckoutPage = () => {
 
   // Define installation states
   const [requestInstallation, setRequestInstallation] = useState(false);
+  const [installationType, setInstallationType] = useState("");
   const [roofType, setRoofType] = useState("metal");
   const [shading, setShading] = useState("none");
   const [roofSize, setRoofSize] = useState("");
@@ -363,6 +365,7 @@ const CheckoutPage = () => {
       notes,
       requestFinancing,
       requestInstallation,
+      installationType,
       roofType,
       shading,
       roofSize,
@@ -401,6 +404,7 @@ const CheckoutPage = () => {
     notes,
     requestFinancing,
     requestInstallation,
+    installationType,
     roofType,
     shading,
     roofSize,
@@ -454,6 +458,7 @@ const CheckoutPage = () => {
     if (draftPayload.notes !== undefined) setNotes(draftPayload.notes);
     if (draftPayload.requestFinancing !== undefined) setRequestFinancing(draftPayload.requestFinancing);
     if (draftPayload.requestInstallation !== undefined) setRequestInstallation(draftPayload.requestInstallation);
+    if (draftPayload.installationType) setInstallationType(draftPayload.installationType);
     if (draftPayload.roofType) setRoofType(draftPayload.roofType);
     if (draftPayload.shading) setShading(draftPayload.shading);
     if (draftPayload.roofSize) setRoofSize(draftPayload.roofSize);
@@ -813,6 +818,7 @@ const CheckoutPage = () => {
       if (requestInstallation) {
         const installationInfo = `
 [Professional Installation Site Details]
+Installation Type: ${installationType || "Not specified"}
 Roof Type: ${roofType}
 Roof Orientation: ${roofOrientation}
 Shading Level: ${shading}
@@ -982,24 +988,7 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
             hasError("phone") && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
           )}
         />
-        <Input
-          value={value.city}
-          onChange={(event) => handleInputChange("city", event.target.value)}
-          placeholder="City"
-          className="h-11 rounded-xl"
-        />
-        <Input
-          value={value.state}
-          onChange={(event) => handleInputChange("state", event.target.value)}
-          placeholder="State"
-          className="h-11 rounded-xl"
-        />
-        <Input
-          value={value.country}
-          onChange={(event) => handleInputChange("country", event.target.value)}
-          placeholder="Country"
-          className="h-11 rounded-xl"
-        />
+        <NigeriaLocationFields state={value.state} city={value.city} onStateChange={(next) => handleInputChange("state", next)} onCityChange={(next) => handleInputChange("city", next)} />
         <Input
           value={value.addressLine1}
           onChange={(event) => handleInputChange("addressLine1", event.target.value)}
@@ -1219,6 +1208,11 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                   Please provide structural details of the installation site to help our engineers plan your custom setup.
                 </p>
                 <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Installation Type *</label>
+                    <input list="installation-types" value={installationType} onChange={(e) => setInstallationType(e.target.value)} placeholder="Search installation type" className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none" />
+                    <datalist id="installation-types"><option value="Residential" /><option value="Commercial" /><option value="Industrial" /></datalist>
+                  </div>
                   <div>
                     <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Type *</label>
                     <select
