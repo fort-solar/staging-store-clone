@@ -636,6 +636,10 @@ const CheckoutPage = () => {
     () => cartDetails.find((item) => item.itemType === "package") ?? null,
     [cartDetails],
   );
+  const primaryPackageDetails = useMemo(
+    () => (primaryPackage ? packageMap.get(primaryPackage.id) : undefined),
+    [packageMap, primaryPackage],
+  );
 
   const isCheckoutDisabled = isCheckoutDisabledState({
     isSubmitting,
@@ -850,6 +854,10 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
         discount_amount: discountAmount,
         total_amount: total,
         currency: "NGN",
+        installation_type: requestInstallation ? installationType.trim() || undefined : undefined,
+        specifications: requestInstallation
+          ? primaryPackageDetails?.installationSpecifications
+          : undefined,
         create_bundle_request: primaryPackage
           ? {
               bundle_id: primaryPackage.sourceId,

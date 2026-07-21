@@ -385,12 +385,22 @@ export type StoreCatalogPackage = {
   overview: string;
   packageIncludes: Array<{ label: string; qty: string }>;
   systemDetails: string[];
+  installationSpecifications: InstallationSpecifications;
   powers: string[];
   solarFinanceEnabled?: boolean;
   discountPercentage?: number;
   includedProducts?: Array<{ id: string; categoryLabel: string; productName: string; quantity: number; image?: string | null; datasheet?: StoreAssetRecord | null }>;
   sourceType: "package";
   sourceId: string;
+};
+
+export type InstallationSpecifications = {
+  inverter_size?: string;
+  inverter_label?: string;
+  pv_size?: string;
+  pv_label?: string;
+  battery_size?: string;
+  battery_label?: string;
 };
 
 export type PendingEndpointSubmission = {
@@ -486,6 +496,8 @@ export type CustomerOrderCreatePayload = {
   discount_amount: number;
   total_amount: number;
   currency: string;
+  installation_type?: string;
+  specifications?: InstallationSpecifications;
   create_package_request?: {
     package_id: string;
     financing_requested: boolean;
@@ -504,8 +516,19 @@ export type CustomerOrderCreatePayload = {
   };
 };
 
-export type CustomerOrderCreateResponse = ApiDataResponse<Record<string, unknown>>;
-export type CustomerOrderDetailApiResponse = ApiDataResponse<Record<string, unknown>>;
+export type CustomerOrderResponseRecord = Record<string, unknown> & {
+  id?: string;
+  installation_type?: string | null;
+  specifications?: InstallationSpecifications | null;
+  order?: (Record<string, unknown> & {
+    id?: string;
+    installation_type?: string | null;
+    specifications?: InstallationSpecifications | null;
+  }) | null;
+};
+
+export type CustomerOrderCreateResponse = ApiDataResponse<CustomerOrderResponseRecord>;
+export type CustomerOrderDetailApiResponse = ApiDataResponse<CustomerOrderResponseRecord>;
 
 export type CustomerInstallationSummaryRecord = {
   activeInstallations: number;
