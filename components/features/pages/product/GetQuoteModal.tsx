@@ -2,13 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ComboboxField } from "@/components/ui/combobox-field";
 import {
   Dialog,
   DialogContent,
@@ -279,60 +273,35 @@ const GetQuoteModal = ({
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm text-[#3E3F43]">Project Type</label>
-                  <Select
+                  <ComboboxField
                     value={form.projectType}
-                    onValueChange={(value) =>
-                      setForm((prev) => ({ ...prev, projectType: value }))
-                    }
-                  >
-                    <SelectTrigger className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-120">
-                      <SelectItem value="Residential">Residential</SelectItem>
-                      <SelectItem value="Commercial">Commercial</SelectItem>
-                      <SelectItem value="Industrial">Industrial</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(value) => setForm((prev) => ({ ...prev, projectType: value }))}
+                    options={["Residential", "Commercial", "Industrial"].map((value) => ({ value, label: value }))}
+                    className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0"
+                    contentClassName="z-120"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm text-[#3E3F43]">Installation Timeline</label>
-                  <Select
+                  <ComboboxField
                     value={form.installationTimeline}
-                    onValueChange={(value) =>
-                      setForm((prev) => ({ ...prev, installationTimeline: value }))
-                    }
-                  >
-                    <SelectTrigger className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-120">
-                      <SelectItem value="Within 2 Weeks">Within 2 Weeks</SelectItem>
-                      <SelectItem value="Within 1 Month">Within 1 Month</SelectItem>
-                      <SelectItem value="Flexible">Flexible</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(value) => setForm((prev) => ({ ...prev, installationTimeline: value }))}
+                    options={["Within 2 Weeks", "Within 1 Month", "Flexible"].map((value) => ({ value, label: value }))}
+                    className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0"
+                    contentClassName="z-120"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm text-[#3E3F43]">Building Type</label>
-                  <Select
+                  <ComboboxField
                     value={form.buildingType}
-                    onValueChange={(value) =>
-                      setForm((prev) => ({ ...prev, buildingType: value }))
-                    }
-                  >
-                    <SelectTrigger className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-120">
-                      <SelectItem value="Bungalow">Bungalow</SelectItem>
-                      <SelectItem value="Duplex">Duplex</SelectItem>
-                      <SelectItem value="Apartment">Apartment</SelectItem>
-                      <SelectItem value="Office">Office</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(value) => setForm((prev) => ({ ...prev, buildingType: value }))}
+                    options={["Bungalow", "Duplex", "Apartment", "Office"].map((value) => ({ value, label: value }))}
+                    className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0"
+                    contentClassName="z-120"
+                  />
                 </div>
 
                 <div className="space-y-2">
