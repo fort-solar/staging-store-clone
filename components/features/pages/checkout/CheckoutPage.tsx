@@ -8,6 +8,7 @@ import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import GradientCheckbox from "@/components/ui/gradient-checkbox";
 import { Input } from "@/components/ui/input";
+import { ComboboxField } from "@/components/ui/combobox-field";
 import { NigeriaLocationFields } from "@/components/ui/nigeria-location-fields";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -1218,49 +1219,36 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                 <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label className="block text-xs font-semibold text-[#5A646B] mb-2">Installation Type *</label>
-                    <input list="installation-types" value={installationType} onChange={(e) => setInstallationType(e.target.value)} placeholder="Search installation type" className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none" />
-                    <datalist id="installation-types"><option value="Residential" /><option value="Commercial" /><option value="Industrial" /></datalist>
+                    <ComboboxField value={installationType} onValueChange={setInstallationType} placeholder="Search installation type" options={["Residential", "Commercial", "Industrial"].map((value) => ({ value, label: value }))} className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Type *</label>
-                    <select
+                    <ComboboxField
                       value={roofType}
-                      onChange={(e) => setRoofType(e.target.value)}
+                      onValueChange={setRoofType}
+                      options={[{ value: "metal", label: "Metal / Tin / Longspan" }, { value: "concrete", label: "Concrete slab (Decking)" }, { value: "tile", label: "Tile Roof" }, { value: "shingle", label: "Asphalt Shingles" }, { value: "other", label: "Other / Not sure" }]}
                       className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
-                    >
-                      <option value="metal">Metal / Tin / Longspan</option>
-                      <option value="concrete">Concrete slab (Decking)</option>
-                      <option value="tile">Tile Roof</option>
-                      <option value="shingle">Asphalt Shingles</option>
-                      <option value="other">Other / Not sure</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Orientation *</label>
-                    <select
+                    <ComboboxField
                       value={roofOrientation}
-                      onChange={(e) => setRoofOrientation(e.target.value)}
+                      onValueChange={setRoofOrientation}
+                      options={[{ value: "flat", label: "Flat Roof (No tilt)" }, { value: "south", label: "Facing South (Optimized)" }, { value: "east_west", label: "Facing East/West split" }, { value: "north", label: "Facing North" }]}
                       className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
-                    >
-                      <option value="flat">Flat Roof (No tilt)</option>
-                      <option value="south">Facing South (Optimized)</option>
-                      <option value="east_west">Facing East/West split</option>
-                      <option value="north">Facing North</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-[#5A646B] mb-2">Shading Level *</label>
-                    <select
+                    <ComboboxField
                       value={shading}
-                      onChange={(e) => setShading(e.target.value)}
+                      onValueChange={setShading}
+                      options={[{ value: "none", label: "No Shading (Full sun exposure)" }, { value: "partial", label: "Partial Shading (Trees, nearby buildings)" }, { value: "heavy", label: "Heavy Shading (Significant obstruction)" }]}
                       className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
-                    >
-                      <option value="none">No Shading (Full sun exposure)</option>
-                      <option value="partial">Partial Shading (Trees, nearby buildings)</option>
-                      <option value="heavy">Heavy Shading (Significant obstruction)</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
