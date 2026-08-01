@@ -82,11 +82,6 @@ export const useGeneralStore = create<GeneralStoreState>()(
 
             addToCart: ({ id, itemType }) => {
                 set((state) => {
-                    // Separate package and product carts
-                    state.cartItems = state.cartItems.filter(
-                        (item) => item.itemType === itemType
-                    );
-
                     const existing = state.cartItems.find(
                         (item) => item.id === id && item.itemType === itemType
                     );
