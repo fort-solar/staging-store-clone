@@ -275,13 +275,15 @@ const PackageDetailPage = () => {
             </div>
 
             <div className="mt-4 space-y-3">
-              <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
-                <FinancingIcon />
-                <div>
-                  <p>{data.solarFinanceEnabled ? "Solar Finance Available" : "Solar Finance Disabled"}</p>
-                  <p className="cursor-pointer hover:underline">{data.solarFinanceEnabled ? "This package can be requested on financing terms." : "Direct payment only for this package."}</p>
+              {data.solarFinanceEnabled ? (
+                <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
+                  <FinancingIcon />
+                  <div>
+                    <p>Solar Finance Available</p>
+                    <p className="cursor-pointer hover:underline">This package can be requested on financing terms.</p>
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
                 <DeliveryIcon />
                 <div>
