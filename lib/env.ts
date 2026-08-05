@@ -10,6 +10,26 @@ export function readNonEmptyEnv(...values: Array<string | null | undefined>) {
   return undefined;
 }
 
+export function readBooleanEnv(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const normalized = value?.trim().toLowerCase();
+
+    if (!normalized) {
+      continue;
+    }
+
+    if (["1", "true", "yes", "on"].includes(normalized)) {
+      return true;
+    }
+
+    if (["0", "false", "no", "off"].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return undefined;
+}
+
 export function requireEnv(name: string, value: string | undefined) {
   if (!value) {
     throw new Error(`${name} is not configured.`);
@@ -23,6 +43,9 @@ const publicFortsolarApiBaseUrl = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_FORTSOLAR_API_BASE_URL,
   process.env.NEXT_PUBLIC_BASE_URL,
 );
+const publicEmailVerificationBypassEnabled =
+  readBooleanEnv(process.env.NEXT_PUBLIC_EMAIL_VERIFICATION_BYPASS) ??
+  process.env.NODE_ENV !== "production";
 const serverFortsolarApiBaseUrl = readNonEmptyEnv(
   process.env.FORTSOLAR_API_BASE_URL,
   publicFortsolarApiBaseUrl,
@@ -36,6 +59,7 @@ const serverSessionSecret = readNonEmptyEnv(
 export const publicEnv = {
   googleClientId: publicGoogleClientId ?? "",
   fortsolarApiBaseUrl: publicFortsolarApiBaseUrl ?? "",
+  emailVerificationBypassEnabled: publicEmailVerificationBypassEnabled,
 } as const;
 
 export const serverEnv = {

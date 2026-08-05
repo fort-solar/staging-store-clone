@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
+import { Button } from "@/components/ui/button";
+import { publicEnv } from "@/lib/env";
 import { verifyEmailToken } from "@/lib/localAuth";
 
 const VerifyEmailForm = () => {
@@ -27,6 +29,8 @@ const VerifyEmailForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isTokenMissing = token.length === 0;
+  const canUseDeveloperBypass =
+    isTokenMissing && publicEnv.emailVerificationBypassEnabled;
 
   const onSubmit = async () => {
     if (isTokenMissing) {
@@ -59,6 +63,14 @@ const VerifyEmailForm = () => {
     }
   };
 
+  const handleDeveloperBypass = () => {
+    setStatus({
+      tone: "success",
+      message: "Sandbox bypass enabled. Continuing without email verification.",
+    });
+    router.push("/");
+  };
+
   return (
     <div className="space-y-8">
       <div className="space-y-3">
@@ -83,6 +95,22 @@ const VerifyEmailForm = () => {
       <AuthButton isLoading={isSubmitting} disabled={isTokenMissing} onClick={onSubmit}>
         Verify Email
       </AuthButton>
+
+      {canUseDeveloperBypass ? (
+        <>
+          <div className="rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] p-5 text-sm text-[#166534]">
+            Email delivery bypass is enabled for this environment. Use this only when SMTP or mock email delivery is intentionally disabled for local or sandbox testing.
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 w-full rounded-2xl border-[#BBF7D0] text-sm font-semibold text-[#166534] hover:bg-[#DCFCE7]"
+            onClick={handleDeveloperBypass}
+          >
+            Continue in Sandbox
+          </Button>
+        </>
+      ) : null}
 
       <p className="text-center text-sm text-[#64748B]">
         Already have an account?{" "}
