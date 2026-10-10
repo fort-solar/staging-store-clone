@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter} from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/components/auth/auth-provider";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
@@ -23,7 +23,6 @@ type SignupFormValues = {
   fullName: string;
   email: string;
   phone: string;
-  address: string;
   password: string;
   confirmPassword: string;
   acceptTerms: boolean;
@@ -33,25 +32,43 @@ const SignupForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { refreshSession } = useAuth();
   const isGoogleAuthEnabled = Boolean(publicEnv.googleClientId);
+
+  const initialEmail = searchParams.get("email") || "";
+  const initialName = searchParams.get("name") || "";
+  const initialPhone = searchParams.get("phone") || "";
 
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
+    reset,
   } = useForm<SignupFormValues>({
     defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      address: "",
+      fullName: initialName,
+      email: initialEmail,
+      phone: initialPhone,
       password: "",
       confirmPassword: "",
       acceptTerms: false,
     },
   });
+
+  React.useEffect(() => {
+    if (initialEmail || initialName || initialPhone) {
+      reset({
+        fullName: initialName,
+        email: initialEmail,
+        phone: initialPhone,
+        password: "",
+        confirmPassword: "",
+        acceptTerms: false,
+      });
+    }
+  }, [initialEmail, initialName, initialPhone, reset]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const passwordValue = watch("password");
@@ -73,7 +90,7 @@ const SignupForm = () => {
       fullName: values.fullName,
       email: values.email,
       phone: values.phone,
-      address: values.address,
+      address: "",
       password: values.password,
       role: "customer",
     });
@@ -93,7 +110,7 @@ const SignupForm = () => {
     await updateCurrentUserProfile({
       name: values.fullName,
       phone: values.phone,
-      address: values.address,
+      address: "",
     }).catch(() => null);
 
     await requestEmailVerification().catch(() => null);
@@ -165,6 +182,7 @@ const SignupForm = () => {
         <AuthInput
           label="Full Name"
           placeholder="eg. John Doe"
+          required
           {...register("fullName", { required: "Full name is required" })}
           error={errors.fullName?.message}
         />
@@ -174,6 +192,7 @@ const SignupForm = () => {
           type="email"
           placeholder="example@email.com"
           autoComplete="email"
+          required
           {...register("email", { required: "Email is required" })}
           error={errors.email?.message}
         />
@@ -183,22 +202,16 @@ const SignupForm = () => {
           type="tel"
           placeholder="902 2367 890"
           autoComplete="tel"
+          required
           {...register("phone", { required: "Phone is required" })}
           error={errors.phone?.message}
-        />
-
-        <AuthInput
-          label="Address"
-          placeholder="suite 5 ..."
-          autoComplete="street-address"
-          {...register("address", { required: "Address is required" })}
-          error={errors.address?.message}
         />
 
         <PasswordInput
           label="Password"
           placeholder="••••••••••••••"
           autoComplete="new-password"
+          required
           {...register("password", {
             required: "Password is required",
             minLength: { value: 8, message: "Use at least 8 characters" },
@@ -210,6 +223,7 @@ const SignupForm = () => {
           label="Confirm Password"
           placeholder="••••••••••••••"
           autoComplete="new-password"
+          required
           {...register("confirmPassword", {
             required: "Please confirm your password",
             validate: (value) => value === passwordValue || "Passwords do not match",

@@ -60,6 +60,7 @@ const CartPage = () => {
           image: product.image,
           stockQuantity:
             item.itemType === "product" ? getProductCartMaxQuantity(productMap.get(String(item.id))) : null,
+          eligibleForInstallation: item.itemType === "product" ? (product as any).eligibleForInstallation : false,
         };
       })
       .filter(Boolean) as Array<{
@@ -70,17 +71,66 @@ const CartPage = () => {
         price: number;
         image: string | { src: string };
         stockQuantity: number | null;
+        eligibleForInstallation?: boolean;
       }>;
   }, [cartItems, packageMap, productMap]);
+
+  const [requestInstallation, setRequestInstallation] = useState(false);
+
+  const hasEligibleProduct = useMemo(() => {
+    return cartDetails.some((item) => item.itemType === "product" && item.eligibleForInstallation);
+  }, [cartDetails]);
+
+  const hasPackage = useMemo(() => {
+    return cartDetails.some((item) => item.itemType === "package");
+  }, [cartDetails]);
 
   const subtotal = cartDetails.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
   const totalItems = cartDetails.reduce((sum, item) => sum + item.quantity, 0);
-  const shipping = 0;
-  const tax = subtotal * 0.05;
-  const total = subtotal + shipping + tax;
+  const shipping = hasPackage ? 0 : 168224;
+  const tax = useMemo(() => {
+    return hasPackage ? 0 : subtotal * 0.075;
+  }, [hasPackage, subtotal]);
+
+  const discountAmount = useMemo(() => {
+    return cartDetails.reduce((sum, item) => {
+      if (item.itemType === "package") {
+        const pkg = packageMap.get(String(item.id));
+        const pct = pkg?.discountPercentage ?? 0;
+        return sum + (item.price * (pct / 100)) * item.quantity;
+      }
+      return sum;
+    }, 0);
+  }, [cartDetails, packageMap]);
+
+  const installationFee = useMemo(() => {
+    if (hasPackage) return 0;
+    return requestInstallation ? 150000 : 0;
+  }, [hasPackage, requestInstallation]);
+
+  const total = subtotal + shipping + tax + installationFee - discountAmount;
+
+  React.useEffect(() => {
+    const localDraft = localStorage.getItem("fortsolar:checkout_draft");
+    let draft = {};
+    if (localDraft) {
+      try {
+        draft = JSON.parse(localDraft);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    localStorage.setItem(
+      "fortsolar:checkout_draft",
+      JSON.stringify({
+        ...draft,
+        requestInstallation: hasPackage ? true : requestInstallation,
+      })
+    );
+  }, [hasPackage, requestInstallation]);
 
   const quoteProducts = useMemo(() => {
     return cartDetails
@@ -163,10 +213,10 @@ const CartPage = () => {
               ))}
             </div>
 
-            <div className="mt-6 flex flex-col lg:flex-row items-center lg:justify-between rounded-xl border border-[#058A0580] bg-[#EBFAEB] px-4 py-1 text-sm font-semibold text-[#058A05]">
+            <div className={`mt-6 flex flex-col lg:flex-row items-center lg:justify-between rounded-xl border px-4 py-1 text-sm font-semibold ${shipping === 0 ? "border-[#048A0580] bg-[#EBFAEB] text-[#048A05]" : "border-[#0284c780] bg-[#f0f9ff] text-[#0284c7]"}`}>
               <div className="flex items-center gap-2">
                 <DeliveryIcon className="w-6 h-6" />
-                Standard Shipping Within Nigeria
+                {shipping === 0 ? "Free Shipping Included" : "Standard Shipping Within Nigeria"}
               </div>
               <span>(4-5 Working Days)</span>
             </div>
@@ -183,9 +233,15 @@ const CartPage = () => {
                 </div>
                 <div className="flex items-center justify-between border-b py-4">
                   <span className="text-sm text-[#5A646B]">Shipping</span>
-                  <span className="rounded-md bg-[#EBFAEB] px-2 py-1 text-xs text-[#058A05]">
-                    Free
-                  </span>
+                  {shipping === 0 ? (
+                    <span className="rounded-md bg-[#EBFAEB] px-2 py-1 text-xs text-[#048A05]">
+                      Free
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-[#252C32]">
+                      {formatNaira(shipping)}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between border-b py-4 border-[#E9EEF0] pb-3">
                   <span className="text-sm text-[#5A646B]">Tax</span>
@@ -193,6 +249,30 @@ const CartPage = () => {
                     {formatNaira(tax)}
                   </span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex items-center justify-between border-b py-4 border-[#E9EEF0] pb-3">
+                    <span className="text-sm text-[#5A646B]">Package Discount</span>
+                    <span className="font-semibold text-red-600">
+                      -{formatNaira(discountAmount)}
+                    </span>
+                  </div>
+                )}
+                {hasPackage && (
+                  <div className="flex items-center justify-between border-b py-4 border-[#E9EEF0] pb-3">
+                    <span className="text-sm text-[#5A646B]">Professional Installation</span>
+                    <span className="rounded-md bg-[#EBFAEB] px-2 py-1 text-xs text-[#048A05] font-semibold">
+                      Free (Included)
+                    </span>
+                  </div>
+                )}
+                {!hasPackage && hasEligibleProduct && requestInstallation && (
+                  <div className="flex items-center justify-between border-b py-4 border-[#E9EEF0] pb-3">
+                    <span className="text-sm text-[#5A646B]">Installation Fee</span>
+                    <span className="font-semibold text-[#252C32]">
+                      {formatNaira(150000)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between py-4">
                   <span className="font-semibold text-[#252C32]">Total</span>
                   <span className="font-semibold text-[#252C32]">
@@ -200,6 +280,23 @@ const CartPage = () => {
                   </span>
                 </div>
               </div>
+
+              {!hasPackage && hasEligibleProduct && (
+                <div className="mt-4 rounded-xl border border-[#E9EEF0] bg-gray-50 p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={requestInstallation}
+                      onChange={(e) => setRequestInstallation(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-[#B0BABF] text-[#1FA21B]"
+                    />
+                    <div className="text-sm">
+                      <p className="font-semibold text-[#252C32]">Request Custom Setup Quote</p>
+                      <p className="text-[#5A646B] text-xs mt-0.5 font-normal">Would you like professional installation for these components? Flat rate: {formatNaira(150000)}.</p>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               <div className="mt-5 space-y-3">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">

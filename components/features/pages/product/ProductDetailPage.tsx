@@ -142,7 +142,7 @@ const ProductDetailPage = () => {
                     key={`${img}-${index}`}
                     type="button"
                     onClick={() => setSelectedImage(img)}
-                    className={`h-20 w-20 overflow-hidden rounded-lg border ${activeImage === img ? "border-[#058A05]" : "border-[#E9EEF0]"} bg-[#F3F4F6]`}
+                    className={`h-20 w-20 overflow-hidden rounded-lg border ${activeImage === img ? "border-[#048A05]" : "border-[#E9EEF0]"} bg-[#F3F4F6]`}
                   >
                     <img src={img} alt={`${product.title} ${index + 1}`} className="h-full w-full object-cover" />
                   </button>
@@ -164,7 +164,7 @@ const ProductDetailPage = () => {
                 <p className="mt-2 text-sm text-[#333333]">{deliveryWarrantyInfo}</p>
               </div>
 
-              <div className="w-fit max-w-xs rounded-2xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] p-4 text-white">
+              <div className="w-fit max-w-xs rounded-2xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] p-4 text-white">
                 <p className="font-semibold">Looking for a full solar solution?</p>
                 <p className="mt-2 text-sm">This product is included in one of our recommended packages.</p>
                 <Link href="/packages" className="mt-4 inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm text-[#1FA21B] hover:opacity-90">
@@ -176,7 +176,7 @@ const ProductDetailPage = () => {
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-xl font-semibold text-[#101828]">Product Details Gallery or Showcase</h3>
                   {product.datasheet?.url ? (
-                    <a href={product.datasheet.url} target="_blank" rel="noreferrer" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-4 py-2 text-sm text-white">
+                    <a href={product.datasheet.url} target="_blank" rel="noreferrer" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-4 py-2 text-sm text-white">
                       Download Datasheet
                     </a>
                   ) : null}
@@ -239,7 +239,7 @@ const ProductDetailPage = () => {
                 onClick={() =>
                   setQuantity((prev) => clampCartQuantity(prev + 1, maxProductQuantity))
                 }
-                className="h-9 w-9 border-l border-[#E4E9EC] bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] text-lg text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-9 w-9 border-l border-[#E4E9EC] bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] text-lg text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 +
               </button>
@@ -259,18 +259,19 @@ const ProductDetailPage = () => {
             <div className="mt-4">
               <button
                 type="button"
+                disabled={isOutOfStock}
                 onClick={(event) => {
                   event.preventDefault();
-                  setQuoteProduct({
+                  addToCart({ id: product.id, itemType: "product" });
+                  updateCartQuantity({
                     id: product.id,
-                    title: product.title,
-                    image: product.image,
-                    price: product.price,
+                    itemType: "product",
+                    quantity: normalizedQuantity,
                   });
                 }}
-                className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center font-semibold text-white"
+                className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Get Quote
+                Add to Cart
               </button>
             </div>
 
@@ -312,6 +313,19 @@ const ProductDetailPage = () => {
               </button>
             </div>
 
+            <div className="mt-3">
+              <a
+                href={`https://wa.me/2347066524793?text=${encodeURIComponent(
+                  `Hi Fortsolar, I'm interested in the product "${product.title}". Can I talk to an engineer about it?`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-full items-center justify-center rounded-xl border border-[#D0D5DD] bg-white py-3 text-sm font-semibold text-[#3B3B3B] transition hover:bg-slate-50 cursor-pointer"
+              >
+                Talk to an Engineer
+              </a>
+            </div>
+
             <div className="mt-6 p-4 text-xs">
               <div className="flex items-center justify-between font-semibold text-[#252C32]">
                 <span>Product Highlights / Quick Specs</span>
@@ -343,13 +357,13 @@ const ProductDetailPage = () => {
               <button
                 type="button"
                 onClick={() => void handleShare()}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#D0D5DD] px-4 py-2 text-sm font-medium text-[#3B3B3B] transition-colors hover:border-[#058A05] hover:text-[#058A05]"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#D0D5DD] px-4 py-2 text-sm font-medium text-[#3B3B3B] transition-colors hover:border-[#048A05] hover:text-[#048A05]"
               >
                 <Share2 className="h-4 w-4" />
                 Share Product
               </button>
               {shareFeedback ? (
-                <p className="mt-2 text-xs text-[#058A05]">{shareFeedback}</p>
+                <p className="mt-2 text-xs text-[#048A05]">{shareFeedback}</p>
               ) : null}
             </div>
           </div>
@@ -357,7 +371,7 @@ const ProductDetailPage = () => {
 
         <div className="mt-12 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[#252C32]">Other Related Products</h2>
-          <Link href="/products" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-4 py-2 text-sm text-white">
+          <Link href="/products" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-4 py-2 text-sm text-white">
             View All Products
           </Link>
         </div>

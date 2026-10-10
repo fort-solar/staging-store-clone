@@ -376,6 +376,7 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
   const deliveryWarrantyInfo =
     readString(raw, ["delivery_warranty_info", "delivery_and_warranty_info"], "") || null;
   const freeDelivery = readBoolean(raw, ["free_delivery", "is_free_delivery"]);
+  const eligibleForInstallation = readBoolean(raw, ["eligible_for_installation"]);
   const description = product.overview || product.name;
 
   return {
@@ -403,6 +404,7 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
     description,
     freeDelivery,
     deliveryWarrantyInfo,
+    eligibleForInstallation,
     quickSpecs: sectionValues.length ? sectionValues : [{ label: "Category", value: categoryLabel }],
     sectionValues,
     isActive: product.is_active,
@@ -474,6 +476,14 @@ export function normalizePackage(item: ProductPackageRecord): StoreCatalogPackag
       item.system_details?.pv_label ? `PV Size: ${item.system_details.pv_label}` : item.estimated_savings_monthly ? `Monthly Savings Estimate: ₦${item.estimated_savings_monthly}` : "Monthly Savings Estimate: N/A",
       item.system_details?.battery_label ? `Battery Size: ${item.system_details.battery_label}` : item.payback_period_years ? `Payback Period: ${item.payback_period_years} years` : "Battery Size: N/A",
     ],
+    installationSpecifications: {
+      inverter_size: item.system_details?.inverter_size,
+      inverter_label: item.system_details?.inverter_label,
+      pv_size: item.system_details?.pv_size,
+      pv_label: item.system_details?.pv_label,
+      battery_size: item.system_details?.battery_size,
+      battery_label: item.system_details?.battery_label,
+    },
     powers: item.what_it_powers?.length ? item.what_it_powers : ["Lighting", "Home and office electronics", item.battery_included ? "Backup during outages" : "Daytime solar loads"],
     solarFinanceEnabled: Boolean(item.solar_finance_enabled),
     discountPercentage,

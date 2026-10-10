@@ -101,7 +101,7 @@ const PackageDetailPage = () => {
                     key={`${image}-${index}`}
                     type="button"
                     onClick={() => setSelectedImage(image)}
-                    className={`h-20 w-20 overflow-hidden rounded-lg border ${activeImage === image ? "border-[#058A05]" : "border-[#E9EEF0]"} bg-[#F3F4F6]`}
+                    className={`h-20 w-20 overflow-hidden rounded-lg border ${activeImage === image ? "border-[#048A05]" : "border-[#E9EEF0]"} bg-[#F3F4F6]`}
                   >
                     <img src={image} alt={`${data.title} ${index + 1}`} className="h-full w-full object-cover" />
                   </button>
@@ -153,7 +153,7 @@ const PackageDetailPage = () => {
                       <div key={asset.url} className="rounded-2xl bg-white p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <strong className="truncate text-sm text-[#252C32]">{asset.name}</strong>
-                          <a href={asset.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#058A05]">
+                          <a href={asset.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#048A05]">
                             Open
                           </a>
                         </div>
@@ -233,13 +233,26 @@ const PackageDetailPage = () => {
                     onAuthenticated: () => router.push("/checkout"),
                   });
                 }}
-                className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] py-3 text-sm font-semibold text-white"
+                className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3 text-sm font-semibold text-white cursor-pointer"
               >
                 Get Package
               </button>
-              <button onClick={() => togglePackageFavorite(data.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC]">
+              <button onClick={() => togglePackageFavorite(data.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC] cursor-pointer">
                 <HeartIcon filled={favorites.includes(data.id)} className={favorites.includes(data.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
               </button>
+            </div>
+
+            <div className="mt-3">
+              <a
+                href={`https://wa.me/2347066524793?text=${encodeURIComponent(
+                  `Hi Fortsolar, I'm interested in the "${data.title}" package. Can I talk to an engineer about it?`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-full items-center justify-center rounded-xl border border-[#D0D5DD] bg-white py-3 text-sm font-semibold text-[#3B3B3B] transition hover:bg-slate-50 cursor-pointer"
+              >
+                Talk to an Engineer
+              </a>
             </div>
 
             <div className="mt-6 p-4 text-sm">
@@ -262,13 +275,15 @@ const PackageDetailPage = () => {
             </div>
 
             <div className="mt-4 space-y-3">
-              <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
-                <FinancingIcon />
-                <div>
-                  <p>{data.solarFinanceEnabled ? "Solar Finance Available" : "Solar Finance Disabled"}</p>
-                  <p className="cursor-pointer hover:underline">{data.solarFinanceEnabled ? "This package can be requested on financing terms." : "Direct payment only for this package."}</p>
+              {data.solarFinanceEnabled ? (
+                <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
+                  <FinancingIcon />
+                  <div>
+                    <p>Solar Finance Available</p>
+                    <p className="cursor-pointer hover:underline">This package can be requested on financing terms.</p>
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
                 <DeliveryIcon />
                 <div>
@@ -314,7 +329,7 @@ const PackageDetailPage = () => {
 
         <div className="mt-12 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[#252C32]">Other Related Packages</h2>
-          <Link href="/packages" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-4 py-2 text-sm text-white">
+          <Link href="/packages" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-4 py-2 text-sm text-white">
             View All Packages
           </Link>
         </div>

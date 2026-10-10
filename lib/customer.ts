@@ -1,5 +1,6 @@
 import { appGet, appRequest } from "@/lib/api/client";
 import type {
+  ApiSuccessResponse,
   CustomerCartApiResponse,
   CustomerCartItemRecord,
   CustomerCartReplacePayload,
@@ -47,6 +48,20 @@ export function getCustomerQuotes() {
   return appGet<CustomerQuoteListApiResponse>("/api/v1/customer/me/quotes");
 }
 
+export function submitCustomerQuoteRequest(payload: Record<string, unknown>) {
+  return appRequest<ApiSuccessResponse>("/api/v1/customer/me/quotes", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function submitCustomerQuoteFeedback(id: string, payload: { response: "approved" | "rejected"; feedback?: string }) {
+  return appRequest<ApiSuccessResponse>(`/api/v1/customer/me/quotes/${id}/feedback`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
 export function getCustomerOrderSummary() {
   return appGet<CustomerOrderSummaryApiResponse>("/api/v1/customer/me/orders/summary");
 }
@@ -91,6 +106,21 @@ export function getCustomerInstallationSummary() {
   );
 }
 
+export function getDraftOrder() {
+  return appGet<{ success: boolean; data: any }>("/api/v1/customer/me/draft-order");
+}
+
+export function saveDraftOrder(payload: any) {
+  return appRequest<{ success: boolean; message: string }>("/api/v1/customer/me/draft-order", {
+    method: "POST",
+    body: { payload },
+  });
+}
+
+export function getFinancingSettings() {
+  return appGet<{ success: boolean; data: any }>("/api/v1/customer/financing-settings");
+}
+
 export function getCustomerInstallations(page = 1, limit = 20) {
   return appGet<CustomerInstallationListApiResponse>(
     withQuery("/api/v1/customer/me/installations", { page, limit }),
@@ -129,6 +159,16 @@ export function reportCustomerInstallationIssue(
 export function getCustomerPackageRequests(page = 1, limit = 20) {
   return appGet<CustomerPackageRequestListApiResponse>(
     withQuery("/api/v1/customer/me/package-requests", { page, limit }),
+  );
+}
+
+export function acceptCustomerPackageRequest(id: string) {
+  return appRequest<{ success: boolean; orderId: string; message: string }>(
+    `/api/v1/customer/me/package-requests/${id}/accept`,
+    {
+      method: "POST",
+      body: {},
+    },
   );
 }
 
@@ -184,4 +224,13 @@ export function toggleCustomerFavorite(payload: CustomerFavoriteTogglePayload) {
       body: payload,
     },
   );
+}
+
+export function uploadFile(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return appRequest<{ success: boolean; data: { id: string } }>("/api/v1/uploads", {
+    method: "POST",
+    body: formData,
+  });
 }

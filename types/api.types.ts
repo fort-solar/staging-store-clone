@@ -176,6 +176,7 @@ export type UnifiedProductRecord = {
   specifications?: Record<string, unknown>;
   is_active: boolean;
   status?: string | null;
+  eligible_for_installation?: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -355,6 +356,7 @@ export type StoreCatalogProduct = {
   quickSpecs: Array<{ label: string; value: string }>;
   sectionValues?: Array<{ label: string; value: string }>;
   isActive?: boolean;
+  eligibleForInstallation?: boolean;
   sourceType: "product";
   sourceId: string;
 };
@@ -383,12 +385,22 @@ export type StoreCatalogPackage = {
   overview: string;
   packageIncludes: Array<{ label: string; qty: string }>;
   systemDetails: string[];
+  installationSpecifications: InstallationSpecifications;
   powers: string[];
   solarFinanceEnabled?: boolean;
   discountPercentage?: number;
   includedProducts?: Array<{ id: string; categoryLabel: string; productName: string; quantity: number; image?: string | null; datasheet?: StoreAssetRecord | null }>;
   sourceType: "package";
   sourceId: string;
+};
+
+export type InstallationSpecifications = {
+  inverter_size?: string;
+  inverter_label?: string;
+  pv_size?: string;
+  pv_label?: string;
+  battery_size?: string;
+  battery_label?: string;
 };
 
 export type PendingEndpointSubmission = {
@@ -412,6 +424,7 @@ export type CustomerSummaryApiResponse = ApiDataResponse<CustomerSummaryRecord>;
 export type CustomerQuoteRecord = {
   id: string;
   createdAt: string;
+  updatedAt: string;
   status: string;
   energySummary: {
     totalLoad: string;
@@ -421,6 +434,13 @@ export type CustomerQuoteRecord = {
   };
   appliances: string[];
   formExtras: Record<string, unknown>;
+  recommendedSystemSize: number | null;
+  estimatedCost: number | null;
+  estimatedSavings: number | null;
+  paybackPeriodYears: number | null;
+  adminNotes: string | null;
+  quoteAssetUrl: string | null;
+  quoteAssetKind: string | null;
 };
 
 export type CustomerQuoteListApiResponse = ApiCollectionResponse<CustomerQuoteRecord>;
@@ -476,6 +496,8 @@ export type CustomerOrderCreatePayload = {
   discount_amount: number;
   total_amount: number;
   currency: string;
+  installation_type?: string;
+  specifications?: InstallationSpecifications;
   create_package_request?: {
     package_id: string;
     financing_requested: boolean;
@@ -483,11 +505,30 @@ export type CustomerOrderCreatePayload = {
   create_bundle_request?: {
     bundle_id: string;
     financing_requested: boolean;
+    financing_id_upload_id?: string | null;
+    financing_statement_upload_id?: string | null;
+    financing_cac_upload_id?: string | null;
+    financing_utility_bill_upload_id?: string | null;
+    financing_bvn?: string | null;
+    financing_nin?: string | null;
+    financing_bvn_consent?: boolean;
+    financing_profile_type?: string | null;
   };
 };
 
-export type CustomerOrderCreateResponse = ApiDataResponse<Record<string, unknown>>;
-export type CustomerOrderDetailApiResponse = ApiDataResponse<Record<string, unknown>>;
+export type CustomerOrderResponseRecord = Record<string, unknown> & {
+  id?: string;
+  installation_type?: string | null;
+  specifications?: InstallationSpecifications | null;
+  order?: (Record<string, unknown> & {
+    id?: string;
+    installation_type?: string | null;
+    specifications?: InstallationSpecifications | null;
+  }) | null;
+};
+
+export type CustomerOrderCreateResponse = ApiDataResponse<CustomerOrderResponseRecord>;
+export type CustomerOrderDetailApiResponse = ApiDataResponse<CustomerOrderResponseRecord>;
 
 export type CustomerInstallationSummaryRecord = {
   activeInstallations: number;
@@ -538,6 +579,14 @@ export type CustomerPackageRequestRecord = {
   displayStatus: string;
   orderId: string | null;
   bundleId: string | null;
+  financing_requested?: boolean;
+  financing_status?: string | null;
+  financing_terms?: {
+    downpayment_amount?: number;
+    installment?: number;
+    tenure?: number;
+  } | null;
+  financing_profile_type?: string | null;
 };
 
 export type CustomerPackageRequestListApiResponse = ApiSuccessResponse & {

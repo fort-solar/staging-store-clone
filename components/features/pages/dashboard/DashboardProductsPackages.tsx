@@ -2,8 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
-import { CardViewIcon } from "@/components/features/icons/CardViewIcon";
-import { ListViewIcon } from "@/components/features/icons/ListViewIcon";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
@@ -95,8 +94,8 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const [packageFilters, setPackageFilters] = useState<PackageFilters>({
     activeOnly: false,
   });
-  const [productView, setProductView] = useState<"grid" | "list">("grid");
-  const [packageView, setPackageView] = useState<"grid" | "list">("grid");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [mobileSort, setMobileSort] = useState<"default" | "price-low" | "price-high">("default");
   const [productQuery, setProductQuery] = useState("");
   const [packageQuery, setPackageQuery] = useState("");
   const [productPage, setProductPage] = useState(1);
@@ -107,12 +106,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const favorites = useGeneralStore((state) => state.favorites);
   const { toggleProductFavorite, togglePackageFavorite } =
     useCustomerFavoriteToggle();
-  const isCategorySidebarOpen = useGeneralStore(
-    (state) => state.isCategorySidebarOpen,
-  );
-  const toggleCategorySidebar = useGeneralStore(
-    (state) => state.toggleCategorySidebar,
-  );
 
   const {
     items: products,
@@ -161,7 +154,6 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const activeProductSection =
     productCategoryLabelById.get(productFilters.categoryId) || "All Products";
   const activeQuery = activeTab === "products" ? productQuery : packageQuery;
-  const activeView = activeTab === "products" ? productView : packageView;
   const resultsCount =
     activeTab === "products" ? productPagination.total : packagePagination.total;
 
@@ -188,6 +180,14 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const activeIsLoading =
     activeTab === "products" ? isLoadingProducts : isLoadingPackages;
   const activeSource = activeTab === "products" ? productSource : packageSource;
+  const sortedProducts = useMemo(() => {
+    if (mobileSort === "default") return products;
+    return [...products].sort((a, b) => mobileSort === "price-low" ? a.price - b.price : b.price - a.price);
+  }, [mobileSort, products]);
+  const sortedPackages = useMemo(() => {
+    if (mobileSort === "default") return packages;
+    return [...packages].sort((a, b) => mobileSort === "price-low" ? a.price - b.price : b.price - a.price);
+  }, [mobileSort, packages]);
 
   return (
     <div className="min-h-screen bg-white py-22">
@@ -203,7 +203,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   onClick={() => handleProductCategorySelect(section.id)}
                   className={`rounded-full px-2 py-1 transition-colors lg:px-3 ${
                     activeProductSection === section.label
-                      ? "font-semibold text-[#058A05]"
+                      ? "font-semibold text-[#048A05]"
                       : "hover:text-[#252C32]"
                   }`}
                 >
@@ -222,7 +222,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   onClick={() => setActiveTab("packages")}
                   className={`w-[50%] rounded-l-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
                     activeTab === "packages"
-                      ? "bg-[#058A05] text-white"
+                      ? "bg-[#048A05] text-white"
                       : "text-[#3B3B3B]"
                   }`}
                 >
@@ -232,7 +232,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                   onClick={() => setActiveTab("products")}
                   className={`w-[50%] rounded-r-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
                     activeTab === "products"
-                      ? "bg-[#058A05] text-white"
+                      ? "bg-[#048A05] text-white"
                       : "text-[#3B3B3B]"
                   }`}
                 >
@@ -248,7 +248,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             {activeQuery.trim().length > 0 ? (
               <p className="text-xl font-semibold text-[#252C32]">
                 Found {resultsCount} results for{" "}
-                <span className="text-[#058A05]">{activeQuery}</span>
+                <span className="text-[#048A05]">{activeQuery}</span>
               </p>
             ) : (
               <p className="text-xl font-semibold text-[#252C32]">
@@ -257,70 +257,23 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-3 lg:justify-start">
-            <div className="flex items-center rounded-md bg-gray-50">
-              <button
-                onClick={() =>
-                  activeTab === "products"
-                    ? setProductView("grid")
-                    : setPackageView("grid")
-                }
-                className={`grid h-9 w-9 place-items-center rounded-l-md ${
-                  activeView === "grid"
-                    ? "border-[#BFE8BF] bg-[#EBFAEB]"
-                    : "border-[#E4E9EC]"
-                }`}
-              >
-                <CardViewIcon
-                  className={
-                    activeView === "grid"
-                      ? "text-[#252C32]"
-                      : "text-[#B0BABF]"
-                  }
-                />
-              </button>
-              <button
-                onClick={() =>
-                  activeTab === "products"
-                    ? setProductView("list")
-                    : setPackageView("list")
-                }
-                className={`grid h-9 w-9 place-items-center rounded-r-md ${
-                  activeView === "list"
-                    ? "border-[#BFE8BF] bg-[#EBFAEB]"
-                    : "border-[#E4E9EC]"
-                }`}
-              >
-                <ListViewIcon
-                  className={
-                    activeView === "list"
-                      ? "text-[#252C32]"
-                      : "text-[#B0BABF]"
-                  }
-                />
-              </button>
-            </div>
-          </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
-          {isCategorySidebarOpen ? (
-            <div
-              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden"
-              onClick={toggleCategorySidebar}
-            />
-          ) : null}
+        <button
+          type="button"
+          onClick={() => setShowMobileFilters((open) => !open)}
+          aria-expanded={showMobileFilters}
+          aria-controls="mobile-catalog-filters"
+          className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#D9E0E4] bg-white px-4 py-3 text-sm font-semibold text-[#252C32] lg:hidden"
+        >
+          <span className="flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filters</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${showMobileFilters ? "rotate-180" : ""}`} />
+        </button>
 
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
           <aside
-            className={`space-y-6 transition-all duration-300 ${
-              isCategorySidebarOpen
-                ? "translate-x-0 opacity-100"
-                : "pointer-events-none -translate-x-4 opacity-0 lg:hidden"
-            } ${
-              isCategorySidebarOpen
-                ? "fixed left-0 top-0 z-50 h-full w-80 overflow-y-auto bg-white px-4 py-14 shadow-lg lg:static lg:h-auto lg:w-auto lg:overflow-visible lg:bg-transparent lg:px-0 lg:pt-0 lg:shadow-none"
-                : "hidden lg:static"
-            }`}
+            id="mobile-catalog-filters"
+            className={`${showMobileFilters ? "block" : "hidden"} space-y-6 rounded-xl border border-[#E4E9EC] bg-[#FAFBFB] p-4 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0`}
           >
             {activeTab === "products" ? (
               <>
@@ -373,16 +326,14 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
           </aside>
 
           <section
-            className={`transition-all duration-300 ${
-              isCategorySidebarOpen ? "" : "lg:col-span-2"
-            }`}
+            className="transition-all duration-300"
           >
             {activeTab === "products" ? (
               activeItemCount > 0 ? (
                 <>
                   <ProductsGrid
-                    items={products}
-                    view={productView}
+                    items={sortedProducts}
+                    view="grid"
                     favorites={favorites.products}
                     onToggleFavorite={toggleProductFavorite}
                     onGetQuote={(item) =>
@@ -424,8 +375,8 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             ) : activeItemCount > 0 ? (
               <>
                 <PackagesGrid
-                  items={packages}
-                  view={packageView}
+                  items={sortedPackages}
+                  view="grid"
                   favorites={favorites.packages}
                   onToggleFavorite={togglePackageFavorite}
                 />
@@ -458,6 +409,18 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
             )}
           </section>
         </div>
+      </div>
+
+      <div className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 overflow-hidden rounded-full bg-[#252C32] text-sm font-semibold text-white shadow-xl lg:hidden">
+        <label className="relative px-5 py-3">
+          <span>{mobileSort === "price-low" ? "Price: low" : mobileSort === "price-high" ? "Price: high" : "Sort by"}</span>
+          <select aria-label="Sort catalog" value={mobileSort} onChange={(event) => setMobileSort(event.target.value as typeof mobileSort)} className="absolute inset-0 cursor-pointer opacity-0">
+            <option value="default">Default</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+          </select>
+        </label>
+        <button type="button" className="flex items-center gap-2 border-l border-white/25 px-5 py-3" onClick={() => setShowMobileFilters((open) => !open)}><SlidersHorizontal className="h-4 w-4" /> Filter</button>
       </div>
 
       {quoteProduct ? (

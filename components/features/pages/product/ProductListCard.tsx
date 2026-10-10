@@ -50,7 +50,7 @@ const ProductListCard = ({
   const isAddToCartDisabled =
     availability === "Out Of Stock" || (stockQuantity > 0 && cartQuantity >= stockQuantity);
   return (
-    <div className="group overfow-hidden flex flex-col sm:flex-row gap-8 rounded-lg border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#058A05] transition-colors">
+    <div className="group overfow-hidden flex flex-col sm:flex-row gap-8 rounded-lg border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#048A05] transition-colors">
       <div
         className="relative aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat sm:w-44 sm:shrink-0"
         style={{ backgroundImage: `url(${image})` }}
@@ -76,7 +76,7 @@ const ProductListCard = ({
             }}
             className="grid h-8 w-8 place-items-center rounded-md bg-white/90 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#058A05]" />
+            <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#048A05]" />
           </button>
         </div>
       </div>
@@ -86,16 +86,20 @@ const ProductListCard = ({
           <div className="order-1 lg:order-2 flex items-center gap-2">
             <Link
               href={href}
-              className="text-sm border border-[#BFE8BF] rounded-xl py-1 px-2 text-[#058A05] text-center hover:bg-[#EBFAEB]"
+              className="text-sm border border-[#BFE8BF] rounded-xl py-1 px-2 text-[#048A05] text-center hover:bg-[#EBFAEB]"
             >
               View Details
             </Link>
             <button
               type="button"
-              onClick={onGetQuote}
-              className="text-sm rounded-xl border border-[#2CB22C] bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] px-3 py-1 text-white"
+              disabled={isAddToCartDisabled}
+              onClick={(event) => {
+                event.preventDefault();
+                addToCart({ id, itemType: "product" });
+              }}
+              className="text-sm rounded-xl border border-[#2CB22C] bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-3 py-1 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Get Quote
+              {cartQuantity > 0 ? `In Cart (${cartQuantity})` : 'Add to Cart'}
             </button>
           </div>
         </div>

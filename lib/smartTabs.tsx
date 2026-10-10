@@ -18,6 +18,7 @@ export type Tab = Readonly<{
   label: string;
   link: string;
   mobileLink?: string;
+  unreadCount?: number;
 }>;
 
 
@@ -155,10 +156,14 @@ export function SmartTabs({
                 : "text-[#7C7C7C] hover:text-[#202020] bg-transparent hover:bg-white"
             }`}
           >
-            <Link href={isDesktop ? tab.link : tab.mobileLink ?? tab.link}>
-            {tab.label}
+            <Link href={isDesktop ? tab.link : tab.mobileLink ?? tab.link} className="flex items-center gap-1.5">
+              <span>{tab.label}</span>
+              {tab.unreadCount && tab.unreadCount > 0 ? (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white leading-none">
+                  {tab.unreadCount}
+                </span>
+              ) : null}
             </Link>
-            
           </Button>
         ))}
 
@@ -187,9 +192,14 @@ export function SmartTabs({
                     }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-[#F6F6F6] ${
                       activeTab === tab.key ? "font-semibold text-[#202020]" : "text-[#3B3B3B]"
-                    }`}
+                    } flex items-center justify-between`}
                   >
-                    {tab.label}
+                    <span>{tab.label}</span>
+                    {tab.unreadCount && tab.unreadCount > 0 ? (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white leading-none">
+                        {tab.unreadCount}
+                      </span>
+                    ) : null}
                   </button>
                 ))}
               </div>

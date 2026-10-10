@@ -60,7 +60,7 @@ const ProductCard
             style={{ backgroundImage: `url(${image})` }}
           >
             <div className="hidden absolute lg:flex justify-between left-0 right-0 top-3 z-20  opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-              <div className={`text-sm font-medium rounded-md px-3 py-2 ${availability === "Out Of Stock" ? "bg-[#EF5350]" : availability === "Limited Stock" ? "bg-[#FFAD33]" : "bg-[#058A05]"}  text-white`}>
+              <div className={`text-sm font-medium rounded-md px-3 py-2 ${availability === "Out Of Stock" ? "bg-[#EF5350]" : availability === "Limited Stock" ? "bg-[#FFAD33]" : "bg-[#048A05]"}  text-white`}>
                 {availability}
               </div>
               <div className="flex">
@@ -84,13 +84,13 @@ const ProductCard
                   }}
                   className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 rounded-r-md bg-white/90 shadow-sm grid place-items-center hover:bg-white`}
                 >
-                  <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#058A05]" />
+                  <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#048A05]" />
                 </button>
               </div>
 
             </div>
             <div className="flex absolute lg:hidden justify-between left-0 right-0 top-3 z-20  transition-all duration-300 opacity-100 translate-y-0">
-              <div className={`text-sm font-medium rounded-md px-3 py-2 ${availability === "Out Of Stock" ? "bg-[#EF5350]" : availability === "Limited Stock" ? "bg-[#FFAD33]" : "bg-[#058A05]"}  text-white`}>
+              <div className={`text-sm font-medium rounded-md px-3 py-2 ${availability === "Out Of Stock" ? "bg-[#EF5350]" : availability === "Limited Stock" ? "bg-[#FFAD33]" : "bg-[#048A05]"}  text-white`}>
                 {availability}
               </div>
               <div className="flex">
@@ -115,7 +115,7 @@ const ProductCard
                   }}
                  className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 rounded-r-md bg-white/90 shadow-sm grid place-items-center hover:bg-white`}
                 >
-                  <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#058A05]" />
+                  <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#048A05]" />
                 </button>
               </div>
 
@@ -145,13 +145,14 @@ const ProductCard
               </Link>
               <button
                 type="button"
+                disabled={isAddToCartDisabled}
                 onClick={(event) => {
                   event.preventDefault();
-                  onGetQuote?.();
+                  addToCart({ id, itemType: "product" });
                 }}
-                className='text-sm rounded-lg py-2 w-full text-white bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#058A05_110.95%)] cursor-pointer ring-0 border border-[#2CB22C] hover:opacity-90'
+                className='text-sm rounded-lg py-2 w-full text-white bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] cursor-pointer ring-0 border border-[#2CB22C] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed'
               >
-                Get Quote
+                {cartQuantity > 0 ? `In Cart (${cartQuantity})` : 'Add to Cart'}
               </button>
             </div>
           </div>
