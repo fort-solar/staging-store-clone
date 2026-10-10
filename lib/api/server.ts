@@ -27,11 +27,14 @@ type ServerPayload =
   | null;
 
 function buildApiUrl(path: string) {
-  if (!FORTSOLAR_API_BASE_URL) {
-    throw new Error("FORTSOLAR_API_BASE_URL is not configured.");
+  const base = (FORTSOLAR_API_BASE_URL || "https://api.fortsolar.ng").replace(/\/+$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  let normalizedPath = cleanPath;
+  if (base.endsWith("/api/v1") && normalizedPath.startsWith("/api/v1")) {
+    normalizedPath = normalizedPath.slice("/api/v1".length);
+    if (!normalizedPath.startsWith("/")) normalizedPath = `/${normalizedPath}`;
   }
-
-  return new URL(path, FORTSOLAR_API_BASE_URL).toString();
+  return `${base}${normalizedPath}`;
 }
 
 export function buildErrorResponse(message: string, status = 400, error?: string) {
