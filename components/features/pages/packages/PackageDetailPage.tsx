@@ -36,9 +36,45 @@ const PackageDetailPage = () => {
 
   const favorites = useGeneralStore((state) => state.favorites.packages);
   const { togglePackageFavorite } = useCustomerFavoriteToggle();
-  const addToCart = useGeneralStore((state) => state.addToCart);
-  const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
   const { requireCustomerLogin } = useCustomerLoginGate();
+  const [activeDraft, setActiveDraft] = useState<{
+    packageId: string | number;
+    packageTitle: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem("fortsolar:active_package_order");
+      if (raw) {
+        setActiveDraft(JSON.parse(raw));
+      }
+    } catch (e) {
+      console.warn("Failed to parse package draft", e);
+    }
+  }, []);
+
+  const handleOrderPackage = (withFinancing = false) => {
+    if (!data) return;
+    try {
+      localStorage.setItem(
+        "fortsolar:active_package_order",
+        JSON.stringify({
+          packageId: data.id,
+          packageTitle: data.title,
+          price: data.finalPrice ?? data.price,
+          image: data.mainImage || data.image,
+          requestFinancing: withFinancing,
+        })
+      );
+    } catch (e) {
+      console.error(e);
+    }
+    const targetUrl = withFinancing ? `/checkout?packageId=${data.id}&financing=1` : `/checkout?packageId=${data.id}`;
+    requireCustomerLogin({
+      redirectTo: targetUrl,
+      onAuthenticated: () => router.push(targetUrl),
+    });
+  };
 
   const activeImage = selectedImage || data?.mainImage || data?.image || "";
   const relatedPackages = useMemo(
@@ -223,19 +259,28 @@ const PackageDetailPage = () => {
               ) : null}
             </div>
 
+            {activeDraft && String(activeDraft.packageId) === String(data.id) && (
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-[#048A05]/30 bg-[#EBFAEB] p-3 text-xs">
+                <span className="text-[#048A05] font-medium">
+                  ✓ You have a saved draft configuration for this package.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleOrderPackage(false)}
+                  className="font-semibold text-[#048A05] underline hover:text-[#036a04] cursor-pointer"
+                >
+                  Resume Setup &rarr;
+                </button>
+              </div>
+            )}
+
             <div className="mt-4 flex items-center gap-3">
               <button
-                onClick={() => {
-                  addToCart({ id: data.id, itemType: "package" });
-                  updateCartQuantity({ id: data.id, itemType: "package", quantity: 1 });
-                  requireCustomerLogin({
-                    redirectTo: "/checkout",
-                    onAuthenticated: () => router.push("/checkout"),
-                  });
-                }}
-                className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3 text-sm font-semibold text-white cursor-pointer"
+                type="button"
+                onClick={() => handleOrderPackage(false)}
+                className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3 text-sm font-semibold text-white cursor-pointer hover:opacity-95 transition"
               >
-                Get Package
+                Order System Package
               </button>
               <button onClick={() => togglePackageFavorite(data.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC] cursor-pointer">
                 <HeartIcon filled={favorites.includes(data.id)} className={favorites.includes(data.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
@@ -278,9 +323,18 @@ const PackageDetailPage = () => {
               {data.solarFinanceEnabled ? (
                 <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
                   <FinancingIcon />
-                  <div>
-                    <p>Solar Finance Available</p>
-                    <p className="cursor-pointer hover:underline">This package can be requested on financing terms.</p>
+                  <div className="flex-1">
+                    <p className="font-semibold text-[#048A05]">Solar Financing Available</p>
+                    <p className="mt-0.5 text-[#5A646B]">
+                      Request structured monthly instalment terms with our verified financing partners.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleOrderPackage(true)}
+                      className="mt-1.5 inline-flex items-center font-semibold text-[#048A05] underline hover:text-[#036a04] cursor-pointer"
+                    >
+                      Apply with Solar Financing &rarr;
+                    </button>
                   </div>
                 </div>
               ) : null}

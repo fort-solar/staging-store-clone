@@ -24,9 +24,28 @@ const CartPage = () => {
   const [query, setQuery] = useState("");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const cartItems = useGeneralStore((state) => state.cartItems);
+  const replaceCart = useGeneralStore((state) => state.replaceCart);
   const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
   const removeFromCart = useGeneralStore((state) => state.removeFromCart);
   const { requireCustomerLogin } = useCustomerLoginGate();
+
+  const [packageDraft, setPackageDraft] = useState<{
+    packageId: string | number;
+    packageTitle: string;
+    price?: number;
+  } | null>(null);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem("fortsolar:active_package_order");
+      if (raw) {
+        setPackageDraft(JSON.parse(raw));
+      }
+    } catch (e) {
+      console.warn("Failed to parse package draft", e);
+    }
+  }, []);
+
   const productIds = useMemo(
     () => cartItems.filter((item) => item.itemType === "product").map((item) => item.id),
     [cartItems],
@@ -45,6 +64,29 @@ const CartPage = () => {
     () => new Map(packages.map((item) => [String(item.id), item])),
     [packages],
   );
+
+  // Migrate any legacy package items out of cartItems into active_package_order draft
+  React.useEffect(() => {
+    const packagesInCart = cartItems.filter((item) => item.itemType === "package");
+    if (packagesInCart.length > 0) {
+      const firstPkg = packagesInCart[0];
+      const pkgDetail = packageMap.get(String(firstPkg.id));
+      const draftObj = {
+        packageId: firstPkg.id,
+        packageTitle: pkgDetail?.title || "Office Pro",
+        price: pkgDetail?.finalPrice ?? pkgDetail?.price,
+        requestFinancing: false,
+      };
+      try {
+        localStorage.setItem("fortsolar:active_package_order", JSON.stringify(draftObj));
+        setPackageDraft(draftObj);
+      } catch (e) {
+        console.warn(e);
+      }
+      const productsOnly = cartItems.filter((item) => item.itemType !== "package");
+      replaceCart(productsOnly);
+    }
+  }, [cartItems, packageMap, replaceCart]);
 
   const cartDetails = useMemo(() => {
     return cartItems
@@ -247,17 +289,77 @@ const CartPage = () => {
 
       <div className="mx-auto w-full max-w-6xl px-4 pt-28 lg:py-2">
         <div className="text-sm text-[#5A646B]">Home / Cart</div>
+        {packageDraft && (
+          <div className="mt-4 mb-2 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100/50 p-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-600 text-white font-bold text-lg">
+                  ⚡
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-emerald-950">
+                      Ongoing Solar Package Order: {packageDraft.packageTitle}
+                    </p>
+                    <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-900">
+                      Draft Saved
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-800 mt-0.5">
+                    Turnkey packages include certified engineer installation and are configured separately from individual equipment shopping carts.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/checkout?packageId=${packageDraft.packageId}`)}
+                  className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 transition cursor-pointer shadow-sm"
+                >
+                  Continue Package Setup &rarr;
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem("fortsolar:active_package_order");
+                    setPackageDraft(null);
+                  }}
+                  className="rounded-xl border border-emerald-300 px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-100 transition cursor-pointer"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
           <div>
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-semibold text-[#252C32]">
-                Your Cart
+                Your Equipment Cart
               </h1>
               <span className="text-sm text-[#5A646B]">
                 {totalItems} Items in cart
               </span>
             </div>
-            <div className="mt-4 border-t border-[#E9EEF0]">
+            {cartDetails.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="mx-auto max-w-sm rounded-2xl border border-dashed border-[#E4E9EC] p-8">
+                  <p className="text-base font-semibold text-[#252C32]">Your equipment cart is empty</p>
+                  <p className="mt-1 text-xs text-[#5A646B]">
+                    Looking for solar panels, inverters, or batteries? Browse our catalog to add products.
+                  </p>
+                  <Link
+                    href="/products"
+                    className="mt-4 inline-flex items-center rounded-xl bg-[#048A05] px-4 py-2 text-xs font-semibold text-white hover:bg-[#037004] transition"
+                  >
+                    Browse Products
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 border-t border-[#E9EEF0]">
               {cartDetails.map((item) => (
                 <div
                   key={`${item.itemType}-${item.id}`}
@@ -309,6 +411,7 @@ const CartPage = () => {
 
               ))}
             </div>
+          )}
 
             <div className={`mt-6 flex flex-col lg:flex-row items-center lg:justify-between rounded-xl border px-4 py-2 text-xs font-semibold ${shipping === 0 ? "border-[#048A0580] bg-[#EBFAEB] text-[#048A05]" : "border-[#0284c780] bg-[#f0f9ff] text-[#0284c7]"}`}>
               <div className="flex items-center gap-2">

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
 import GradientCheckbox from "@/components/ui/gradient-checkbox";
@@ -35,6 +35,7 @@ import {
   type CheckoutItem,
 } from "@/lib/checkout";
 import {
+  useStorePackageById,
   useStorePackagesByIds,
   useStoreProductsByIds,
 } from "@/lib/store-catalog";
@@ -78,6 +79,33 @@ function getOrderId(value: Record<string, unknown>) {
 
 const CheckoutPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryPackageId = searchParams?.get("packageId");
+  const queryFinancing = searchParams?.get("financing");
+
+  const [activePackageOrder, setActivePackageOrder] = useState<{
+    packageId: string | number;
+    packageTitle: string;
+    price?: number;
+    image?: string;
+    requestFinancing?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("fortsolar:active_package_order");
+      if (raw) {
+        setActivePackageOrder(JSON.parse(raw));
+      }
+    } catch (e) {
+      console.warn("Failed to parse package draft", e);
+    }
+  }, []);
+
+  const targetPackageId = queryPackageId || (activePackageOrder?.packageId ? String(activePackageOrder.packageId) : undefined);
+  const { package: selectedPackage } = useStorePackageById(targetPackageId || undefined);
+  const isPackageCheckout = Boolean(targetPackageId);
+
   const { session } = useAuth();
   const { isRefreshing, requireCustomerLogin } = useCustomerLoginGate();
   const currentUser = useMemo(() => sessionSnapshotToMockUser(session), [session]);
@@ -123,15 +151,22 @@ const CheckoutPage = () => {
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [draftPayload, setDraftPayload] = useState<any>(null);
 
-  // Define installation states
-  const [requestInstallation, setRequestInstallation] = useState(false);
-  const [installationType, setInstallationType] = useState("");
-  const [roofType, setRoofType] = useState("metal");
-  const [shading, setShading] = useState("none");
-  const [roofSize, setRoofSize] = useState("");
-  const [roofOrientation, setRoofOrientation] = useState("flat");
-  const [monthlyBill, setMonthlyBill] = useState("");
-  const [dailyUsageKwh, setDailyUsageKwh] = useState("");
+  // Define installation states (Nigerian structural & roofing context)
+  const [requestInstallation, setRequestInstallation] = useState(true);
+  const [installationType, setInstallationType] = useState("Residential");
+  const [buildingType, setBuildingType] = useState("Bungalow");
+  const [roofStyle, setRoofStyle] = useState("Hip Roof (Pitched / Sloped)");
+  const [roofMaterial, setRoofMaterial] = useState("Longspan Aluminium / Corrugated Metal");
+
+  // Sync package order financing and installation mode
+  useEffect(() => {
+    if (isPackageCheckout) {
+      setRequestInstallation(true);
+      if (queryFinancing === "1" || activePackageOrder?.requestFinancing) {
+        setRequestFinancing(true);
+      }
+    }
+  }, [isPackageCheckout, queryFinancing, activePackageOrder]);
 
   // Define financing calculator states
   const [downpaymentPct, setDownpaymentPct] = useState(30);
@@ -369,12 +404,9 @@ const CheckoutPage = () => {
       requestFinancing,
       requestInstallation,
       installationType,
-      roofType,
-      shading,
-      roofSize,
-      roofOrientation,
-      monthlyBill,
-      dailyUsageKwh,
+      buildingType,
+      roofStyle,
+      roofMaterial,
       downpaymentPct,
       tenureMonths,
       profileType,
@@ -408,12 +440,9 @@ const CheckoutPage = () => {
     requestFinancing,
     requestInstallation,
     installationType,
-    roofType,
-    shading,
-    roofSize,
-    roofOrientation,
-    monthlyBill,
-    dailyUsageKwh,
+    buildingType,
+    roofStyle,
+    roofMaterial,
     downpaymentPct,
     tenureMonths,
     profileType,
@@ -462,12 +491,9 @@ const CheckoutPage = () => {
     if (draftPayload.requestFinancing !== undefined) setRequestFinancing(draftPayload.requestFinancing);
     if (draftPayload.requestInstallation !== undefined) setRequestInstallation(draftPayload.requestInstallation);
     if (draftPayload.installationType) setInstallationType(draftPayload.installationType);
-    if (draftPayload.roofType) setRoofType(draftPayload.roofType);
-    if (draftPayload.shading) setShading(draftPayload.shading);
-    if (draftPayload.roofSize) setRoofSize(draftPayload.roofSize);
-    if (draftPayload.roofOrientation) setRoofOrientation(draftPayload.roofOrientation);
-    if (draftPayload.monthlyBill) setMonthlyBill(draftPayload.monthlyBill);
-    if (draftPayload.dailyUsageKwh) setDailyUsageKwh(draftPayload.dailyUsageKwh);
+    if (draftPayload.buildingType) setBuildingType(draftPayload.buildingType);
+    if (draftPayload.roofStyle) setRoofStyle(draftPayload.roofStyle);
+    if (draftPayload.roofMaterial) setRoofMaterial(draftPayload.roofMaterial);
     if (draftPayload.downpaymentPct) setDownpaymentPct(draftPayload.downpaymentPct);
     if (draftPayload.tenureMonths) setTenureMonths(draftPayload.tenureMonths);
     if (draftPayload.profileType) setProfileType(draftPayload.profileType);
@@ -516,13 +542,36 @@ const CheckoutPage = () => {
   }, [currentUser?.address, currentUser?.email, currentUser?.fullName, currentUser?.phone]);
 
   const cartDetails = useMemo(() => {
-    return cartItems
-      .map((item) => {
-        const product =
-          item.itemType === "product"
-            ? productMap.get(String(item.id))
-            : packageMap.get(String(item.id));
+    if (isPackageCheckout) {
+      if (!selectedPackage) return [];
+      const img =
+        typeof selectedPackage.mainImage === "string" && selectedPackage.mainImage
+          ? selectedPackage.mainImage
+          : typeof selectedPackage.image === "string" && selectedPackage.image
+          ? selectedPackage.image
+          : "";
+      return [
+        {
+          id: String(selectedPackage.id),
+          itemType: "package" as const,
+          quantity: 1,
+          title: selectedPackage.title,
+          price: selectedPackage.finalPrice ?? selectedPackage.price,
+          image: img,
+          sourceType: "package" as const,
+          sourceId: String(selectedPackage.id),
+          eligibleForInstallation: true,
+          freeDelivery: true,
+          weightTier: "under_5kg",
+          eligibleForWaybill: true,
+        },
+      ];
+    }
 
+    return cartItems
+      .filter((item) => item.itemType === "product")
+      .map((item) => {
+        const product = productMap.get(String(item.id));
         if (!product) {
           return null;
         }
@@ -536,7 +585,7 @@ const CheckoutPage = () => {
           image: product.image,
           sourceType: product.sourceType,
           sourceId: product.sourceId,
-          eligibleForInstallation: item.itemType === "product" ? (product as any).eligibleForInstallation : false,
+          eligibleForInstallation: (product as any).eligibleForInstallation ?? false,
           freeDelivery: (product as any).freeDelivery ?? false,
           weightTier: (product as any).weightTier ?? "under_5kg",
           eligibleForWaybill: (product as any).eligibleForWaybill ?? true,
@@ -548,15 +597,15 @@ const CheckoutPage = () => {
         weightTier: string;
         eligibleForWaybill: boolean;
       }>;
-  }, [cartItems, packageMap, productMap]);
+  }, [isPackageCheckout, selectedPackage, cartItems, productMap]);
 
   const hasEligibleProduct = useMemo(() => {
     return cartDetails.some((item) => item.itemType === "product" && item.eligibleForInstallation);
   }, [cartDetails]);
 
   const hasPackage = useMemo(() => {
-    return cartDetails.some((item) => item.itemType === "package");
-  }, [cartDetails]);
+    return isPackageCheckout || cartDetails.some((item) => item.itemType === "package");
+  }, [isPackageCheckout, cartDetails]);
 
   const isAllFreeDelivery = useMemo(() => {
     return cartDetails.length > 0 && cartDetails.every((item) => item.freeDelivery || item.itemType === "package");
@@ -895,16 +944,13 @@ const CheckoutPage = () => {
       const resolvedBillingAddress = useShippingAsBilling ? shippingAddress : billingAddress;
       
       let finalNotes = notes.trim();
-      if (requestInstallation) {
+      if (requestInstallation || hasPackage) {
         const installationInfo = `
 [Professional Installation Site Details]
-Installation Type: ${installationType || "Not specified"}
-Roof Type: ${roofType}
-Roof Orientation: ${roofOrientation}
-Shading Level: ${shading}
-Estimated Roof Size: ${roofSize || "Not specified"} sqm
-Monthly Bill: ${monthlyBill || "Not specified"}
-Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
+Installation Type: ${installationType || "Residential"}
+Building Type: ${buildingType || "Bungalow"}
+Roof Architecture / Style: ${roofStyle || "Hip Roof (Pitched / Sloped)"}
+Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
 `;
         finalNotes = finalNotes ? `${finalNotes}\n${installationInfo}` : installationInfo;
       }
@@ -963,9 +1009,15 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
           tone: "success",
           message: "Your order and financing application have been submitted successfully! Our partners are reviewing your documents, and we will update you soon.",
         });
-        clearCustomerCart();
-        replaceCart([]);
-        localStorage.removeItem("fortsolar:checkout_draft");
+        if (!isPackageCheckout) {
+          clearCustomerCart();
+          replaceCart([]);
+        }
+        try {
+          localStorage.removeItem("fortsolar:active_package_order");
+          localStorage.removeItem("fortsolar:checkout_draft");
+          localStorage.removeItem("fortsolar:applied_coupon");
+        } catch (e) {}
         setTimeout(() => {
           router.push("/settings");
         }, 4000);
@@ -987,7 +1039,11 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
             },
             email: shippingAddress.email,
             onSuccess: (nextReference) => {
-              localStorage.removeItem("fortsolar:checkout_draft");
+              try {
+                localStorage.removeItem("fortsolar:active_package_order");
+                localStorage.removeItem("fortsolar:checkout_draft");
+                localStorage.removeItem("fortsolar:applied_coupon");
+              } catch (e) {}
               void handlePaymentVerification(nextReference);
             },
             onClose: () => {
@@ -1286,77 +1342,77 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
               ) : null}
              </section>
 
-            {requestInstallation && (
+            {(requestInstallation || hasPackage) && (
               <section className="rounded-2xl border border-[#E9EEF0] p-5">
                 <h2 className="text-xl font-semibold text-[#252C32]">Installation Site Details</h2>
                 <p className="mt-1 text-sm text-[#5A646B]">
-                  Please provide structural details of the installation site to help our engineers plan your custom setup.
+                  Please specify structural details of the installation site to help our engineers plan and assign the best installation team.
                 </p>
                 <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label className="block text-xs font-semibold text-[#5A646B] mb-2">Installation Type *</label>
-                    <ComboboxField value={installationType} onValueChange={setInstallationType} placeholder="Search installation type" options={["Residential", "Commercial", "Industrial"].map((value) => ({ value, label: value }))} className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Type *</label>
                     <ComboboxField
-                      value={roofType}
-                      onValueChange={setRoofType}
-                      options={[{ value: "metal", label: "Metal / Tin / Longspan" }, { value: "concrete", label: "Concrete slab (Decking)" }, { value: "tile", label: "Tile Roof" }, { value: "shingle", label: "Asphalt Shingles" }, { value: "other", label: "Other / Not sure" }]}
+                      value={installationType}
+                      onValueChange={setInstallationType}
+                      placeholder="Select installation type"
+                      options={[
+                        { value: "Residential", label: "Residential" },
+                        { value: "Commercial & Industrial (C&I)", label: "Commercial & Industrial (C&I)" },
+                      ]}
                       className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Orientation *</label>
+                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Building Type *</label>
                     <ComboboxField
-                      value={roofOrientation}
-                      onValueChange={setRoofOrientation}
-                      options={[{ value: "flat", label: "Flat Roof (No tilt)" }, { value: "south", label: "Facing South (Optimized)" }, { value: "east_west", label: "Facing East/West split" }, { value: "north", label: "Facing North" }]}
+                      value={buildingType}
+                      onValueChange={setBuildingType}
+                      placeholder="Select building structure"
+                      options={[
+                        { value: "Bungalow", label: "Bungalow" },
+                        { value: "1-Storey Building (e.g. Duplex / 2 Floors)", label: "1-Storey Building (e.g. Duplex / 2 Floors)" },
+                        { value: "2-Storey Building (3 Floors)", label: "2-Storey Building (3 Floors)" },
+                        { value: "3-Storey Building or Higher", label: "3-Storey Building or Higher" },
+                        { value: "Warehouse / Commercial Facility", label: "Warehouse / Commercial Facility" },
+                        { value: "Other", label: "Other Structure" },
+                      ]}
                       className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Shading Level *</label>
+                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Architecture / Style *</label>
                     <ComboboxField
-                      value={shading}
-                      onValueChange={setShading}
-                      options={[{ value: "none", label: "No Shading (Full sun exposure)" }, { value: "partial", label: "Partial Shading (Trees, nearby buildings)" }, { value: "heavy", label: "Heavy Shading (Significant obstruction)" }]}
+                      value={roofStyle}
+                      onValueChange={setRoofStyle}
+                      placeholder="Select roof design"
+                      options={[
+                        { value: "Hip Roof (Pitched / Sloped)", label: "Hip Roof (Pitched / Sloped)" },
+                        { value: "Hidden Roof (Parapet / Concealed)", label: "Hidden Roof (Parapet / Concealed)" },
+                        { value: "Flat Roof (Concrete Decking)", label: "Flat Roof (Concrete Decking)" },
+                        { value: "Gable Roof", label: "Gable Roof" },
+                        { value: "Other", label: "Other Design" },
+                      ]}
                       className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Estimated Roof Size (sqm)</label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 50"
-                      value={roofSize}
-                      onChange={(e) => setRoofSize(e.target.value)}
-                      className="h-11 rounded-xl"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Monthly Electricity Bill (₦)</label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 50000"
-                      value={monthlyBill}
-                      onChange={(e) => setMonthlyBill(e.target.value)}
-                      className="h-11 rounded-xl"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Daily Usage Estimate (kWh)</label>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 15"
-                      value={dailyUsageKwh}
-                      onChange={(e) => setDailyUsageKwh(e.target.value)}
-                      className="h-11 rounded-xl"
+                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Material *</label>
+                    <ComboboxField
+                      value={roofMaterial}
+                      onValueChange={setRoofMaterial}
+                      placeholder="Select roofing material"
+                      options={[
+                        { value: "Longspan Aluminium / Corrugated Metal", label: "Longspan Aluminium / Corrugated Metal" },
+                        { value: "Stone-Coated Metal Tiles (Gerard)", label: "Stone-Coated Metal Tiles (Gerard)" },
+                        { value: "Concrete Decking (Slab)", label: "Concrete Decking (Slab)" },
+                        { value: "Clay / Ceramic Roof Tiles", label: "Clay / Ceramic Roof Tiles" },
+                        { value: "Asbestos / Fibre Cement", label: "Asbestos / Fibre Cement" },
+                        { value: "Other", label: "Other Material" },
+                      ]}
+                      className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
                     />
                   </div>
                 </div>
@@ -1817,23 +1873,35 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                 </div>
               )}
 
-              <div className="mt-8 text-sm text-[#5A646B]">
-                <p className="mb-2">Good to know</p>
-                <p className="font-semibold text-[#252C32]">
-                  Packages remain available during checkout
-                </p>
-                <p className="mt-2">
-                  Need a full installation-ready setup instead of individual components?{" "}
-                  <Link
-                    href="/packages"
-                    className="inline-flex items-center gap-1 font-medium text-[#252C32] underline"
-                  >
-                    Browse packages
-                    <span>↗</span>
-                  </Link>
-                  .
-                </p>
-              </div>
+              {isPackageCheckout ? (
+                <div className="mt-8 text-sm text-[#5A646B]">
+                  <p className="mb-2 font-medium text-emerald-800">Turnkey System Guarantee</p>
+                  <p className="font-semibold text-[#252C32]">
+                    Certified Installation & Nationwide Dispatch
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-[#5A646B]">
+                    Complete solar systems include professional mounting, safety breaker testing, and installer dispatch. Our engineering unit will verify your site structural details before deployment.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-8 text-sm text-[#5A646B]">
+                  <p className="mb-2">Good to know</p>
+                  <p className="font-semibold text-[#252C32]">
+                    Packages remain available during checkout
+                  </p>
+                  <p className="mt-2">
+                    Need a full installation-ready setup instead of individual components?{" "}
+                    <Link
+                      href="/packages"
+                      className="inline-flex items-center gap-1 font-medium text-[#252C32] underline"
+                    >
+                      Browse packages
+                      <span>↗</span>
+                    </Link>
+                    .
+                  </p>
+                </div>
+              )}
             </div>
           </aside>
         </div>
