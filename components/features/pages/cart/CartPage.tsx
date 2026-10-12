@@ -90,10 +90,8 @@ const CartPage = () => {
     0
   );
   const totalItems = cartDetails.reduce((sum, item) => sum + item.quantity, 0);
-  const shipping = hasPackage ? 0 : 168224;
-  const tax = useMemo(() => {
-    return hasPackage ? 0 : subtotal * 0.075;
-  }, [hasPackage, subtotal]);
+  const shipping = (cartDetails.length === 0 || subtotal === 0) ? 0 : (hasPackage ? 0 : 168224);
+  const tax = 0;
 
   const discountAmount = useMemo(() => {
     return cartDetails.reduce((sum, item) => {
@@ -107,11 +105,11 @@ const CartPage = () => {
   }, [cartDetails, packageMap]);
 
   const installationFee = useMemo(() => {
-    if (hasPackage) return 0;
+    if (hasPackage || cartDetails.length === 0 || subtotal === 0) return 0;
     return requestInstallation ? 150000 : 0;
-  }, [hasPackage, requestInstallation]);
+  }, [hasPackage, requestInstallation, cartDetails.length, subtotal]);
 
-  const total = subtotal + shipping + tax + installationFee - discountAmount;
+  const total = subtotal + shipping + installationFee - discountAmount;
 
   React.useEffect(() => {
     const localDraft = localStorage.getItem("fortsolar:checkout_draft");
@@ -242,12 +240,6 @@ const CartPage = () => {
                       {formatNaira(shipping)}
                     </span>
                   )}
-                </div>
-                <div className="flex items-center justify-between border-b py-4 border-[#E9EEF0] pb-3">
-                  <span className="text-sm text-[#5A646B]">Tax</span>
-                  <span className="font-semibold text-[#252C32]">
-                    {formatNaira(tax)}
-                  </span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex items-center justify-between border-b py-4 border-[#E9EEF0] pb-3">

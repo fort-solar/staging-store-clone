@@ -559,12 +559,11 @@ const CheckoutPage = () => {
     [cartDetails],
   );
   const shippingAmount = useMemo(() => {
+    if (cartDetails.length === 0 || subtotal === 0) return 0;
     return hasPackage ? 0 : 168224;
-  }, [hasPackage]);
+  }, [hasPackage, cartDetails.length, subtotal]);
 
-  const taxAmount = useMemo(() => {
-    return hasPackage ? 0 : subtotal * 0.075;
-  }, [subtotal, hasPackage]);
+  const taxAmount = 0;
 
   const discountAmount = useMemo(() => {
     return cartDetails.reduce((sum, item) => {
@@ -578,11 +577,11 @@ const CheckoutPage = () => {
   }, [cartDetails, packageMap]);
 
   const installationFee = useMemo(() => {
-    if (!requestInstallation) return 0;
+    if (!requestInstallation || cartDetails.length === 0 || subtotal === 0) return 0;
     return hasPackage ? 0 : 150000;
-  }, [requestInstallation, hasPackage]);
+  }, [requestInstallation, hasPackage, cartDetails.length, subtotal]);
 
-  const total = subtotal + shippingAmount + taxAmount + installationFee - discountAmount;
+  const total = subtotal + shippingAmount + installationFee - discountAmount;
 
   const calculatorResults = useMemo(() => {
     if (!financingSettings) return null;
@@ -1628,12 +1627,6 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                   <span className="text-[#5A646B]">Shipping</span>
                   <span className="font-semibold text-[#252C32]">
                     {formatNaira(shippingAmount)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#5A646B]">Tax</span>
-                  <span className="font-semibold text-[#252C32]">
-                    {formatNaira(taxAmount)}
                   </span>
                 </div>
                 {requestInstallation && (
