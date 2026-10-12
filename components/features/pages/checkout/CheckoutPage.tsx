@@ -22,6 +22,8 @@ import {
   getDraftOrder,
   saveDraftOrder,
   getFinancingSettings,
+  getCustomerDeliverySettings,
+  validateCustomerCoupon,
   submitCustomerQuoteRequest,
 } from "@/lib/customer";
 import { sessionSnapshotToMockUser } from "@/lib/localAuth";
@@ -535,9 +537,17 @@ const CheckoutPage = () => {
           sourceType: product.sourceType,
           sourceId: product.sourceId,
           eligibleForInstallation: item.itemType === "product" ? (product as any).eligibleForInstallation : false,
+          freeDelivery: (product as any).freeDelivery ?? false,
+          weightTier: (product as any).weightTier ?? "under_5kg",
+          eligibleForWaybill: (product as any).eligibleForWaybill ?? true,
         };
       })
-      .filter((item): item is (CheckoutItem & { eligibleForInstallation: boolean }) => Boolean(item));
+      .filter(Boolean) as Array<CheckoutItem & {
+        eligibleForInstallation: boolean;
+        freeDelivery: boolean;
+        weightTier: string;
+        eligibleForWaybill: boolean;
+      }>;
   }, [cartItems, packageMap, productMap]);
 
   const hasEligibleProduct = useMemo(() => {
@@ -546,6 +556,27 @@ const CheckoutPage = () => {
 
   const hasPackage = useMemo(() => {
     return cartDetails.some((item) => item.itemType === "package");
+  }, [cartDetails]);
+
+  const isAllFreeDelivery = useMemo(() => {
+    return cartDetails.length > 0 && cartDetails.every((item) => item.freeDelivery || item.itemType === "package");
+  }, [cartDetails]);
+
+  const maxWeightSurcharge = useMemo(() => {
+    const TIER_SURCHARGES: Record<string, number> = {
+      under_5kg: 0,
+      "5_15kg": 4000,
+      "15_30kg": 9000,
+      over_30kg: 18000,
+    };
+    let max = 0;
+    for (const item of cartDetails) {
+      if (item.itemType === "product") {
+        const surcharge = TIER_SURCHARGES[item.weightTier || "under_5kg"] ?? 0;
+        if (surcharge > max) max = surcharge;
+      }
+    }
+    return max;
   }, [cartDetails]);
 
   useEffect(() => {
@@ -558,10 +589,103 @@ const CheckoutPage = () => {
     () => cartDetails.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [cartDetails],
   );
+
+  const [deliverySettings, setDeliverySettings] = useState<{
+    universal_fee: number;
+    free_shipping_threshold?: number;
+    weight_tiers?: Array<{ key: string; name: string; surcharge: number }>;
+    state_rules?: Record<string, { all_cities_free: boolean; free_cities: string[] }>;
+  } | null>(null);
+
+  useEffect(() => {
+    getCustomerDeliverySettings()
+      .then((res) => {
+        if (res?.success && res.data) {
+          setDeliverySettings(res.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to load customer delivery settings:", err));
+  }, []);
+
+  const [couponInput, setCouponInput] = useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount_amount: number;
+    discount_type: "percentage" | "fixed";
+    discount_value: number;
+    description: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("fortsolar:applied_coupon");
+      if (saved) {
+        setAppliedCoupon(JSON.parse(saved));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  async function handleApplyCoupon() {
+    if (!couponInput.trim()) return;
+    setIsValidatingCoupon(true);
+    setCouponError(null);
+    try {
+      const res = await validateCustomerCoupon({
+        code: couponInput.trim().toUpperCase(),
+        order_amount: subtotal,
+        product_ids: cartDetails.map((it) => String(it.id)),
+      });
+      if (res.success && res.data.valid && res.data.coupon) {
+        const couponData = {
+          code: res.data.coupon.code,
+          discount_amount: res.data.discount_amount,
+          discount_type: res.data.coupon.discount_type,
+          discount_value: res.data.coupon.discount_value,
+          description: res.data.coupon.description,
+        };
+        setAppliedCoupon(couponData);
+        localStorage.setItem("fortsolar:applied_coupon", JSON.stringify(couponData));
+        setCouponInput("");
+      } else {
+        setCouponError(res.data?.message || "Invalid or expired discount coupon.");
+      }
+    } catch (err: any) {
+      setCouponError(err.message || "Failed to validate coupon code.");
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    localStorage.removeItem("fortsolar:applied_coupon");
+  }
+
   const shippingAmount = useMemo(() => {
     if (cartDetails.length === 0 || subtotal === 0) return 0;
-    return hasPackage ? 0 : 168224;
-  }, [hasPackage, cartDetails.length, subtotal]);
+    if (hasPackage) return 0; // Complete packages ship free nationwide
+    const threshold = deliverySettings?.free_shipping_threshold ?? 1500000;
+    if (subtotal >= threshold) return 0; // Free order threshold
+    if (isAllFreeDelivery) return 0;
+
+    // Check destination state free rules
+    const stateNorm = (shippingAddress.state || "").trim().toLowerCase();
+    if (stateNorm && deliverySettings?.state_rules) {
+      for (const [st, rule] of Object.entries(deliverySettings.state_rules)) {
+        if (st.toLowerCase() === stateNorm && rule.all_cities_free) {
+          return 0;
+        }
+      }
+    }
+
+    const baseRate = deliverySettings?.universal_fee ?? 16000;
+    return baseRate + maxWeightSurcharge;
+  }, [cartDetails.length, subtotal, hasPackage, deliverySettings, isAllFreeDelivery, shippingAddress.state, maxWeightSurcharge]);
 
   const taxAmount = 0;
 
@@ -581,7 +705,9 @@ const CheckoutPage = () => {
     return hasPackage ? 0 : 150000;
   }, [requestInstallation, hasPackage, cartDetails.length, subtotal]);
 
-  const total = subtotal + shippingAmount + installationFee - discountAmount;
+  const couponDiscount = appliedCoupon?.discount_amount ?? 0;
+  const totalDiscount = discountAmount + couponDiscount;
+  const total = Math.max(0, subtotal + shippingAmount + installationFee - totalDiscount);
 
   const calculatorResults = useMemo(() => {
     if (!financingSettings) return null;
@@ -762,56 +888,6 @@ const CheckoutPage = () => {
 
     setValidationErrors({});
 
-    if (!hasPackage) {
-      setIsSubmitting(true);
-      setCheckoutStatus(null);
-      try {
-        const quotePayload = {
-          name: shippingAddress.fullName,
-          email: shippingAddress.email,
-          phone: shippingAddress.phone,
-          address: shippingAddress.addressLine1,
-          location: shippingAddress.city,
-          roofSize: roofSize,
-          roofOrientation: roofOrientation,
-          shading: shading,
-          monthlyBill: monthlyBill ? Number(monthlyBill) : undefined,
-          dailyUsageKwh: dailyUsageKwh ? Number(dailyUsageKwh) : undefined,
-          requestInstallation: true,
-          agreeToTerms: legalConsent,
-          products: quoteProducts.map(p => ({
-            id: p.id,
-            title: p.title,
-            price: p.price,
-            quantity: p.quantity
-          }))
-        };
-
-        await submitCustomerQuoteRequest(quotePayload);
-
-        setCheckoutStatus({
-          tone: "success",
-          message: "Your installation quote request has been submitted successfully! Redirecting you to your quotes history...",
-        });
-
-        localStorage.removeItem("fortsolar:checkout_draft");
-        await clearCustomerCart().catch(() => null);
-        replaceCart([]);
-
-        setTimeout(() => {
-          router.push("/settings/quotes");
-        }, 3000);
-      } catch (err: any) {
-        setCheckoutStatus({
-          tone: "error",
-          message: err.message || "Failed to submit quote request.",
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
-    }
-
     setIsSubmitting(true);
     setCheckoutStatus(null);
 
@@ -848,10 +924,11 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
         shipping_address: shippingAddress,
         billing_address: resolvedBillingAddress,
         notes: finalNotes || undefined,
+        coupon_code: appliedCoupon ? appliedCoupon.code : undefined,
         subtotal,
         shipping_amount: shippingAmount,
         tax_amount: taxAmount,
-        discount_amount: discountAmount,
+        discount_amount: totalDiscount,
         total_amount: total,
         currency: "NGN",
         installation_type: requestInstallation ? installationType.trim() || undefined : undefined,
@@ -1637,18 +1714,85 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                     </span>
                   </div>
                 )}
-                <div className="flex items-center justify-between">
-                  <span className="text-[#5A646B]">Discount</span>
-                  <span className="font-semibold text-[#252C32]">
-                    -{formatNaira(discountAmount)}
-                  </span>
-                </div>
+                {discountAmount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#5A646B]">Package Discount</span>
+                    <span className="font-semibold text-red-600">
+                      -{formatNaira(discountAmount)}
+                    </span>
+                  </div>
+                )}
+                {appliedCoupon && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#048A05] font-medium">Coupon ({appliedCoupon.code})</span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="text-xs text-red-500 hover:text-red-700 font-bold"
+                        title="Remove coupon"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <span className="font-semibold text-[#048A05]">
+                      -{formatNaira(couponDiscount)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between border-t border-[#E9EEF0] pt-3">
                   <span className="font-semibold text-[#252C32]">Total</span>
                   <span className="font-semibold text-[#252C32]">
                     {formatNaira(total)}
                   </span>
                 </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-[#E9EEF0] bg-gray-50/70 p-3">
+                <label className="block text-xs font-semibold text-[#252C32] mb-1.5">
+                  Have a Discount Code?
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Coupon code"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value);
+                      if (couponError) setCouponError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleApplyCoupon();
+                      }
+                    }}
+                    className="h-9 flex-1 rounded-lg border border-[#E4E9EC] bg-white px-2.5 text-xs uppercase font-semibold outline-none focus:border-[#1FA21B]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleApplyCoupon()}
+                    disabled={isValidatingCoupon || !couponInput.trim()}
+                    className="h-9 rounded-lg bg-[#1FA21B] px-3 text-xs font-semibold text-white disabled:opacity-50 hover:bg-[#188015] transition"
+                  >
+                    {isValidatingCoupon ? "..." : "Apply"}
+                  </button>
+                </div>
+                {couponError && (
+                  <p className="mt-1 text-xs text-red-500 font-medium">⚠️ {couponError}</p>
+                )}
+                {appliedCoupon && (
+                  <div className="mt-2 flex items-center justify-between rounded-lg bg-[#EBFAEB] px-2 py-1 text-xs text-[#048A05]">
+                    <span className="font-semibold">✓ {appliedCoupon.code} (-{formatNaira(couponDiscount)})</span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-red-500 hover:text-red-700 font-bold text-xs"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button
@@ -1658,14 +1802,10 @@ Daily Usage: ${dailyUsageKwh || "Not specified"} kWh/day
                 className="mt-5 w-full rounded-xl bg-[#1FA21B] py-3 text-center font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting
-                  ? (hasPackage
-                      ? (requestFinancing ? "Submitting application..." : "Starting payment...")
-                      : "Submitting request...")
+                  ? (requestFinancing ? "Submitting application..." : "Starting payment...")
                   : isVerifyingPayment
                     ? "Verifying payment..."
-                    : (hasPackage
-                        ? (requestFinancing ? "Apply for Financing" : "Pay Now")
-                        : "Get Quote")}
+                    : (requestFinancing ? "Apply for Financing" : "Pay with Paystack")}
               </button>
 
               {checkoutStatus && checkoutStatus.tone === "error" && (

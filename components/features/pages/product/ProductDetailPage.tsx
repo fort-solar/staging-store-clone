@@ -102,8 +102,10 @@ const ProductDetailPage = () => {
   const deliveryWarrantyInfo =
     product.deliveryWarrantyInfo ||
     (product.freeDelivery
-      ? `This product qualifies for free delivery and includes a ${product.warrantyYears}-year performance warranty.`
-      : `This product includes a ${product.warrantyYears}-year performance warranty. Delivery charges may apply.`);
+      ? `This product qualifies for free nationwide delivery and includes a ${product.warrantyYears}-year performance warranty.`
+      : product.eligibleForWaybill !== false
+      ? `Interstate commercial motor park waybill dispatch is available across Nigeria. Includes a ${product.warrantyYears}-year performance warranty.`
+      : `This product is available for warehouse pickup only (interstate waybill unavailable). Includes a ${product.warrantyYears}-year performance warranty.`);
 
   async function handleShare() {
     try {
@@ -205,8 +207,30 @@ const ProductDetailPage = () => {
           </div>
 
           <div>
-            <div className="flex items-center justify-end">
-              <span className={`text-sm ${product.availability === "Out Of Stock" ? "text-[#EF5350]" : product.availability === "Limited Stock" ? "text-[#FFAD33]" : "text-[#1FA21B]"}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {product.eligibleForWaybill !== false ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#EBFAEB] px-2.5 py-1 text-xs font-semibold text-[#048A05]">
+                    <span>📦</span> Park-to-Park Waybill Eligible
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                    <span>🏪</span> Warehouse Pickup Only
+                  </span>
+                )}
+                {product.weightTier && (
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                    {product.weightTier === "under_5kg"
+                      ? "Weight: <5kg"
+                      : product.weightTier === "5_15kg"
+                      ? "Weight: 5-15kg"
+                      : product.weightTier === "15_30kg"
+                      ? "Weight: 15-30kg"
+                      : "Weight: >30kg"}
+                  </span>
+                )}
+              </div>
+              <span className={`text-sm font-semibold ${product.availability === "Out Of Stock" ? "text-[#EF5350]" : product.availability === "Limited Stock" ? "text-[#FFAD33]" : "text-[#1FA21B]"}`}>
                 {product.availability}
               </span>
             </div>
@@ -325,6 +349,51 @@ const ProductDetailPage = () => {
                 Talk to an Engineer
               </a>
             </div>
+
+            {(product.externalMarketplaceLinks?.jumia ||
+              product.externalMarketplaceLinks?.konga ||
+              product.externalMarketplaceLinks?.others) && (
+              <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#5A646B] mb-2">
+                  Also Available on Marketplaces
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {product.externalMarketplaceLinks?.jumia && (
+                    <a
+                      href={product.externalMarketplaceLinks.jumia}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#F68B1E]/40 bg-[#F68B1E]/10 px-3 py-1.5 text-xs font-semibold text-[#D47000] hover:bg-[#F68B1E]/20 transition"
+                    >
+                      <span>Buy on Jumia</span>
+                      <span>↗</span>
+                    </a>
+                  )}
+                  {product.externalMarketplaceLinks?.konga && (
+                    <a
+                      href={product.externalMarketplaceLinks.konga}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#ED017F]/40 bg-[#ED017F]/10 px-3 py-1.5 text-xs font-semibold text-[#C00065] hover:bg-[#ED017F]/20 transition"
+                    >
+                      <span>Buy on Konga</span>
+                      <span>↗</span>
+                    </a>
+                  )}
+                  {product.externalMarketplaceLinks?.others && (
+                    <a
+                      href={product.externalMarketplaceLinks.others}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition"
+                    >
+                      <span>Marketplace Store</span>
+                      <span>↗</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 p-4 text-xs">
               <div className="flex items-center justify-between font-semibold text-[#252C32]">

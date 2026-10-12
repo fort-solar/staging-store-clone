@@ -234,3 +234,66 @@ export function uploadFile(file: File) {
     body: formData,
   });
 }
+
+export function validateCustomerCoupon(payload: {
+  code: string;
+  order_amount: number;
+  product_ids?: string[];
+}) {
+  return appRequest<{
+    success: boolean;
+    data: {
+      valid: boolean;
+      discount_amount: number;
+      coupon: {
+        code: string;
+        description: string | null;
+        discount_type: "percentage" | "fixed";
+        discount_value: number;
+      };
+      message?: string;
+    };
+  }>("/api/v1/customer/coupons/validate", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function getCustomerDeliverySettings() {
+  return appGet<{
+    success: boolean;
+    data: {
+      universal_fee: number;
+      currency: string;
+      free_shipping_threshold?: number;
+      weight_tiers?: Array<{ key: string; name: string; max_kg: number | null; surcharge: number }>;
+      state_rules?: Record<string, { all_cities_free: boolean; free_cities: string[] }>;
+    };
+  }>("/api/v1/customer/delivery-settings");
+}
+
+export function calculateCustomerDeliveryFee(payload: {
+  state?: string;
+  city?: string;
+  order_total?: number;
+  weight_tier?: string;
+  is_all_free_delivery?: boolean;
+}) {
+  return appRequest<{
+    success: boolean;
+    data: {
+      fee: number;
+      is_free: boolean;
+      currency: string;
+      breakdown: {
+        base_rate: number;
+        weight_surcharge: number;
+        rule_applied: string;
+      };
+    };
+  }>("/api/v1/customer/delivery-fee", {
+    method: "POST",
+    body: payload,
+  });
+}
+

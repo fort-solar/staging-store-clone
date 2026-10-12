@@ -376,6 +376,11 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
   const deliveryWarrantyInfo =
     readString(raw, ["delivery_warranty_info", "delivery_and_warranty_info"], "") || null;
   const freeDelivery = readBoolean(raw, ["free_delivery", "is_free_delivery"]);
+  const eligibleForWaybill = readBoolean(raw, ["eligible_for_waybill", "is_eligible_for_waybill"], true);
+  const weightTier = readString(raw, ["weight_tier"], "under_5kg");
+  const externalMarketplaceLinks = isRecord(raw.external_marketplace_links)
+    ? (raw.external_marketplace_links as { jumia?: string; konga?: string; others?: string })
+    : null;
   const eligibleForInstallation = readBoolean(raw, ["eligible_for_installation"]);
   const description = product.overview || product.name;
 
@@ -404,6 +409,9 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
     description,
     freeDelivery,
     deliveryWarrantyInfo,
+    eligibleForWaybill,
+    weightTier,
+    externalMarketplaceLinks,
     eligibleForInstallation,
     quickSpecs: sectionValues.length ? sectionValues : [{ label: "Category", value: categoryLabel }],
     sectionValues,

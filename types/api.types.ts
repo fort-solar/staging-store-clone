@@ -353,6 +353,9 @@ export type StoreCatalogProduct = {
   description: string;
   freeDelivery?: boolean;
   deliveryWarrantyInfo?: string | null;
+  eligibleForWaybill?: boolean;
+  weightTier?: string | null;
+  externalMarketplaceLinks?: { jumia?: string; konga?: string; others?: string } | null;
   quickSpecs: Array<{ label: string; value: string }>;
   sectionValues?: Array<{ label: string; value: string }>;
   isActive?: boolean;
@@ -490,6 +493,7 @@ export type CustomerOrderCreatePayload = {
   shipping_address: CustomerAddressPayload;
   billing_address: CustomerAddressPayload;
   notes?: string;
+  coupon_code?: string;
   subtotal: number;
   shipping_amount: number;
   tax_amount: number;
