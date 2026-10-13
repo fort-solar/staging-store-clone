@@ -87,7 +87,7 @@ export async function verifyCheckoutPaymentFlow(input: {
 
     return {
       tone: "success",
-      message: "Payment verified successfully. Your order is now awaiting approval.",
+      message: "Payment verified successfully. Your order is confirmed and is now processing!",
     };
   } catch (error) {
     return {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Script from "next/script";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
@@ -1313,13 +1314,20 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             <p>Primary Item: {order.primaryItemName || "N/A"}</p>
                           </div>
 
-                          <div className="flex gap-4 items-center mt-4">
+                          <div className="flex flex-wrap gap-3 items-center mt-4">
+                            <Link
+                              href={`/orders/${order.id}`}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg shadow-xs transition"
+                            >
+                              Track Order & Live Status →
+                            </Link>
+
                             <button
                               type="button"
                               onClick={() => void toggleOrderDetail(order.id)}
-                              className="text-sm font-semibold text-[#168416]"
+                              className="text-xs font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg"
                             >
-                              {expandedOrderId === order.id ? "Hide Order Detail" : "View Order Detail"}
+                              {expandedOrderId === order.id ? "Hide Raw Data" : "View Raw Data"}
                             </button>
 
                             {order.status === "pending" && (

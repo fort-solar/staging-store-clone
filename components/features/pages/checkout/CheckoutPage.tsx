@@ -824,7 +824,7 @@ const CheckoutPage = () => {
     shippingAddress,
   });
 
-  async function handlePaymentVerification(reference: string) {
+  async function handlePaymentVerification(reference: string, targetOrderId?: string) {
     setIsVerifyingPayment(true);
     setCheckoutStatus({
       tone: "info",
@@ -838,7 +838,11 @@ const CheckoutPage = () => {
         clearCustomerCart,
         replaceCart,
         onVerified: async () => {
-          router.push("/settings/orders");
+          if (targetOrderId) {
+            router.push(`/orders/${targetOrderId}`);
+          } else {
+            router.push("/settings/orders");
+          }
           router.refresh();
         },
       });
@@ -1056,7 +1060,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                 localStorage.removeItem("fortsolar:checkout_draft");
                 localStorage.removeItem("fortsolar:applied_coupon");
               } catch (e) {}
-              void handlePaymentVerification(nextReference);
+              void handlePaymentVerification(nextReference, orderId);
             },
             onClose: () => {
               setCheckoutStatus({
