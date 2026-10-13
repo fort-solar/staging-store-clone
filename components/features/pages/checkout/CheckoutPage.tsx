@@ -151,12 +151,12 @@ const CheckoutPage = () => {
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [draftPayload, setDraftPayload] = useState<any>(null);
 
-  // Define installation states (Nigerian structural & roofing context)
+  // Define installation states (Nigerian structural & roofing context) - unselected by default
   const [requestInstallation, setRequestInstallation] = useState(true);
-  const [installationType, setInstallationType] = useState("Residential");
-  const [buildingType, setBuildingType] = useState("Bungalow");
-  const [roofStyle, setRoofStyle] = useState("Hip Roof (Pitched / Sloped)");
-  const [roofMaterial, setRoofMaterial] = useState("Longspan Aluminium / Corrugated Metal");
+  const [installationType, setInstallationType] = useState("");
+  const [buildingType, setBuildingType] = useState("");
+  const [roofStyle, setRoofStyle] = useState("");
+  const [roofMaterial, setRoofMaterial] = useState("");
 
   // Sync package order financing and installation mode
   useEffect(() => {
@@ -881,7 +881,15 @@ const CheckoutPage = () => {
       if (profileType === "business" && !cacDocumentUploadId) errors.uploadsCac = true;
     }
 
-    // 4. Validate Legal Consent / Terms
+    // 4. Validate Installation Site Details
+    if (requestInstallation || hasPackage) {
+      if (!installationType.trim()) errors.installationType = true;
+      if (!buildingType.trim()) errors.buildingType = true;
+      if (!roofStyle.trim()) errors.roofStyle = true;
+      if (!roofMaterial.trim()) errors.roofMaterial = true;
+    }
+
+    // 5. Validate Legal Consent / Terms
     if (!legalConsent) errors.legalConsent = true;
 
     // If there are errors, set state and abort
@@ -892,6 +900,8 @@ const CheckoutPage = () => {
       
       if (errors.legalConsent) {
         primaryErrorMessage = "You must agree to the Terms of Service, Refund Policy, and data consent to proceed.";
+      } else if (errors.installationType || errors.buildingType || errors.roofStyle || errors.roofMaterial) {
+        primaryErrorMessage = "Please select all required installation site details.";
       } else if (hasPackage && requestFinancing) {
         if (errors.bvn) {
           primaryErrorMessage = "Please enter a valid 11-digit BVN.";
@@ -920,6 +930,8 @@ const CheckoutPage = () => {
         elementId = "shipping-section";
       } else if (firstErrorKey.startsWith("billing")) {
         elementId = "billing-section";
+      } else if (firstErrorKey.startsWith("installation") || firstErrorKey === "buildingType" || firstErrorKey === "roofStyle" || firstErrorKey === "roofMaterial") {
+        elementId = "installation-section";
       } else if (firstErrorKey === "bvn" || firstErrorKey === "bvnConsent" || firstErrorKey.startsWith("uploads")) {
         elementId = "financing-section";
       } else if (firstErrorKey === "legalConsent") {
@@ -1343,14 +1355,16 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
              </section>
 
             {(requestInstallation || hasPackage) && (
-              <section className="rounded-2xl border border-[#E9EEF0] p-5">
+              <section id="installation-section" className="rounded-2xl border border-[#E9EEF0] p-5">
                 <h2 className="text-xl font-semibold text-[#252C32]">Installation Site Details</h2>
                 <p className="mt-1 text-sm text-[#5A646B]">
                   Please specify structural details of the installation site to help our engineers plan and assign the best installation team.
                 </p>
                 <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Installation Type *</label>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.installationType ? "text-red-600" : "text-[#5A646B]"}`}>
+                      Installation Type *
+                    </label>
                     <ComboboxField
                       value={installationType}
                       onValueChange={setInstallationType}
@@ -1359,12 +1373,16 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Residential", label: "Residential" },
                         { value: "Commercial & Industrial (C&I)", label: "Commercial & Industrial (C&I)" },
                       ]}
-                      className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
+                        validationErrors.installationType ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Building Type *</label>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.buildingType ? "text-red-600" : "text-[#5A646B]"}`}>
+                      Building Type *
+                    </label>
                     <ComboboxField
                       value={buildingType}
                       onValueChange={setBuildingType}
@@ -1377,12 +1395,16 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Warehouse / Commercial Facility", label: "Warehouse / Commercial Facility" },
                         { value: "Other", label: "Other Structure" },
                       ]}
-                      className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
+                        validationErrors.buildingType ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Architecture / Style *</label>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofStyle ? "text-red-600" : "text-[#5A646B]"}`}>
+                      Roof Architecture / Style *
+                    </label>
                     <ComboboxField
                       value={roofStyle}
                       onValueChange={setRoofStyle}
@@ -1394,12 +1416,16 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Gable Roof", label: "Gable Roof" },
                         { value: "Other", label: "Other Design" },
                       ]}
-                      className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
+                        validationErrors.roofStyle ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#5A646B] mb-2">Roof Material *</label>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofMaterial ? "text-red-600" : "text-[#5A646B]"}`}>
+                      Roof Material *
+                    </label>
                     <ComboboxField
                       value={roofMaterial}
                       onValueChange={setRoofMaterial}
@@ -1412,7 +1438,9 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Asbestos / Fibre Cement", label: "Asbestos / Fibre Cement" },
                         { value: "Other", label: "Other Material" },
                       ]}
-                      className="w-full h-11 px-3 rounded-xl border border-[#E4E9EC] text-sm bg-white outline-none"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
+                        validationErrors.roofMaterial ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      }`}
                     />
                   </div>
                 </div>
@@ -1875,12 +1903,11 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
 
               {isPackageCheckout ? (
                 <div className="mt-8 text-sm text-[#5A646B]">
-                  <p className="mb-2 font-medium text-emerald-800">Turnkey System Guarantee</p>
                   <p className="font-semibold text-[#252C32]">
-                    Certified Installation & Nationwide Dispatch
+                    Free Nationwide Delivery & Installation
                   </p>
                   <p className="mt-2 text-xs leading-relaxed text-[#5A646B]">
-                    Complete solar systems include professional mounting, safety breaker testing, and installer dispatch. Our engineering unit will verify your site structural details before deployment.
+                    Every complete solar package includes free nationwide delivery and certified professional installation.
                   </p>
                 </div>
               ) : (

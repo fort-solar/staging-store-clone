@@ -1292,7 +1292,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
                               <p className="text-lg font-semibold text-[#202020]">
-                                {order.orderNumber || order.id}
+                                {order.orderNumber || (order.id ? `#${order.id.replace(/-/g, "").slice(0, 8).toUpperCase()}` : "Order")}
                               </p>
                               <p className="text-xs text-[#7C7C7C]">{formatDate(order.createdAt)}</p>
                             </div>

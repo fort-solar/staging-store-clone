@@ -306,7 +306,7 @@ const CartPage = () => {
                     </span>
                   </div>
                   <p className="text-xs text-emerald-800 mt-0.5">
-                    Turnkey packages include certified engineer installation and are configured separately from individual equipment shopping carts.
+                    Complete solar packages include free nationwide delivery and professional installation, and are configured separately from individual equipment shopping carts.
                   </p>
                 </div>
               </div>
