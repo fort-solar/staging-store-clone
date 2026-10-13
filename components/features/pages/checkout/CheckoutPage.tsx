@@ -962,7 +962,7 @@ const CheckoutPage = () => {
       let finalNotes = notes.trim();
       if (requestInstallation || hasPackage) {
         const installationInfo = `
-[Professional Installation Site Details]
+Professional Installation Site Details
 Installation Type: ${installationType || "Residential"}
 Building Type: ${buildingType || "Bungalow"}
 Roof Architecture / Style: ${roofStyle || "Hip Roof (Pitched / Sloped)"}
