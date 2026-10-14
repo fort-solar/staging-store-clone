@@ -34,7 +34,6 @@ const DashboardHeader = ({
   const favoritesCount = useGeneralStore(
     (state) => state.favorites.products.length + state.favorites.packages.length
   );
-  const toggleCategorySidebar = useGeneralStore((state) => state.toggleCategorySidebar);
 
   const userInitial = session?.user.fullName?.charAt(0)?.toUpperCase() ?? "A";
   const userFullName = session?.user.fullName ?? "Customer User";
@@ -49,54 +48,36 @@ const DashboardHeader = ({
   return (
     <div className="fixed left-0 top-0 z-50 w-full border-b border-[#E9EEF0] bg-white">
       <div className="mx-auto w-full max-w-6xl px-4 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center justify-between lg:justify-start lg:mr-16 bg-white">
+        <div className="flex items-center justify-between lg:justify-start lg:mr-8 bg-white">
           <Link href="/" className="bg-white">
             <LogoFull className="h-7 w-auto bg-white" />
           </Link>
-          <Button
-            onClick={toggleCategorySidebar}
-            className="flex lg:hidden bg-[#048A05] hover:bg-[#047804] text-white rounded-md h-9 px-4 text-xs"
-          >
-            Categories
-          </Button>
         </div>
-          <div className="lg:hidden block relative w-full">
+
+        <div className="lg:hidden block relative w-full">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA5AC]">
+            <SearchIcon />
+          </span>
+          <Input
+            placeholder="Search"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            className="pl-10 h-11 text-xs rounded-lg border-[#C9D4D9] focus-visible:ring-[#BFE8BF]"
+          />
+        </div>
+
+        <div className="hidden flex-1 items-center lg:flex lg:justify-start max-w-xl">
+          <div className="relative w-full">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA5AC]">
               <SearchIcon />
             </span>
             <Input
-              placeholder="Search"
+              placeholder="Search products, packages, or solar systems..."
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
-              className="pl-10 h-11 text-xs rounded-lg border-[#C9D4D9] focus-visible:ring-[#BFE8BF]"
+              className="pl-10 h-10 text-xs rounded-lg border-[#C9D4D9] focus-visible:ring-[#BFE8BF]"
             />
           </div>
-
-        <div className="hidden flex-1 gap-2 items-center lg:flex lg:justify-start">
-          <Button
-            onClick={toggleCategorySidebar}
-            className="bg-[#048A05] hidden lg:flex hover:bg-[#047804] text-white rounded-md h-9 px-4 text-xs gap-2"
-          >
-            <span className="grid gap-1">
-              <span className="h-0.5 w-4 bg-white rounded-full" />
-              <span className="h-0.5 w-4 bg-white rounded-full" />
-              <span className="h-0.5 w-4 bg-white rounded-full" />
-            </span>
-            <span>Categories</span>
-          </Button>
-
-          <div className="hidden lg:block relative max-w-lg lg:max-w-xl w-full mr-10">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA5AC]">
-              <SearchIcon />
-            </span>
-            <Input
-              placeholder="Search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              className="pl-10 h-11 text-xs rounded-lg border-[#C9D4D9] focus-visible:ring-[#BFE8BF]"
-            />
-          </div>
-
         </div>
 
         <div className="hidden lg:flex items-center gap-4 justify-end text-sm text-[#3B3B3B]">

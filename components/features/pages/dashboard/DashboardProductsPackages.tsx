@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, Check, ChevronDown, ListFilter, SlidersHorizontal } from "lucide-react";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
@@ -95,7 +95,29 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     activeOnly: false,
   });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showDesktopFilters, setShowDesktopFilters] = useState(true);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [mobileSort, setMobileSort] = useState<"default" | "price-low" | "price-high">("default");
+  const categoryMenuRef = useRef<HTMLDivElement | null>(null);
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target as Node)) {
+        setCategoryMenuOpen(false);
+      }
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setSortMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const [productQuery, setProductQuery] = useState("");
   const [packageQuery, setPackageQuery] = useState("");
   const [productPage, setProductPage] = useState(1);
@@ -243,37 +265,158 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        {/* Catalog Header & Controls Bar */}
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#E9EEF0] pb-4">
           <div>
             {activeQuery.trim().length > 0 ? (
-              <p className="text-xl font-semibold text-[#252C32]">
+              <h1 className="text-xl font-bold text-[#252C32]">
                 Found {resultsCount} results for{" "}
-                <span className="text-[#048A05]">{activeQuery}</span>
-              </p>
+                <span className="text-[#048A05]">&ldquo;{activeQuery}&rdquo;</span>
+              </h1>
             ) : (
-              <p className="text-xl font-semibold text-[#252C32]">
-                {activeTab === "products" ? "All Products" : "All Packages"}
-              </p>
+              <h1 className="text-xl font-bold text-[#252C32]">
+                {activeTab === "products" ? activeProductSection : "All Packages"}
+              </h1>
             )}
+            <p className="text-xs text-[#5A646B] mt-0.5">
+              Showing {activeItemCount} of {resultsCount} items
+            </p>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Folded Categories Dropdown (when on products) */}
+            {activeTab === "products" && (
+              <div className="relative" ref={categoryMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryMenuOpen((prev) => !prev);
+                    setSortMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
+                    productFilters.categoryId
+                      ? "border-[#048A05] bg-[#EAFBEA] text-[#048A05]"
+                      : "border-[#D9E0E4] bg-white text-[#252C32] hover:border-[#048A05]"
+                  }`}
+                  aria-expanded={categoryMenuOpen}
+                >
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span>Category: {activeProductSection}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${categoryMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {categoryMenuOpen && (
+                  <div className="absolute right-0 top-full z-30 mt-1.5 w-56 rounded-xl border border-[#E9EEF0] bg-white py-1.5 shadow-lg">
+                    {productSections.map((section) => {
+                      const isSelected = productFilters.categoryId === section.id;
+                      return (
+                        <button
+                          key={section.id || section.label}
+                          type="button"
+                          onClick={() => {
+                            handleProductCategorySelect(section.id);
+                            setCategoryMenuOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs transition-colors ${
+                            isSelected
+                              ? "bg-[#EAFBEA] font-semibold text-[#048A05]"
+                              : "text-[#252C32] hover:bg-[#F4F6F8]"
+                          }`}
+                        >
+                          <span>{section.label}</span>
+                          {isSelected && <Check className="h-3.5 w-3.5 text-[#048A05]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Folded Sort Dropdown */}
+            <div className="relative" ref={sortMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSortMenuOpen((prev) => !prev);
+                  setCategoryMenuOpen(false);
+                }}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
+                  mobileSort !== "default"
+                    ? "border-[#048A05] bg-[#EAFBEA] text-[#048A05]"
+                    : "border-[#D9E0E4] bg-white text-[#252C32] hover:border-[#048A05]"
+                }`}
+                aria-expanded={sortMenuOpen}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                <span>
+                  Sort:{" "}
+                  {mobileSort === "price-low"
+                    ? "Price: Low to High"
+                    : mobileSort === "price-high"
+                    ? "Price: High to Low"
+                    : "Default"}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${sortMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {sortMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-[#E9EEF0] bg-white py-1.5 shadow-lg">
+                  {[
+                    { key: "default", label: "Default / Recommended" },
+                    { key: "price-low", label: "Price: Low to High" },
+                    { key: "price-high", label: "Price: High to Low" },
+                  ].map((option) => {
+                    const isSelected = mobileSort === option.key;
+                    return (
+                      <button
+                        key={option.key}
+                        type="button"
+                        onClick={() => {
+                          setMobileSort(option.key as "default" | "price-low" | "price-high");
+                          setSortMenuOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs transition-colors ${
+                          isSelected
+                            ? "bg-[#EAFBEA] font-semibold text-[#048A05]"
+                            : "text-[#252C32] hover:bg-[#F4F6F8]"
+                        }`}
+                      >
+                        <span>{option.label}</span>
+                        {isSelected && <Check className="h-3.5 w-3.5 text-[#048A05]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Filters Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowMobileFilters((prev) => !prev);
+                setShowDesktopFilters((prev) => !prev);
+              }}
+              className="flex items-center gap-2 rounded-lg border border-[#D9E0E4] bg-white px-3 py-2 text-xs font-semibold text-[#252C32] hover:border-[#048A05] transition-colors"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span>Filters</span>
+              {(Boolean(productFilters.categoryId) || productFilters.activeOnly || packageFilters.activeOnly) ? (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#048A05] text-[10px] font-bold text-white">
+                  {Number(Boolean(productFilters.categoryId)) +
+                    Number(productFilters.activeOnly) +
+                    Number(packageFilters.activeOnly)}
+                </span>
+              ) : null}
+            </button>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowMobileFilters((open) => !open)}
-          aria-expanded={showMobileFilters}
-          aria-controls="mobile-catalog-filters"
-          className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#D9E0E4] bg-white px-4 py-3 text-sm font-semibold text-[#252C32] lg:hidden"
-        >
-          <span className="flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filters</span>
-          <ChevronDown className={`h-4 w-4 transition-transform ${showMobileFilters ? "rotate-180" : ""}`} />
-        </button>
-
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+        <div className={`mt-6 grid grid-cols-1 gap-6 ${showDesktopFilters ? "lg:grid-cols-[260px_1fr]" : "lg:grid-cols-1"}`}>
           <aside
             id="mobile-catalog-filters"
-            className={`${showMobileFilters ? "block" : "hidden"} space-y-6 rounded-xl border border-[#E4E9EC] bg-[#FAFBFB] p-4 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0`}
+            className={`${showMobileFilters ? "block" : "hidden"} ${showDesktopFilters ? "lg:block" : "lg:hidden"} space-y-6 rounded-xl border border-[#E4E9EC] bg-[#FAFBFB] p-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0`}
           >
             {activeTab === "products" ? (
               <>
