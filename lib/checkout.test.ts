@@ -78,7 +78,7 @@ describe("checkout helpers", () => {
     expect(onVerified).toHaveBeenCalledTimes(1);
     expect(status).toEqual({
       tone: "success",
-      message: "Payment verified successfully. Your order is now awaiting approval.",
+      message: "Payment verified successfully. Your order is confirmed and is now processing!",
     });
   });
 });
