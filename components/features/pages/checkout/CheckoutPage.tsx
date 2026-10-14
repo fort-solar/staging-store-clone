@@ -1299,7 +1299,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               <div
                 className={`rounded-2xl px-4 py-3 text-sm ${
                   checkoutStatus.tone === "success"
-                    ? "bg-[#EAF7E8] text-[#168416]"
+                    ? "bg-[#EAF7E8] text-[#048a05]"
                     : "bg-[#EEF5FF] text-[#1D4ED8]"
                 }`}
               >

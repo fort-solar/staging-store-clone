@@ -966,7 +966,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                 <div
                   className={`rounded-xl px-4 py-3 text-sm ${
                     pageStatus.tone === "success"
-                      ? "bg-[#EAF7E8] text-[#168416]"
+                      ? "bg-[#EAF7E8] text-[#048a05]"
                       : pageStatus.tone === "info"
                         ? "bg-[#EEF5FF] text-[#1D4ED8]"
                         : "bg-[#FDECEC] text-[#C73939]"
@@ -989,7 +989,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                     <div
                       className={`rounded-xl px-4 py-3 text-sm ${
                         profileStatus.tone === "success"
-                          ? "bg-[#EAF7E8] text-[#168416]"
+                          ? "bg-[#EAF7E8] text-[#048a05]"
                           : "bg-[#FDECEC] text-[#C73939]"
                       }`}
                     >
@@ -1049,7 +1049,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                     <Button
                       onClick={handleProfileSave}
                       disabled={isSavingProfile}
-                      className="rounded-xl bg-[#1D9A1D] px-8 py-6 text-base font-semibold text-white hover:bg-[#168416] lg:w-fit w-full"
+                      className="rounded-xl bg-[#1D9A1D] px-8 py-6 text-base font-semibold text-white hover:bg-[#048a05] lg:w-fit w-full"
                     >
                       {isSavingProfile ? "Saving..." : "Save Details"}
                     </Button>
@@ -1298,7 +1298,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               <p className="text-xs text-[#7C7C7C]">{formatDate(order.createdAt)}</p>
                             </div>
                             <div className="text-right">
-                              <span className="inline-flex rounded-full bg-[#EAF7E8] px-3 py-1 text-xs font-medium text-[#168416]">
+                              <span className="inline-flex rounded-full bg-[#EAF7E8] px-3 py-1 text-xs font-medium text-[#048a05]">
                                 {humanizeStatus(order.displayStatus || order.status)}
                               </span>
                               <p className="mt-2 text-lg font-semibold text-[#202020]">
@@ -1411,7 +1411,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                 Created {formatDate(installation.createdAt)}
                               </p>
                               <div className="mt-2 flex flex-wrap gap-2">
-                                <span className="inline-flex rounded-full bg-[#EAF7E8] px-3 py-1 text-xs font-medium text-[#168416]">
+                                <span className="inline-flex rounded-full bg-[#EAF7E8] px-3 py-1 text-xs font-medium text-[#048a05]">
                                   {humanizeStatus(installation.displayStatus || installation.status)}
                                 </span>
                                 <span className="inline-flex rounded-full bg-[#EEF5FF] px-3 py-1 text-xs font-medium text-[#1D4ED8]">
@@ -1450,7 +1450,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             <button
                               type="button"
                               onClick={() => void toggleInstallationDetail(installation.id)}
-                              className="text-sm font-semibold text-[#168416]"
+                              className="text-sm font-semibold text-[#048a05]"
                             >
                               {expandedInstallationId === installation.id
                                 ? "Hide Installation Detail"
@@ -1604,7 +1604,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               <Button
                                 onClick={() => handleAcceptAndPay(request.id)}
                                 disabled={isPayingRequestId !== null || isVerifyingPayment}
-                                className="rounded-xl bg-[#1D9A1D] px-6 py-2 text-sm font-semibold text-white hover:bg-[#168416]"
+                                className="rounded-xl bg-[#1D9A1D] px-6 py-2 text-sm font-semibold text-white hover:bg-[#048a05]"
                               >
                                 {isPayingRequestId === request.id ? "Processing..." : "Accept & Pay"}
                               </Button>
