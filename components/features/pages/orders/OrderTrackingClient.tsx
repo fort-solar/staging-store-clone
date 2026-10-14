@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Check,
   AlertCircle,
+  Lock,
   Phone,
   Calendar,
   MapPin,
@@ -104,26 +105,75 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
     );
   }
 
+  const isAuthRequired =
+    Boolean(error) &&
+    (error!.toLowerCase().includes("authoriz") ||
+      error!.toLowerCase().includes("authoris") ||
+      error!.toLowerCase().includes("unauthor") ||
+      error!.toLowerCase().includes("token") ||
+      error!.toLowerCase().includes("sign in") ||
+      error!.toLowerCase().includes("log in") ||
+      error!.toLowerCase().includes("401") ||
+      error!.toLowerCase().includes("authenticated"));
+
   if (error || !order) {
+    if (isAuthRequired) {
+      return (
+        <div className="min-h-screen bg-[#F8FAFC]">
+          <DashboardHeader query="" onQueryChange={() => {}} />
+          <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-4 pt-28 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-[#048A05] ring-8 ring-emerald-50/50">
+              <Lock className="h-8 w-8" />
+            </div>
+            <h2 className="mt-5 text-2xl font-extrabold text-gray-900 tracking-tight">
+              Sign In to View Your Order
+            </h2>
+            <p className="mt-2 text-sm text-gray-600 max-w-md leading-relaxed">
+              Please sign in to your Fortsolar customer account to track this order, check hardware dispatch status, and monitor installation milestones.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Link
+                href={`/login?redirect=${encodeURIComponent(`/orders/${orderId}`)}`}
+                className="rounded-xl bg-[#048A05] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#036B04] transition-all text-center"
+              >
+                Sign In to Account
+              </Link>
+              <Link
+                href="/"
+                className="rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-all text-center"
+              >
+                Back to Store
+              </Link>
+            </div>
+            <p className="mt-6 text-xs text-gray-400">
+              Need assistance? Email our team at <a href="mailto:enquiry@fortsolar.ng" className="text-[#048A05] font-medium underline">enquiry@fortsolar.ng</a>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[#F8FAFC]">
         <DashboardHeader query="" onQueryChange={() => {}} />
         <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-4 pt-28 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-            <AlertCircle className="h-7 w-7" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-8 ring-rose-50/50">
+            <AlertCircle className="h-8 w-8" />
           </div>
-          <h2 className="mt-4 text-xl font-bold text-gray-900">Order Not Found</h2>
-          <p className="mt-2 text-sm text-gray-600">{error || "We couldn't retrieve the tracking details for this order."}</p>
-          <div className="mt-6 flex gap-3">
+          <h2 className="mt-5 text-2xl font-extrabold text-gray-900 tracking-tight">Order Not Found</h2>
+          <p className="mt-2 text-sm text-gray-600 max-w-md leading-relaxed">
+            We could not find an order matching reference #{orderId.slice(0, 8)}. Please check your confirmation email or verify the order link.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={() => router.push("/settings/orders")}
-              className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-all"
             >
               View All Orders
             </button>
             <Link
               href="/"
-              className="rounded-xl bg-[#048A05] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#036B04]"
+              className="rounded-xl bg-[#048A05] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#036B04] transition-all text-center"
             >
               Back to Store
             </Link>
