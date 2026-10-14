@@ -1254,6 +1254,32 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               );
                             })()
                           )}
+
+                          {quote.status === "approved" && (
+                            <div className="mt-4 p-4 border border-[#DCFCE7] rounded-xl bg-[#F0FDF4] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-semibold text-[#166534]">Proposal Accepted</p>
+                                <p className="text-xs text-[#15803D]">
+                                  This custom quote proposal was accepted and converted into a package request.
+                                </p>
+                              </div>
+                              {quote.convertedPackageRequestId && (
+                                <Button
+                                  onClick={() => handleAcceptAndPay(quote.convertedPackageRequestId!)}
+                                  className="px-4 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg shrink-0"
+                                  disabled={isPayingRequestId === quote.convertedPackageRequestId}
+                                >
+                                  {isPayingRequestId === quote.convertedPackageRequestId ? "Processing..." : "Complete Checkout"}
+                                </Button>
+                              )}
+                            </div>
+                          )}
+
+                          {quote.status === "rejected" && (
+                            <div className="mt-4 p-3 border border-red-100 rounded-xl bg-red-50 text-xs text-red-700">
+                              Proposal declined. Our engineering team has been notified to provide revised specifications.
+                            </div>
+                          )}
                         </div>
                       ))}
                       <PaginationControls
