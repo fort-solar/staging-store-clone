@@ -444,6 +444,7 @@ export type CustomerQuoteRecord = {
   adminNotes: string | null;
   quoteAssetUrl: string | null;
   quoteAssetKind: string | null;
+  convertedPackageRequestId?: string | null;
 };
 
 export type CustomerQuoteListApiResponse = ApiCollectionResponse<CustomerQuoteRecord>;

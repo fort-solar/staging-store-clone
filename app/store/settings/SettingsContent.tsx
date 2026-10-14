@@ -749,11 +749,11 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     });
 
     try {
-      await submitCustomerQuoteFeedback(id, { response, feedback: note });
+      const result = await submitCustomerQuoteFeedback(id, { response, feedback: note });
       setPageStatus({
         tone: "success",
         message: response === "approved"
-          ? "Proposal accepted! Check the 'Package Requests' tab to complete deposit payment."
+          ? "Proposal accepted! Initializing secure checkout..."
           : "Proposal rejected successfully. Our engineers will follow up soon.",
       });
       // Refresh quotes
@@ -766,7 +766,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       } catch (_) {}
       
       if (response === "approved") {
-        router.push("/settings/package-requests");
+        const pkgReqId = (result as any)?.data?.convertedPackageRequestId;
+        if (pkgReqId) {
+          await handleAcceptAndPay(pkgReqId);
+        } else {
+          router.push("/settings/package-requests");
+        }
       }
     } catch (err) {
       setPageStatus({
@@ -1238,7 +1243,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                               className="px-4 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg w-full sm:w-fit"
                                               disabled={isFeedbackSubmittingQuoteId === quote.id}
                                             >
-                                              Accept Proposal
+                                              {isFeedbackSubmittingQuoteId === quote.id ? "Processing..." : "Accept Proposal & Pay"}
                                             </Button>
                                           </>
                                         )}
