@@ -104,7 +104,7 @@ const ProductDetailPage = () => {
     (product.freeDelivery
       ? `This product qualifies for free nationwide delivery and includes a ${product.warrantyYears}-year performance warranty.`
       : product.eligibleForWaybill !== false
-      ? `Interstate commercial motor park waybill dispatch is available across Nigeria. Includes a ${product.warrantyYears}-year performance warranty.`
+      ? `Interstate commercial motor park waybill delivery is available across Nigeria. Includes a ${product.warrantyYears}-year performance warranty.`
       : `This product is available for warehouse pickup only (interstate waybill unavailable). Includes a ${product.warrantyYears}-year performance warranty.`);
 
   async function handleShare() {

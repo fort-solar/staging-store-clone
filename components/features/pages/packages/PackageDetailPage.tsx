@@ -19,8 +19,11 @@ import {
   useStorePackageById,
   useStorePackages,
 } from "@/lib/store-catalog";
+import { useAuth } from "@/components/auth/auth-provider";
+import { getDraftOrder, saveDraftOrder } from "@/lib/customer";
 
 const PackageDetailPage = () => {
+  const { session } = useAuth();
   const [query, setQuery] = useState("");
   const params = useParams<{ id: string }>();
   const [showFeatures, setShowFeatures] = useState(true);
@@ -43,31 +46,55 @@ const PackageDetailPage = () => {
   } | null>(null);
 
   React.useEffect(() => {
+    let localDraft: any = null;
     try {
       const raw = localStorage.getItem("fortsolar:active_package_order");
       if (raw) {
-        setActiveDraft(JSON.parse(raw));
+        localDraft = JSON.parse(raw);
+        setActiveDraft(localDraft);
       }
     } catch (e) {
       console.warn("Failed to parse package draft", e);
     }
-  }, []);
+
+    if (session) {
+      getDraftOrder()
+        .then((res) => {
+          if (res?.success && res.data?.packageDraft) {
+            setActiveDraft(res.data.packageDraft);
+            try {
+              localStorage.setItem(
+                "fortsolar:active_package_order",
+                JSON.stringify(res.data.packageDraft),
+              );
+            } catch (err) {
+              console.warn(err);
+            }
+          }
+        })
+        .catch((err) => console.warn("Failed to get draft order:", err));
+    }
+  }, [session]);
 
   const handleOrderPackage = (withFinancing = false) => {
     if (!data) return;
+    const packageDraft = {
+      packageId: data.id,
+      packageTitle: data.title,
+      price: data.finalPrice ?? data.price,
+      image: data.mainImage || data.image,
+      requestFinancing: withFinancing,
+    };
     try {
       localStorage.setItem(
         "fortsolar:active_package_order",
-        JSON.stringify({
-          packageId: data.id,
-          packageTitle: data.title,
-          price: data.finalPrice ?? data.price,
-          image: data.mainImage || data.image,
-          requestFinancing: withFinancing,
-        })
+        JSON.stringify(packageDraft),
       );
     } catch (e) {
       console.error(e);
+    }
+    if (session) {
+      saveDraftOrder({ packageDraft }).catch((err) => console.warn("Backend draft save failed:", err));
     }
     const targetUrl = withFinancing ? `/checkout?packageId=${data.id}&financing=1` : `/checkout?packageId=${data.id}`;
     requireCustomerLogin({

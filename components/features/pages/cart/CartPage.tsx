@@ -14,13 +14,20 @@ import {
   useStoreProductsByIds,
 } from "@/lib/store-catalog";
 import { clampCartQuantity, getProductCartMaxQuantity } from "@/lib/cart";
-import { validateCustomerCoupon } from "@/lib/customer";
+import {
+  validateCustomerCoupon,
+  getDraftOrder,
+  saveDraftOrder,
+  deleteDraftOrder,
+} from "@/lib/customer";
+import { useAuth } from "@/components/auth/auth-provider";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
 const CartPage = () => {
   const router = useRouter();
+  const { session } = useAuth();
   const [query, setQuery] = useState("");
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const cartItems = useGeneralStore((state) => state.cartItems);
@@ -36,15 +43,49 @@ const CartPage = () => {
   } | null>(null);
 
   React.useEffect(() => {
+    let localDraft: any = null;
     try {
       const raw = localStorage.getItem("fortsolar:active_package_order");
       if (raw) {
-        setPackageDraft(JSON.parse(raw));
+        localDraft = JSON.parse(raw);
+        setPackageDraft(localDraft);
       }
     } catch (e) {
       console.warn("Failed to parse package draft", e);
     }
-  }, []);
+
+    if (session) {
+      getDraftOrder()
+        .then((res) => {
+          if (res?.success && res.data?.packageDraft) {
+            setPackageDraft(res.data.packageDraft);
+            try {
+              localStorage.setItem(
+                "fortsolar:active_package_order",
+                JSON.stringify(res.data.packageDraft),
+              );
+            } catch (err) {
+              console.warn(err);
+            }
+          } else if (localDraft) {
+            saveDraftOrder({ packageDraft: localDraft }).catch((err) => console.warn(err));
+          }
+        })
+        .catch((err) => console.warn("Failed to sync backend draft order:", err));
+    }
+  }, [session]);
+
+  const handleClearPackageDraft = () => {
+    try {
+      localStorage.removeItem("fortsolar:active_package_order");
+    } catch (err) {
+      console.warn(err);
+    }
+    setPackageDraft(null);
+    if (session) {
+      deleteDraftOrder().catch((err) => console.warn("Failed to delete backend draft:", err));
+    }
+  };
 
   const productIds = useMemo(
     () => cartItems.filter((item) => item.itemType === "product").map((item) => item.id),
@@ -290,41 +331,40 @@ const CartPage = () => {
       <div className="mx-auto w-full max-w-6xl px-4 pt-28 lg:py-2">
         <div className="text-sm text-[#5A646B]">Home / Cart</div>
         {packageDraft && (
-          <div className="mt-4 mb-2 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100/50 p-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-600 text-white font-bold text-lg">
-                  ⚡
+          <div className="mt-4 mb-3 rounded-2xl border border-[#048A05]/25 bg-[#F6FAF6] p-4 sm:p-5 shadow-sm transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#048A05] text-white shadow-sm">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-emerald-950">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-bold text-[#1E293B]">
                       Ongoing Solar Package Order: {packageDraft.packageTitle}
                     </p>
-                    <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-900">
+                    <span className="rounded-full bg-[#048A05]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#048A05]">
                       Draft Saved
                     </span>
                   </div>
-                  <p className="text-xs text-emerald-800 mt-0.5">
+                  <p className="text-xs text-[#5A646B] mt-1 leading-relaxed">
                     Complete solar packages include free nationwide delivery and professional installation, and are configured separately from individual equipment shopping carts.
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => router.push(`/checkout?packageId=${packageDraft.packageId}`)}
-                  className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 transition cursor-pointer shadow-sm"
+                  className="rounded-xl bg-[#048A05] px-4 py-2 text-xs font-semibold text-white hover:bg-[#037004] transition cursor-pointer shadow-sm"
                 >
                   Continue Package Setup &rarr;
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    localStorage.removeItem("fortsolar:active_package_order");
-                    setPackageDraft(null);
-                  }}
-                  className="rounded-xl border border-emerald-300 px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-100 transition cursor-pointer"
+                  onClick={handleClearPackageDraft}
+                  className="rounded-xl border border-[#048A05]/30 px-3 py-2 text-xs font-medium text-[#048A05] hover:bg-[#048A05]/10 transition cursor-pointer"
                 >
                   Clear
                 </button>
@@ -413,23 +453,35 @@ const CartPage = () => {
             </div>
           )}
 
-            <div className={`mt-6 flex flex-col lg:flex-row items-center lg:justify-between rounded-xl border px-4 py-2 text-xs font-semibold ${shipping === 0 ? "border-[#048A0580] bg-[#EBFAEB] text-[#048A05]" : "border-[#0284c780] bg-[#f0f9ff] text-[#0284c7]"}`}>
-              <div className="flex items-center gap-2">
-                <DeliveryIcon className="w-5 h-5" />
-                <span>
-                  {shipping === 0
-                    ? (hasPackage
-                        ? "Free Nationwide Delivery Included (Packages)"
+            {cartDetails.length > 0 && (
+              <div
+                className={`mt-6 flex flex-col sm:flex-row items-center sm:justify-between gap-2 rounded-xl border px-4 py-3 text-xs font-semibold ${
+                  shipping === 0
+                    ? "border-[#048A05]/30 bg-[#EBFAEB] text-[#048A05]"
+                    : "border-[#0284c7]/30 bg-[#f0f9ff] text-[#0284c7]"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <DeliveryIcon className="w-5 h-5 shrink-0" />
+                  <span>
+                    {shipping === 0
+                      ? hasPackage
+                        ? "Free Nationwide Delivery & Installation Included (Packages)"
+                        : isAllFreeDelivery
+                        ? "Free Delivery on Eligible Products"
                         : subtotal >= 1500000
                         ? "Free Delivery Threshold Met (Orders ≥ ₦1,500,000)"
-                        : "Free Delivery Promotional Coverage")
-                    : hasWarehouseOnlyProduct
-                    ? "Regional Warehouse Pickup Only (One or more items ineligible for waybill)"
-                    : "Park-to-Park Waybill Across Nigeria (Motor Park Pickup)"}
+                        : "Free Delivery Included"
+                      : hasWarehouseOnlyProduct
+                      ? "Regional Warehouse Pickup Only (One or more items ineligible for waybill)"
+                      : "Standard Nationwide Waybill Delivery (Calculated at checkout based on destination)"}
+                  </span>
+                </div>
+                <span className="shrink-0">
+                  {shipping === 0 ? "Free Nationwide Delivery" : "(4-5 Working Days Waybill)"}
                 </span>
               </div>
-              <span>{shipping === 0 ? "Free Nationwide Dispatch" : "(4-5 Working Days Waybill)"}</span>
-            </div>
+            )}
           </div>
 
           <aside className="space-y-4">
@@ -443,7 +495,9 @@ const CartPage = () => {
                 </div>
                 <div className="flex items-center justify-between border-b py-3">
                   <span className="text-sm text-[#5A646B]">Shipping</span>
-                  {shipping === 0 ? (
+                  {cartDetails.length === 0 ? (
+                    <span className="font-semibold text-[#252C32]">₦0.00</span>
+                  ) : shipping === 0 ? (
                     <span className="rounded-md bg-[#EBFAEB] px-2 py-0.5 text-xs text-[#048A05] font-semibold">
                       Free
                     </span>

@@ -117,6 +117,12 @@ export function saveDraftOrder(payload: any) {
   });
 }
 
+export function deleteDraftOrder() {
+  return appRequest<{ success: boolean; message: string }>("/api/v1/customer/me/draft-order", {
+    method: "DELETE",
+  });
+}
+
 export function getFinancingSettings() {
   return appGet<{ success: boolean; data: any }>("/api/v1/customer/financing-settings");
 }

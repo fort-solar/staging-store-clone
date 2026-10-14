@@ -60,7 +60,7 @@ const DashboardHeader = ({
             Categories
           </Button>
         </div>
-          <div className="lg:hidden block relative max-w-lg lg:max-w-xl w-full mr-10">
+          <div className="lg:hidden block relative w-full">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA5AC]">
               <SearchIcon />
             </span>

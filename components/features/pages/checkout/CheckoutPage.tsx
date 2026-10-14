@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,6 +21,7 @@ import {
   uploadFile,
   getDraftOrder,
   saveDraftOrder,
+  deleteDraftOrder,
   getFinancingSettings,
   getCustomerDeliverySettings,
   validateCustomerCoupon,
@@ -148,7 +149,6 @@ const CheckoutPage = () => {
   const [billingAddress, setBillingAddress] = useState<AddressFormState>(EMPTY_ADDRESS);
 
   // Load draft from localStorage on mount, and backend if logged in
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [draftPayload, setDraftPayload] = useState<any>(null);
 
   // Define installation states (Nigerian structural & roofing context) - unselected by default
@@ -457,14 +457,59 @@ const CheckoutPage = () => {
     session,
   ]);
 
-  // Load draft order on mount
+  const applyDraftToState = useCallback((draft: any) => {
+    if (!draft) return;
+    if (draft.shippingAddress) {
+      setShippingAddress((prev) => ({
+        fullName: prev.fullName || draft.shippingAddress.fullName || "",
+        email: prev.email || draft.shippingAddress.email || "",
+        phone: prev.phone || draft.shippingAddress.phone || "",
+        addressLine1: prev.addressLine1 || draft.shippingAddress.addressLine1 || "",
+        state: prev.state || draft.shippingAddress.state || "",
+        city: prev.city || draft.shippingAddress.city || "",
+        country: prev.country || draft.shippingAddress.country || "Nigeria",
+      }));
+    }
+    if (draft.billingAddress) {
+      setBillingAddress((prev) => ({
+        fullName: prev.fullName || draft.billingAddress.fullName || "",
+        email: prev.email || draft.billingAddress.email || "",
+        phone: prev.phone || draft.billingAddress.phone || "",
+        addressLine1: prev.addressLine1 || draft.billingAddress.addressLine1 || "",
+        state: prev.state || draft.billingAddress.state || "",
+        city: prev.city || draft.billingAddress.city || "",
+        country: prev.country || draft.billingAddress.country || "Nigeria",
+      }));
+    }
+    if (draft.useShippingAsBilling !== undefined) setUseShippingAsBilling(draft.useShippingAsBilling);
+    if (draft.notes) setNotes((prev) => prev || draft.notes);
+    if (draft.requestFinancing !== undefined) setRequestFinancing(draft.requestFinancing);
+    if (draft.requestInstallation !== undefined) setRequestInstallation(draft.requestInstallation);
+    if (draft.installationType) setInstallationType((prev) => prev || draft.installationType);
+    if (draft.buildingType) setBuildingType((prev) => prev || draft.buildingType);
+    if (draft.roofStyle) setRoofStyle((prev) => prev || draft.roofStyle);
+    if (draft.roofMaterial) setRoofMaterial((prev) => prev || draft.roofMaterial);
+    if (draft.downpaymentPct) setDownpaymentPct(draft.downpaymentPct);
+    if (draft.tenureMonths) setTenureMonths(draft.tenureMonths);
+    if (draft.profileType) setProfileType(draft.profileType);
+    if (draft.bvn) setBvn((prev) => prev || draft.bvn);
+    if (draft.nin) setNin((prev) => prev || draft.nin);
+    if (draft.bvnConsent !== undefined) setBvnConsent(draft.bvnConsent);
+    if (draft.legalConsent !== undefined) setLegalConsent(draft.legalConsent);
+    if (draft.govIdUploadId) setGovIdUploadId((prev) => prev || draft.govIdUploadId);
+    if (draft.utilityBillUploadId) setUtilityBillUploadId((prev) => prev || draft.utilityBillUploadId);
+    if (draft.bankStatementUploadId) setBankStatementUploadId((prev) => prev || draft.bankStatementUploadId);
+    if (draft.cacDocumentUploadId) setCacDocumentUploadId((prev) => prev || draft.cacDocumentUploadId);
+  }, []);
+
+  // Load draft order on mount and apply directly
   useEffect(() => {
     const localDraft = localStorage.getItem("fortsolar:checkout_draft");
     if (localDraft) {
       try {
         const parsed = JSON.parse(localDraft);
         setDraftPayload(parsed);
-        setShowResumePrompt(true);
+        applyDraftToState(parsed);
       } catch (err) {
         console.error("Failed to parse local checkout draft:", err);
       }
@@ -475,39 +520,12 @@ const CheckoutPage = () => {
         .then((res) => {
           if (res?.success && res.data) {
             setDraftPayload(res.data);
-            setShowResumePrompt(true);
+            applyDraftToState(res.data);
           }
         })
         .catch((err) => console.warn("Failed to load backend draft order:", err));
     }
-  }, [session]);
-
-  const resumeDraft = () => {
-    if (!draftPayload) return;
-    if (draftPayload.shippingAddress) setShippingAddress(draftPayload.shippingAddress);
-    if (draftPayload.billingAddress) setBillingAddress(draftPayload.billingAddress);
-    if (draftPayload.useShippingAsBilling !== undefined) setUseShippingAsBilling(draftPayload.useShippingAsBilling);
-    if (draftPayload.notes !== undefined) setNotes(draftPayload.notes);
-    if (draftPayload.requestFinancing !== undefined) setRequestFinancing(draftPayload.requestFinancing);
-    if (draftPayload.requestInstallation !== undefined) setRequestInstallation(draftPayload.requestInstallation);
-    if (draftPayload.installationType) setInstallationType(draftPayload.installationType);
-    if (draftPayload.buildingType) setBuildingType(draftPayload.buildingType);
-    if (draftPayload.roofStyle) setRoofStyle(draftPayload.roofStyle);
-    if (draftPayload.roofMaterial) setRoofMaterial(draftPayload.roofMaterial);
-    if (draftPayload.downpaymentPct) setDownpaymentPct(draftPayload.downpaymentPct);
-    if (draftPayload.tenureMonths) setTenureMonths(draftPayload.tenureMonths);
-    if (draftPayload.profileType) setProfileType(draftPayload.profileType);
-    if (draftPayload.bvn) setBvn(draftPayload.bvn);
-    if (draftPayload.nin) setNin(draftPayload.nin);
-    if (draftPayload.bvnConsent !== undefined) setBvnConsent(draftPayload.bvnConsent);
-    if (draftPayload.legalConsent !== undefined) setLegalConsent(draftPayload.legalConsent);
-    if (draftPayload.govIdUploadId) setGovIdUploadId(draftPayload.govIdUploadId);
-    if (draftPayload.utilityBillUploadId) setUtilityBillUploadId(draftPayload.utilityBillUploadId);
-    if (draftPayload.bankStatementUploadId) setBankStatementUploadId(draftPayload.bankStatementUploadId);
-    if (draftPayload.cacDocumentUploadId) setCacDocumentUploadId(draftPayload.cacDocumentUploadId);
-
-    setShowResumePrompt(false);
-  };
+  }, [session, applyDraftToState]);
 
   useEffect(() => {
     if (!session && !isRefreshing) {
@@ -1034,6 +1052,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           localStorage.removeItem("fortsolar:checkout_draft");
           localStorage.removeItem("fortsolar:applied_coupon");
         } catch (e) {}
+        deleteDraftOrder().catch((err) => console.warn(err));
         setTimeout(() => {
           router.push("/settings");
         }, 4000);
@@ -1060,6 +1079,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                 localStorage.removeItem("fortsolar:checkout_draft");
                 localStorage.removeItem("fortsolar:applied_coupon");
               } catch (e) {}
+              deleteDraftOrder().catch((err) => console.warn(err));
               void handlePaymentVerification(nextReference, orderId);
             },
             onClose: () => {
@@ -1082,6 +1102,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           message: "Redirecting to Paystack to complete your payment.",
         });
         localStorage.removeItem("fortsolar:checkout_draft");
+        deleteDraftOrder().catch((err) => console.warn(err));
         window.location.assign(authorizationUrl);
       }
     } catch (error) {
@@ -1264,34 +1285,6 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
 
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="text-sm text-[#5A646B]">Store / Checkout</div>
-
-        {showResumePrompt && draftPayload && (
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-[#048A0580] bg-[#EBFAEB] p-4 text-[#048A05] shadow-sm animate-pulse">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">✍️</span>
-              <div>
-                <p className="font-semibold text-sm">You have an incomplete checkout</p>
-                <p className="text-xs text-[#048A05]/80 font-normal">Resume your saved details (address, site options, and uploads).</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={resumeDraft}
-                className="rounded-lg bg-[#048A05] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#048a05]/90"
-              >
-                Resume Purchase
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowResumePrompt(false)}
-                className="rounded-lg border border-[#048a05]/20 px-2.5 py-1.5 text-xs font-semibold hover:bg-[#048a05]/10"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-6">

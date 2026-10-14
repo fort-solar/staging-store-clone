@@ -186,4 +186,9 @@ table th, table td { max-width: 18rem; overflow: hidden; text-overflow: ellipsis
 .dark [class*="text-[#202020]"], .dark [class*="text-[#1F2937]"], .dark [class*="text-[#111827]"], .dark [class*="text-[#0F172A]"], .dark [class*="text-[#252C32]"] { color: var(--foreground) !important; }
 .dark [class*="text-[#3B3B3B]"], .dark [class*="text-[#4B5563]"], .dark [class*="text-[#5B6472]"], .dark [class*="text-[#6B7280]"] { color: var(--muted-foreground) !important; }
 .dark [class*="border-[#"] { border-color: var(--border) !important; }
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
 @media (max-width: 767px) { .overflow-x-auto { -webkit-overflow-scrolling: touch; } }
