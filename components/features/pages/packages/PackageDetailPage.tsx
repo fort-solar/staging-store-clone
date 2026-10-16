@@ -3,10 +3,13 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles, Fuel } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaShare, FaTiktok, FaYoutube } from "react-icons/fa";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { FinancingIcon } from "@/components/features/icons/FinancingIcon";
+import FinancingBreakdownModal from "@/components/features/financing/FinancingBreakdownModal";
+import FuelSavingsDrawer from "@/components/features/financing/FuelSavingsDrawer";
+import FinancingApplicationModal from "@/components/features/financing/FinancingApplicationModal";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import HeartIcon from "@/components/features/icons/HeartIcon";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
@@ -44,6 +47,12 @@ const PackageDetailPage = () => {
     packageId: string | number;
     packageTitle: string;
   } | null>(null);
+
+  // Financing & ROI Modals State
+  const [showBreakdownModal, setShowBreakdownModal] = useState(false);
+  const [showFuelDrawer, setShowFuelDrawer] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [selectedFinancingPlan, setSelectedFinancingPlan] = useState<any>(null);
 
   React.useEffect(() => {
     let localDraft: any = null;
@@ -286,6 +295,29 @@ const PackageDetailPage = () => {
               ) : null}
             </div>
 
+            {/* Financing Breakdown & Generator Fuel ROI Hyperlinks */}
+            {data.solarFinanceEnabled ? (
+              <div className="mt-2.5 flex items-center gap-3 flex-wrap text-xs">
+                <button
+                  type="button"
+                  onClick={() => setShowBreakdownModal(true)}
+                  className="inline-flex items-center gap-1.5 font-bold text-[#048A05] hover:text-[#036a04] hover:underline cursor-pointer"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-[#048A05]" />
+                  <span>See financing breakdown & monthly payments &rarr;</span>
+                </button>
+                <span className="text-gray-300">•</span>
+                <button
+                  type="button"
+                  onClick={() => setShowFuelDrawer(true)}
+                  className="inline-flex items-center gap-1 font-semibold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                >
+                  <Fuel className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Compare vs generator fuel ROI</span>
+                </button>
+              </div>
+            ) : null}
+
             {activeDraft && String(activeDraft.packageId) === String(data.id) && (
               <div className="mt-3 flex items-center justify-between rounded-xl border border-[#048A05]/30 bg-[#EBFAEB] p-3 text-xs">
                 <span className="text-[#048A05] font-medium">
@@ -353,15 +385,24 @@ const PackageDetailPage = () => {
                   <div className="flex-1">
                     <p className="font-semibold text-[#048A05]">Solar Financing Available</p>
                     <p className="mt-0.5 text-[#5A646B]">
-                      Request structured monthly instalment terms with our verified financing partners.
+                      Request structured monthly instalment terms with our verified financing partners (CheckOff, Altpower, Sterling).
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => handleOrderPackage(true)}
-                      className="mt-1.5 inline-flex items-center font-semibold text-[#048A05] underline hover:text-[#036a04] cursor-pointer"
-                    >
-                      Apply with Solar Financing &rarr;
-                    </button>
+                    <div className="mt-2.5 flex items-center gap-3 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setShowBreakdownModal(true)}
+                        className="inline-flex items-center font-bold text-[#048A05] underline hover:text-[#036a04] cursor-pointer"
+                      >
+                        Calculator & Breakdown &rarr;
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowApplicationModal(true)}
+                        className="inline-flex items-center px-3 py-1 rounded-lg bg-[#048A05] text-white font-semibold hover:opacity-95 transition cursor-pointer"
+                      >
+                        Apply in 3 Steps
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : null}
@@ -418,6 +459,50 @@ const PackageDetailPage = () => {
           <PackagesGrid items={relatedPackages} view="grid" />
         </div>
       </div>
+
+      {/* Interactive Financing Breakdown Modal */}
+      <FinancingBreakdownModal
+        isOpen={showBreakdownModal}
+        onClose={() => setShowBreakdownModal(false)}
+        packageTitle={data.title}
+        packagePrice={data.finalPrice ?? data.price}
+        packageId={data.id}
+        onProceedToApply={(plan) => {
+          setSelectedFinancingPlan(plan);
+          setShowBreakdownModal(false);
+          setShowApplicationModal(true);
+        }}
+        onOpenFuelComparison={() => {
+          setShowBreakdownModal(false);
+          setShowFuelDrawer(true);
+        }}
+      />
+
+      {/* Generator Fuel vs Solar ROI Drawer */}
+      <FuelSavingsDrawer
+        isOpen={showFuelDrawer}
+        onClose={() => setShowFuelDrawer(false)}
+        packageTitle={data.title}
+        packagePrice={data.finalPrice ?? data.price}
+        monthlyInstallment={selectedFinancingPlan?.monthlyPayment}
+        onSelectPlan={() => {
+          setShowFuelDrawer(false);
+          setShowApplicationModal(true);
+        }}
+      />
+
+      {/* Frictionless 3-Step Financing Intake Modal */}
+      <FinancingApplicationModal
+        isOpen={showApplicationModal}
+        onClose={() => setShowApplicationModal(false)}
+        packageId={data.id}
+        packageTitle={data.title}
+        packagePrice={data.finalPrice ?? data.price}
+        initialPlan={selectedFinancingPlan}
+        onSuccess={() => {
+          // Success is handled within the modal state
+        }}
+      />
     </div>
   );
 };
