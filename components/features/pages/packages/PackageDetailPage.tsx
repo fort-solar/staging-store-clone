@@ -100,10 +100,14 @@ const PackageDetailPage = () => {
     return Math.round((principal + totalInterest) / 12);
   }, [packagePrice]);
 
-  const handleOrderPackage = (withFinancing = false) => {
+  const handleOrderPackage = (
+    withFinancing = false,
+    financingTerms?: { downPaymentPct: number; tenureMonths: number }
+  ) => {
     if (!data) return;
+    const packageId = data.slug || data.id;
     const packageDraft = {
-      packageId: data.id,
+      packageId,
       packageTitle: data.title,
       price: data.finalPrice ?? data.price,
       image: data.mainImage || data.image,
@@ -120,7 +124,12 @@ const PackageDetailPage = () => {
     if (session) {
       saveDraftOrder({ packageDraft }).catch((err) => console.warn("Backend draft save failed:", err));
     }
-    const targetUrl = withFinancing ? `/checkout?packageId=${data.id}&financing=1` : `/checkout?packageId=${data.id}`;
+    let targetUrl = withFinancing
+      ? `/checkout?packageId=${encodeURIComponent(String(packageId))}&financing=1`
+      : `/checkout?packageId=${encodeURIComponent(String(packageId))}`;
+    if (withFinancing && financingTerms) {
+      targetUrl += `&downpayment=${financingTerms.downPaymentPct}&tenure=${financingTerms.tenureMonths}`;
+    }
     requireCustomerLogin({
       redirectTo: targetUrl,
       onAuthenticated: () => router.push(targetUrl),
@@ -510,10 +519,10 @@ const PackageDetailPage = () => {
         onClose={() => setShowCostSavingsModal(false)}
         systemPrice={packagePrice}
         packageName={data.title}
-        packageSlug={String(data.id)}
+        packageSlug={String(data.slug || data.id)}
         onBuyOutright={() => handleOrderPackage(false)}
         onBuyWithFinancing={(terms) => {
-          handleOrderPackage(true);
+          handleOrderPackage(true, terms);
         }}
       />
     </div>

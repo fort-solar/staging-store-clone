@@ -71,7 +71,7 @@ export function CostSavingsModal({
     if (onBuyOutright) {
       onBuyOutright();
     } else {
-      router.push(`/checkout?package=${packageSlug || ""}&financing=false`);
+      router.push(`/checkout?packageId=${encodeURIComponent(packageSlug || "")}&financing=0`);
     }
     onClose();
   };
@@ -85,7 +85,7 @@ export function CostSavingsModal({
       });
     } else {
       router.push(
-        `/checkout?package=${packageSlug || ""}&financing=true&downpayment=${downPaymentPct}&tenure=${tenureMonths}`
+        `/checkout?packageId=${encodeURIComponent(packageSlug || "")}&financing=1&downpayment=${downPaymentPct}&tenure=${tenureMonths}`
       );
     }
     onClose();

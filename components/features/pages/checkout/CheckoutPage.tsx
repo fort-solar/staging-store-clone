@@ -80,8 +80,10 @@ function getOrderId(value: Record<string, unknown>) {
 const CheckoutPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryPackageId = searchParams?.get("packageId");
+  const queryPackageId = searchParams?.get("packageId") || searchParams?.get("package");
   const queryFinancing = searchParams?.get("financing");
+  const queryDownpayment = searchParams?.get("downpayment");
+  const queryTenure = searchParams?.get("tenure");
 
   const [activePackageOrder, setActivePackageOrder] = useState<{
     packageId: string | number;
@@ -161,13 +163,26 @@ const CheckoutPage = () => {
   useEffect(() => {
     if (isPackageCheckout) {
       setRequestInstallation(true);
-      if (queryFinancing === "1") {
-        setRequestFinancing(true);
-      } else {
-        setRequestFinancing(false);
+      const isFinancing =
+        queryFinancing === "1" ||
+        queryFinancing === "true" ||
+        (queryFinancing === null && Boolean(activePackageOrder?.requestFinancing));
+      setRequestFinancing(Boolean(isFinancing));
+
+      if (queryDownpayment) {
+        const dp = Number(queryDownpayment);
+        if (!isNaN(dp) && dp >= 10 && dp <= 90) {
+          setDownpaymentPct(dp);
+        }
+      }
+      if (queryTenure) {
+        const tn = Number(queryTenure);
+        if (!isNaN(tn) && [3, 6, 12, 18, 24].includes(tn)) {
+          setTenureMonths(tn);
+        }
       }
     }
-  }, [isPackageCheckout, queryFinancing]);
+  }, [isPackageCheckout, queryFinancing, queryDownpayment, queryTenure, activePackageOrder?.requestFinancing]);
 
   // Define financing calculator states (Standard 4% monthly flat rate)
   const [downpaymentPct, setDownpaymentPct] = useState(30);
@@ -373,24 +388,45 @@ const CheckoutPage = () => {
 
   const cartDetails = useMemo(() => {
     if (isPackageCheckout) {
-      if (!selectedPackage) return [];
+      if (!selectedPackage) {
+        if (activePackageOrder) {
+          return [
+            {
+              id: String(activePackageOrder.packageId),
+              itemType: "package" as const,
+              quantity: 1,
+              title: activePackageOrder.packageTitle || "Solar System Package",
+              price: activePackageOrder.price ?? 0,
+              image: activePackageOrder.image || "",
+              sourceType: "package" as const,
+              sourceId: String(activePackageOrder.packageId),
+              slug: String(activePackageOrder.packageId),
+              eligibleForInstallation: true,
+              freeDelivery: true,
+              weightTier: "under_5kg",
+              eligibleForWaybill: true,
+            },
+          ];
+        }
+        return [];
+      }
       const img =
         typeof selectedPackage.mainImage === "string" && selectedPackage.mainImage
           ? selectedPackage.mainImage
           : typeof selectedPackage.image === "string" && selectedPackage.image
           ? selectedPackage.image
-          : "";
+          : (activePackageOrder?.image || "");
       return [
         {
           id: String(selectedPackage.id),
           itemType: "package" as const,
           quantity: 1,
-          title: selectedPackage.title,
-          price: selectedPackage.finalPrice ?? selectedPackage.price,
+          title: selectedPackage.title || activePackageOrder?.packageTitle || "Solar System Package",
+          price: selectedPackage.finalPrice ?? selectedPackage.price ?? activePackageOrder?.price ?? 0,
           image: img,
           sourceType: "package" as const,
           sourceId: String(selectedPackage.id),
-          slug: selectedPackage.slug,
+          slug: selectedPackage.slug || String(selectedPackage.id),
           eligibleForInstallation: true,
           freeDelivery: true,
           weightTier: "under_5kg",
@@ -429,7 +465,7 @@ const CheckoutPage = () => {
         weightTier: string;
         eligibleForWaybill: boolean;
       }>;
-  }, [isPackageCheckout, selectedPackage, cartItems, productMap]);
+  }, [isPackageCheckout, selectedPackage, activePackageOrder, cartItems, productMap]);
 
   const hasEligibleProduct = useMemo(() => {
     return cartDetails.some((item) => item.itemType === "product" && item.eligibleForInstallation);
@@ -626,8 +662,8 @@ const CheckoutPage = () => {
     [cartDetails],
   );
   const primaryPackageDetails = useMemo(
-    () => (primaryPackage ? packageMap.get(primaryPackage.id) : undefined),
-    [packageMap, primaryPackage],
+    () => (primaryPackage ? (selectedPackage || packageMap.get(primaryPackage.id)) : undefined),
+    [packageMap, primaryPackage, selectedPackage],
   );
 
   const isCheckoutDisabled = isCheckoutDisabledState({
@@ -858,7 +894,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
 
         setSubmittedFinancingInfo({
           orderId,
-          packageTitle: primaryPackage?.title || selectedPackage?.title || "Solar System Package",
+          packageTitle: primaryPackage?.title || selectedPackage?.title || activePackageOrder?.packageTitle || "Solar System Package",
           totalAmount: total,
           downpaymentAmount: calculatorResults?.downpaymentVal ?? 0,
           financedAmount: calculatorResults?.financedAmount ?? 0,
@@ -1151,11 +1187,11 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               </Link>
               <span className="text-[#B0BABF]">/</span>
               <Link
-                href={`/packages/${primaryPackage?.slug || selectedPackage?.slug || targetPackageId || primaryPackage?.sourceId}`}
+                href={`/packages/${primaryPackage?.slug || selectedPackage?.slug || (activePackageOrder?.packageId ? String(activePackageOrder.packageId) : "") || targetPackageId}`}
                 className="hover:text-[#048A05] transition font-medium truncate max-w-[220px]"
-                title={primaryPackage?.title || selectedPackage?.title}
+                title={primaryPackage?.title || selectedPackage?.title || activePackageOrder?.packageTitle}
               >
-                {primaryPackage?.title || selectedPackage?.title || "Package"}
+                {primaryPackage?.title || selectedPackage?.title || activePackageOrder?.packageTitle || "Package"}
               </Link>
               <span className="text-[#B0BABF]">/</span>
             </>
