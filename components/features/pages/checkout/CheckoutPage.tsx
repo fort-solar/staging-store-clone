@@ -162,11 +162,13 @@ const CheckoutPage = () => {
   useEffect(() => {
     if (isPackageCheckout) {
       setRequestInstallation(true);
-      if (queryFinancing === "1" || activePackageOrder?.requestFinancing) {
+      if (queryFinancing === "1") {
         setRequestFinancing(true);
+      } else {
+        setRequestFinancing(false);
       }
     }
-  }, [isPackageCheckout, queryFinancing, activePackageOrder]);
+  }, [isPackageCheckout, queryFinancing]);
 
   // Define financing calculator states
   const [downpaymentPct, setDownpaymentPct] = useState(30);
@@ -483,7 +485,13 @@ const CheckoutPage = () => {
     }
     if (draft.useShippingAsBilling !== undefined) setUseShippingAsBilling(draft.useShippingAsBilling);
     if (draft.notes) setNotes((prev) => prev || draft.notes);
-    if (draft.requestFinancing !== undefined) setRequestFinancing(draft.requestFinancing);
+    if (queryFinancing === "1") {
+      setRequestFinancing(true);
+    } else if (isPackageCheckout) {
+      setRequestFinancing(false);
+    } else if (draft.requestFinancing !== undefined) {
+      setRequestFinancing(draft.requestFinancing);
+    }
     if (draft.requestInstallation !== undefined) setRequestInstallation(draft.requestInstallation);
     if (draft.installationType) setInstallationType((prev) => prev || draft.installationType);
     if (draft.buildingType) setBuildingType((prev) => prev || draft.buildingType);
@@ -1094,12 +1102,12 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
         handler.openIframe();
         setCheckoutStatus({
           tone: "info",
-          message: "Order created. Complete the payment in the Paystack popup.",
+          message: "Order created. Complete payment in the secure window.",
         });
       } else {
         setCheckoutStatus({
           tone: "info",
-          message: "Redirecting to Paystack to complete your payment.",
+          message: "Redirecting to complete your payment...",
         });
         localStorage.removeItem("fortsolar:checkout_draft");
         deleteDraftOrder().catch((err) => console.warn(err));
@@ -1886,7 +1894,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                   ? (requestFinancing ? "Submitting application..." : "Starting payment...")
                   : isVerifyingPayment
                     ? "Verifying payment..."
-                    : (requestFinancing ? "Apply for Financing" : "Pay with Paystack")}
+                    : (requestFinancing ? "Apply for Financing" : "Proceed to Payment")}
               </button>
 
               {checkoutStatus && checkoutStatus.tone === "error" && (

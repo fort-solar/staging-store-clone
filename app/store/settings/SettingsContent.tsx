@@ -710,12 +710,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
         handler.openIframe();
         setPageStatus({
           tone: "info",
-          message: "Order generated. Complete payment in the Paystack popup.",
+          message: "Order generated. Complete payment in the secure window.",
         });
       } else {
         setPageStatus({
           tone: "info",
-          message: "Redirecting to Paystack to complete payment...",
+          message: "Redirecting to complete payment...",
         });
         window.location.assign(authorizationUrl);
       }
@@ -848,12 +848,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
         handler.openIframe();
         setPageStatus({
           tone: "info",
-          message: "Complete payment in the Paystack popup.",
+          message: "Complete payment in the secure window.",
         });
       } else {
         setPageStatus({
           tone: "info",
-          message: "Redirecting to Paystack to complete payment...",
+          message: "Redirecting to complete payment...",
         });
         window.location.assign(authorizationUrl);
       }

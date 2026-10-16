@@ -533,9 +533,6 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
                   <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
                   <span className="font-semibold">Payment Verified Successfully</span>
                 </div>
-                <p className="mt-1 text-[11px] text-emerald-800">
-                  Transaction secured via Paystack gateway.
-                </p>
               </div>
             </section>
 
