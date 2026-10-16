@@ -462,6 +462,8 @@ export type CustomerOrderSummaryApiResponse = ApiDataResponse<CustomerOrderSumma
 export type CustomerOrderListItem = {
   id: string;
   type: string;
+  isFinancing?: boolean;
+  financingStatus?: string | null;
   orderNumber: string;
   createdAt: string;
   status: string;

@@ -185,9 +185,24 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
     );
   }
 
-  const isPackage = Boolean(order.isPackageOrder || order.type === "QUOTE");
+  const isFinancing = Boolean(order.isFinancing || order.type === "FINANCING");
+  const isPackage = Boolean(order.isPackageOrder || order.type === "QUOTE" || isFinancing);
   const stages = order.stepperStages || [
-    { key: "processing", label: "Payment Confirmed", description: "Order confirmed and being prepared.", completed: true, status: "current" },
+    {
+      key: "processing",
+      label: isFinancing
+        ? order.status === "completed"
+          ? "Financing Approved (Financed)"
+          : "Financing Application Review"
+        : "Payment Confirmed",
+      description: isFinancing
+        ? order.status === "completed"
+          ? "Financing approved and confirmed by partner."
+          : "Under partner underwriting review. Customer agreement completed via phone/email consultation."
+        : "Order confirmed and being prepared.",
+      completed: order.status === "completed" || (!isFinancing && order.status !== "pending"),
+      status: "current",
+    },
     { key: "shipped", label: "Equipment Shipped", description: "Package dispatched from warehouse.", completed: false, status: "upcoming" },
     { key: "installer_assigned", label: "Installer Assigned", description: "Technician allocated.", completed: false, status: "upcoming" },
     { key: "installation_in_progress", label: "Installation In Progress", description: "On site wiring & setup.", completed: false, status: "upcoming" },
@@ -248,7 +263,11 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200/80">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              {humanizeStatus(order.displayStatus || order.status)}
+              {isFinancing && order.status !== "completed"
+                ? "Financing Under Review"
+                : isFinancing && order.status === "completed"
+                ? "Financed & Completed"
+                : humanizeStatus(order.displayStatus || order.status)}
             </span>
             <a
               href={`https://wa.me/2348000000000?text=${encodeURIComponent(`Hello Fortsolar Support, I have a question regarding my order ${order.orderNumber}`)}`}
@@ -268,7 +287,7 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-emerald-300">
-                  {isPackage ? "Solar Package Installation" : "Retail Product Delivery"}
+                  {isFinancing ? "Solar Package Financing" : isPackage ? "Solar Package Installation" : "Retail Product Delivery"}
                 </p>
                 <h2 className="mt-1 text-xl font-bold sm:text-2xl text-white">
                   {stages[activeIndex]?.label || "Order In Progress"}
@@ -563,17 +582,56 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
                   </div>
                 )}
                 <div className="border-t border-gray-100 pt-3 flex justify-between text-sm font-bold text-gray-900">
-                  <span>Total Paid</span>
+                  <span>
+                    {isFinancing
+                      ? order.status === "completed"
+                        ? "Total Financed"
+                        : "Package Value (Financing)"
+                      : order.status === "completed"
+                      ? "Total Paid"
+                      : "Total Amount Due"}
+                  </span>
                   <span className="text-emerald-700">{formatCurrency(order.totals?.total, order.currency)}</span>
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100 p-3.5 text-xs text-emerald-900">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span className="font-semibold">Payment Verified Successfully</span>
+              {isFinancing ? (
+                order.status === "completed" ? (
+                  <div className="rounded-2xl bg-emerald-50/80 border border-emerald-200 p-3.5 text-xs text-emerald-900">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                      <span className="font-bold">Financing Approved & Completed</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-emerald-800">
+                      Payment confirmed by partner financing company. Installation dispatched.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3.5 text-xs text-amber-950">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span className="font-bold">Financing Application Under Review</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-amber-900 leading-relaxed">
+                      No direct online payment required here. Agreement terms, down payment, and underwriting are finalized directly via phone and email consultation.
+                    </p>
+                  </div>
+                )
+              ) : order.status === "completed" || (order.payment && order.payment.status === "success") ? (
+                <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100 p-3.5 text-xs text-emerald-900">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold">Payment Verified Successfully</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 text-xs text-blue-900">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-blue-600 shrink-0" />
+                    <span className="font-semibold">Awaiting Payment Confirmation</span>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Audit Event Timeline */}

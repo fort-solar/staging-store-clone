@@ -1354,15 +1354,19 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               Track Order & Live Status →
                             </Link>
 
-                            <button
-                              type="button"
-                              onClick={() => void toggleOrderDetail(order.id)}
-                              className="text-xs font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg"
-                            >
-                              {expandedOrderId === order.id ? "Hide Raw Data" : "View Raw Data"}
-                            </button>
-
-                            {order.status === "pending" && (
+                            {order.type === "FINANCING" || (order as any).isFinancing ? (
+                              order.status === "completed" ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                                  Payment Completed (Financed)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                  Financing Application (Under Review)
+                                </span>
+                              )
+                            ) : order.status === "pending" ? (
                               <Button
                                 onClick={() => handlePayOrder(order.id)}
                                 className="px-4 py-1.5 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg"
@@ -1370,23 +1374,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               >
                                 {isPayingOrderId === order.id ? "Processing Payment..." : "Pay Order Deposit"}
                               </Button>
-                            )}
+                            ) : null}
                           </div>
-
-                          {expandedOrderId === order.id && orderDetails[order.id] ? (
-                            <div className="mt-4 rounded-2xl bg-[#FAFAFA] p-4">
-                              <div className="grid gap-4 lg:grid-cols-2">
-                                {Object.entries(orderDetails[order.id]).map(([key, value]) => (
-                                  <div key={key} className="space-y-2">
-                                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7C7C7C]">
-                                      {humanizeStatus(key)}
-                                    </p>
-                                    <DetailValue value={value} />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : null}
                         </div>
                       ))}
 

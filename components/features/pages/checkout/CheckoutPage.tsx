@@ -1146,10 +1146,10 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
             <div className="pt-6 flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 type="button"
-                onClick={() => router.push(`/settings`)}
-                className="rounded-xl bg-[#1FA21B] px-6 py-3 text-sm font-semibold text-white hover:bg-[#188015] transition shadow-sm"
+                onClick={() => router.push(`/orders/${submittedFinancingInfo.orderId}`)}
+                className="rounded-xl bg-[#048A05] px-6 py-3 text-sm font-bold text-white hover:bg-[#036B04] transition shadow-sm"
               >
-                Track Request in Dashboard
+                Track Order & Live Status →
               </button>
               <button
                 type="button"
