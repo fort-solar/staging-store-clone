@@ -22,6 +22,8 @@ import {
 } from "@/lib/store-catalog";
 import { useAuth } from "@/components/auth/auth-provider";
 import { getDraftOrder, saveDraftOrder } from "@/lib/customer";
+import { GoogleReviewsBadge } from "@/components/features/reviews/GoogleReviewsBadge";
+import { GoogleReviewsCard } from "@/components/features/reviews/GoogleReviewsCard";
 
 const PackageDetailPage = () => {
   const { session } = useAuth();
@@ -280,14 +282,18 @@ const PackageDetailPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Customer Reviews & Google Business Verification */}
+              <div className="pt-2">
+                <GoogleReviewsCard />
+              </div>
             </div>
           </div>
 
           {/* Right Column: Pricing, Financing, Action Buttons */}
           <div>
-            <div className="flex items-center gap-2 text-sm text-[#F59E0B]">
-              {"★★★★★"}
-              <span className="text-[#5A646B]">({data.reviewsCount} Reviews)</span>
+            <div className="mb-2">
+              <GoogleReviewsBadge />
             </div>
 
             <h1 className="mt-2 text-2xl font-semibold text-[#252C32]">{data.title}</h1>

@@ -39,6 +39,10 @@ export function requireEnv(name: string, value: string | undefined) {
 }
 
 const publicGoogleClientId = readNonEmptyEnv(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+const publicGoogleReviewUrl = readNonEmptyEnv(
+  process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL,
+  "https://www.google.com/search?q=Fortsolar+Lagos+Reviews"
+);
 const publicFortsolarApiBaseUrl = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_FORTSOLAR_API_BASE_URL,
   process.env.NEXT_PUBLIC_BASE_URL,
@@ -58,9 +62,12 @@ const serverSessionSecret = readNonEmptyEnv(
 
 export const publicEnv = {
   googleClientId: publicGoogleClientId ?? "",
+  googleReviewUrl: publicGoogleReviewUrl ?? "https://www.google.com/search?q=Fortsolar+Lagos+Reviews",
   fortsolarApiBaseUrl: publicFortsolarApiBaseUrl ?? "",
   emailVerificationBypassEnabled: publicEmailVerificationBypassEnabled,
 } as const;
+
+export const FORTSOLAR_GOOGLE_REVIEW_URL = publicEnv.googleReviewUrl;
 
 export const serverEnv = {
   fortsolarApiBaseUrl: serverFortsolarApiBaseUrl,

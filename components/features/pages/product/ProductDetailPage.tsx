@@ -20,6 +20,8 @@ import {
 } from "@/lib/store-catalog";
 import { clampCartQuantity, getProductCartMaxQuantity } from "@/lib/cart";
 import { useGeneralStore } from "@/store/GeneralStore";
+import { GoogleReviewsBadge } from "@/components/features/reviews/GoogleReviewsBadge";
+import { GoogleReviewsCard } from "@/components/features/reviews/GoogleReviewsCard";
 import type { CatalogId } from "@/types/common.types";
 
 type QuoteProduct = {
@@ -212,6 +214,11 @@ const ProductDetailPage = () => {
                   )}
                 </div>
               </div>
+
+              {/* Customer Reviews & Google Business Verification */}
+              <div className="pt-2">
+                <GoogleReviewsCard title="Product & Installation Reviews" subtitle="Read feedback on Fortsolar hardware & installations on Google." />
+              </div>
             </div>
           </div>
 
@@ -244,7 +251,11 @@ const ProductDetailPage = () => {
               </span>
             </div>
 
-            <h1 className="mt-2 text-2xl font-semibold text-[#252C32]">{product.title}</h1>
+            <div className="mt-2.5 mb-1">
+              <GoogleReviewsBadge />
+            </div>
+
+            <h1 className="mt-1 text-2xl font-semibold text-[#252C32]">{product.title}</h1>
             <p className="mt-2 text-sm text-[#5A646B]">{product.mini_description}</p>
 
             <div className="mt-4 flex w-fit items-center gap-3 overflow-hidden rounded-sm border">

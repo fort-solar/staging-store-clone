@@ -38,6 +38,7 @@ import type {
   CustomerQuoteRecord,
   CustomerSummaryRecord,
 } from "@/types/api.types";
+import { FORTSOLAR_GOOGLE_REVIEW_URL } from "@/lib/env";
 
 const tabs = [
   { key: "profile", label: "Profile", link: "/settings/profile", mobileLink: "/settings/profile#section" },
@@ -1505,6 +1506,22 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                   Report Issue
                                 </button>
                               </>
+                            ) : null}
+
+                            {Boolean(
+                              installation.progressPercent >= 100 ||
+                                installation.status === "completed" ||
+                                (installation.displayStatus && installation.displayStatus.toLowerCase().includes("completed"))
+                            ) ? (
+                              <a
+                                href={FORTSOLAR_GOOGLE_REVIEW_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100/80 cursor-pointer shadow-2xs"
+                              >
+                                <span>★ Leave a Review on Google</span>
+                                <span>↗</span>
+                              </a>
                             ) : null}
                           </div>
 

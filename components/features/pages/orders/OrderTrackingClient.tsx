@@ -27,6 +27,8 @@ import {
   Maximize2,
   X,
 } from "lucide-react";
+import { GoogleIcon } from "@/components/features/icons/GoogleIcon";
+import { FORTSOLAR_GOOGLE_REVIEW_URL } from "@/lib/env";
 import { getCustomerOrderDetail } from "@/lib/customer";
 import { cn } from "@/lib/utils";
 
@@ -197,6 +199,12 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
 
   const installation = order.installation;
   const photos = installation?.photos || [];
+  const isInstallationCompleted = Boolean(
+    order.status === "completed" ||
+      installation?.status === "completed" ||
+      stages.find((s: { key?: string; completed?: boolean }) => s.key === "installation_completed")?.completed ||
+      (order.displayStatus && order.displayStatus.toLowerCase().includes("completed"))
+  );
 
   const stageIcons: Record<string, React.ReactNode> = {
     processing: <ShieldCheck className="h-5 w-5" />,
@@ -355,6 +363,38 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main Left Column (2 Cols) */}
           <div className="space-y-8 lg:col-span-2">
+            {/* Google Reviews Invitation for Completed Installations */}
+            {isInstallationCompleted && (
+              <section className="rounded-3xl border border-emerald-200/90 bg-[linear-gradient(135deg,#F0FDF4_0%,#FFFFFF_100%)] p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-500 font-bold text-sm tracking-tight">★★★★★</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+                        Installation Verified
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900">
+                      How was your Fortsolar installation experience?
+                    </h3>
+                    <p className="text-xs text-gray-600 max-w-xl leading-relaxed">
+                      If you loved your new solar setup and our technician’s workmanship, please leave a quick review on our official Google Business page to help other Nigerian homeowners and businesses make the switch.
+                    </p>
+                  </div>
+                  <a
+                    href={FORTSOLAR_GOOGLE_REVIEW_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-xs font-semibold text-white shadow-sm hover:bg-black transition cursor-pointer shrink-0"
+                  >
+                    <GoogleIcon />
+                    <span>Leave a Review on Google</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </section>
+            )}
+
             {/* Assigned Installer Card (If available) */}
             {installation && (
               <section className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/50 via-white to-emerald-50/20 p-6 shadow-sm">
