@@ -25,6 +25,7 @@ export type UserRole = "customer" | "installer" | "admin";
 export type MockUser = {
   id: string;
   fullName: string;
+  salutation?: string | null;
   name: string;
   email: string;
   phone: string;
@@ -74,6 +75,7 @@ function toClientAuthState(snapshot: SessionSnapshot): ClientAuthState {
     user: {
       id: snapshot.user.id,
       email: snapshot.user.email,
+      salutation: snapshot.user.salutation ?? null,
       fullName: snapshot.user.fullName,
       name: snapshot.user.name,
       phone: snapshot.user.phone ?? "",
@@ -101,6 +103,7 @@ function fromClientUserState(state: ClientAuthState): MockUser {
   return {
     id: state.user.id,
     fullName: state.user.fullName,
+    salutation: state.user.salutation ?? null,
     name: state.user.name,
     email: state.user.email,
     phone: state.user.phone ?? "",
@@ -176,6 +179,7 @@ export function sessionSnapshotToMockUser(snapshot: SessionSnapshot | null) {
   return {
     id: snapshot.user.id,
     fullName: snapshot.user.fullName,
+    salutation: snapshot.user.salutation ?? null,
     name: snapshot.user.name,
     email: snapshot.user.email,
     phone: snapshot.user.phone ?? "",
@@ -202,6 +206,7 @@ export const getMockCurrentUser = (): MockUser | null => {
 
 type RegisterPayload = {
   fullName: string;
+  salutation?: string;
   email: string;
   phone: string;
   address: string;
@@ -261,6 +266,7 @@ export const registerMockUser = async (
       body: {
         email: payload.email,
         password: payload.password,
+        salutation: payload.salutation,
         name: payload.fullName,
         role: payload.role,
       },
@@ -379,6 +385,7 @@ export async function logoutUser() {
 
 export async function updateCurrentUserProfile(values: {
   name: string;
+  salutation?: string;
   phone: string;
   address: string;
 }) {

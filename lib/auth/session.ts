@@ -108,6 +108,7 @@ export function createSessionSnapshot(
     user: {
       id: payload.user.id,
       email: payload.user.email,
+      salutation: payload.user.salutation,
       name: payload.user.name,
       fullName: payload.user.fullName,
       adminRole: payload.user.adminRole,

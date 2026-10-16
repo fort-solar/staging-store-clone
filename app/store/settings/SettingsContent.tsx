@@ -250,6 +250,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [isPayingRequestId, setIsPayingRequestId] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState({
+    salutation: "Mr.",
+    customSalutation: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -316,15 +318,19 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   useEffect(() => {
     const fullName = currentUser?.fullName ?? "";
     const parts = fullName.split(/\s+/).filter(Boolean);
+    const salutation = currentUser?.salutation ?? "";
+    const isPreset = ["Mr.", "Mrs.", "Ms.", "Doctor (PhD)", "Engr."].includes(salutation);
 
     setProfileForm({
+      salutation: isPreset ? salutation : (salutation ? "custom" : "Mr."),
+      customSalutation: isPreset ? "" : salutation,
       firstName: parts[0] ?? "",
       lastName: parts.slice(1).join(" "),
       email: currentUser?.email ?? "",
       phone: currentUser?.phone ?? "",
       address: currentUser?.address ?? "",
     });
-  }, [currentUser?.address, currentUser?.email, currentUser?.fullName, currentUser?.phone]);
+  }, [currentUser?.address, currentUser?.email, currentUser?.fullName, currentUser?.phone, currentUser?.salutation]);
 
   useEffect(() => {
     setLocalQuoteRequests(readStoredQuoteRequests());
@@ -510,8 +516,14 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     setIsSavingProfile(true);
     setProfileStatus(null);
 
+    const effectiveSalutation =
+      profileForm.salutation === "custom"
+        ? profileForm.customSalutation.trim()
+        : profileForm.salutation.trim();
+
     try {
       await updateCurrentUserProfile({
+        salutation: effectiveSalutation || undefined,
         name: fullName,
         phone: profileForm.phone,
         address: profileForm.address,
@@ -925,7 +937,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
               </div>
               <div>
                 <p className="text-2xl font-semibold text-[#202020]">
-                  {currentUser?.fullName ?? "Customer User"}
+                  {[currentUser?.salutation, currentUser?.fullName].filter(Boolean).join(" ") || "Customer User"}
                 </p>
                 <span className="mt-2 inline-flex items-center rounded-full bg-[#EAF7E8] px-4 py-1 text-sm font-medium text-[#1E8E1E]">
                   Customer
@@ -1004,6 +1016,44 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   ) : null}
 
                   <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="flex flex-col gap-1.5 lg:col-span-2">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-[#475569]">
+                        Title / Salutation Prefix
+                      </label>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[160px_1fr]">
+                        <select
+                          value={profileForm.salutation}
+                          onChange={(e) =>
+                            setProfileForm((current) => ({
+                              ...current,
+                              salutation: e.target.value,
+                            }))
+                          }
+                          className="h-12 rounded-xl border border-[#CBD5E1] bg-white px-3 text-sm font-medium text-[#0F172A] outline-none transition focus:border-[#048a05] focus:ring-1 focus:ring-[#048a05]"
+                        >
+                          <option value="Mr.">Mr.</option>
+                          <option value="Mrs.">Mrs.</option>
+                          <option value="Ms.">Ms.</option>
+                          <option value="Doctor (PhD)">Doctor (PhD)</option>
+                          <option value="Engr.">Engr.</option>
+                          <option value="custom">Other / Custom Title...</option>
+                        </select>
+                        {profileForm.salutation === "custom" && (
+                          <Input
+                            value={profileForm.customSalutation}
+                            onChange={(e) =>
+                              setProfileForm((current) => ({
+                                ...current,
+                                customSalutation: e.target.value,
+                              }))
+                            }
+                            placeholder="e.g. Prof., Chief, Alhaji, Dr."
+                            className="h-12 rounded-xl"
+                          />
+                        )}
+                      </div>
+                    </div>
+
                     <Input
                       value={profileForm.firstName}
                       onChange={(event) =>

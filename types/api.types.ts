@@ -40,6 +40,7 @@ export type AuthSession = {
 export type AuthUser = {
   id: string;
   email: string;
+  salutation?: string | null;
   name: string;
   fullName: string;
   phone: string | null;
@@ -89,7 +90,7 @@ export type AuthProfileUpdateApiResponse = ApiSuccessResponse & {
 export type SessionSnapshot = {
   portal: PortalRole;
   session: AuthSession;
-  user: Pick<AuthUser, "id" | "email" | "name" | "fullName" | "role" | "adminRole" | "avatar_url" | "status" | "phone" | "address" | "emailVerified">;
+  user: Pick<AuthUser, "id" | "email" | "salutation" | "name" | "fullName" | "role" | "adminRole" | "avatar_url" | "status" | "phone" | "address" | "emailVerified">;
   expiresAt: string | null;
 };
 
@@ -288,7 +289,7 @@ export type NotificationSocketConfigApiResponse = ApiSuccessResponse & {
 
 export type ClientAuthState = {
   session: Pick<AuthSession, "userId" | "email" | "fullName" | "role" | "signedInAt">;
-  user: Pick<AuthUser, "id" | "email" | "fullName" | "name" | "phone" | "address" | "role" | "status" | "emailVerified">;
+  user: Pick<AuthUser, "id" | "email" | "salutation" | "fullName" | "name" | "phone" | "address" | "role" | "status" | "emailVerified">;
   portal: PortalRole;
   expiresAt: string | null;
 };

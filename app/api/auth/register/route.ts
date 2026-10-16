@@ -13,6 +13,7 @@ type RegisterRequestBody = {
   email?: string;
   password?: string;
   name?: string;
+  salutation?: string;
   role?: string;
 };
 
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
     body: JSON.stringify({
       email: body.email,
       password: body.password,
+      salutation: body.salutation,
       name: body.name,
       role: body.role ?? "customer",
     }),

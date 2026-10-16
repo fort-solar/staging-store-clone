@@ -20,6 +20,8 @@ import {
 } from "@/lib/localAuth";
 
 type SignupFormValues = {
+  salutation: string;
+  customSalutation: string;
   fullName: string;
   email: string;
   phone: string;
@@ -48,6 +50,8 @@ const SignupForm = () => {
     reset,
   } = useForm<SignupFormValues>({
     defaultValues: {
+      salutation: "Mr.",
+      customSalutation: "",
       fullName: initialName,
       email: initialEmail,
       phone: initialPhone,
@@ -60,6 +64,8 @@ const SignupForm = () => {
   React.useEffect(() => {
     if (initialEmail || initialName || initialPhone) {
       reset({
+        salutation: "Mr.",
+        customSalutation: "",
         fullName: initialName,
         email: initialEmail,
         phone: initialPhone,
@@ -72,6 +78,7 @@ const SignupForm = () => {
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const passwordValue = watch("password");
+  const selectedSalutation = watch("salutation");
 
   const onSubmit = async (values: SignupFormValues) => {
     if (values.password !== values.confirmPassword) {
@@ -84,9 +91,13 @@ const SignupForm = () => {
       return;
     }
 
+    const effectiveSalutation =
+      values.salutation === "custom" ? values.customSalutation.trim() : values.salutation;
+
     setIsSubmitting(true);
     setStatus(null);
     const { error, session } = await registerMockUser({
+      salutation: effectiveSalutation || undefined,
       fullName: values.fullName,
       email: values.email,
       phone: values.phone,
@@ -108,6 +119,7 @@ const SignupForm = () => {
     }
 
     await updateCurrentUserProfile({
+      salutation: effectiveSalutation || undefined,
       name: values.fullName,
       phone: values.phone,
       address: "",
@@ -179,13 +191,52 @@ const SignupForm = () => {
       ) : null}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <AuthInput
-          label="Full Name"
-          placeholder="eg. John Doe"
-          required
-          {...register("fullName", { required: "Full name is required" })}
-          error={errors.fullName?.message}
-        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[150px_1fr]">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#475569]">
+              Title / Prefix
+            </label>
+            <select
+              className="h-12 w-full rounded-xl border border-[#CBD5E1] bg-white px-3 text-sm font-medium text-[#0F172A] outline-none transition focus:border-[#048a05] focus:ring-1 focus:ring-[#048a05]"
+              {...register("salutation")}
+            >
+              <option value="Mr.">Mr.</option>
+              <option value="Mrs.">Mrs.</option>
+              <option value="Ms.">Ms.</option>
+              <option value="Doctor (PhD)">Doctor (PhD)</option>
+              <option value="Engr.">Engr.</option>
+              <option value="custom">Custom...</option>
+            </select>
+          </div>
+
+          {selectedSalutation === "custom" ? (
+            <AuthInput
+              label="Custom Prefix"
+              placeholder="e.g. Prof., Chief, Alhaji"
+              required
+              {...register("customSalutation", { required: "Custom title is required" })}
+              error={errors.customSalutation?.message}
+            />
+          ) : (
+            <AuthInput
+              label="Full Name"
+              placeholder="eg. John Doe"
+              required
+              {...register("fullName", { required: "Full name is required" })}
+              error={errors.fullName?.message}
+            />
+          )}
+        </div>
+
+        {selectedSalutation === "custom" && (
+          <AuthInput
+            label="Full Name"
+            placeholder="eg. John Doe"
+            required
+            {...register("fullName", { required: "Full name is required" })}
+            error={errors.fullName?.message}
+          />
+        )}
 
         <AuthInput
           label="Email"
