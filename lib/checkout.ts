@@ -17,6 +17,7 @@ export type CheckoutAddress = {
 
 export type CheckoutItem = {
   id: string;
+  slug?: string;
   itemType: "product" | "package";
   quantity: number;
   title: string;

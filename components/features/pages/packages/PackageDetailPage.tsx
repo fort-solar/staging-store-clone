@@ -166,9 +166,13 @@ const PackageDetailPage = () => {
           <span className="text-lg">←</span>
           <span>Back</span>
         </button>
-        <div className="mt-4 text-sm text-[#5A646B]">
-          Home / Packages / <span className="text-[#252C32]">{data.title}</span>
-        </div>
+        <nav aria-label="Breadcrumb" className="mt-4 flex items-center gap-2 text-sm text-[#5A646B] flex-wrap">
+          <Link href="/" className="hover:text-[#048A05] transition font-medium">Home</Link>
+          <span className="text-[#B0BABF]">/</span>
+          <Link href="/packages" className="hover:text-[#048A05] transition font-medium">Packages</Link>
+          <span className="text-[#B0BABF]">/</span>
+          <span className="text-[#252C32] font-medium truncate max-w-[320px]">{data.title}</span>
+        </nav>
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
           {/* Left Column: Image Gallery, Overview, Specifications */}

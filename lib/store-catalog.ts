@@ -384,8 +384,11 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
   const eligibleForInstallation = readBoolean(raw, ["eligible_for_installation"]);
   const description = product.overview || product.name;
 
+  const slug = product.slug || readString(raw, ["slug"], "");
+
   return {
     id: product.id,
+    slug: slug || undefined,
     title: product.name,
     mini_description: truncateWords(description || product.slug || categoryLabel, 50),
     image: productImages[0],
@@ -443,8 +446,11 @@ export function normalizePackage(item: ProductPackageRecord): StoreCatalogPackag
   const discountPercentage = item.discount_percentage ?? readNumber(raw, ["discount_percentage", "discount"]);
   const finalPrice = Math.max(0, item.price - (item.price * discountPercentage) / 100);
 
+  const slug = item.slug || readString(raw, ["slug"], "");
+
   return {
     id: item.id,
+    slug: slug || undefined,
     title: item.name,
     mini_description: item.overview || item.description || `${item.name} solar solution`,
     image: thumbnail,

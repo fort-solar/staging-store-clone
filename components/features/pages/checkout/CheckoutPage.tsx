@@ -390,6 +390,7 @@ const CheckoutPage = () => {
           image: img,
           sourceType: "package" as const,
           sourceId: String(selectedPackage.id),
+          slug: selectedPackage.slug,
           eligibleForInstallation: true,
           freeDelivery: true,
           weightTier: "under_5kg",
@@ -408,6 +409,7 @@ const CheckoutPage = () => {
 
         return {
           id: String(item.id),
+          slug: product.slug,
           itemType: item.itemType,
           quantity: item.quantity,
           title: product.title,
@@ -1149,7 +1151,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               </Link>
               <span className="text-[#B0BABF]">/</span>
               <Link
-                href={`/packages/${targetPackageId || primaryPackage?.sourceId}`}
+                href={`/packages/${primaryPackage?.slug || selectedPackage?.slug || targetPackageId || primaryPackage?.sourceId}`}
                 className="hover:text-[#048A05] transition font-medium truncate max-w-[220px]"
                 title={primaryPackage?.title || selectedPackage?.title}
               >

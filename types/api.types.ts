@@ -330,6 +330,7 @@ export type StorePackageSystemDetails = {
 
 export type StoreCatalogProduct = {
   id: string | number;
+  slug?: string;
   title: string;
   mini_description: string;
   image: string;
@@ -366,6 +367,7 @@ export type StoreCatalogProduct = {
 
 export type StoreCatalogPackage = {
   id: string | number;
+  slug?: string;
   title: string;
   mini_description: string;
   image: string;

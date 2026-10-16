@@ -130,10 +130,19 @@ const ProductDetailPage = () => {
           <span>Back</span>
         </button>
 
-        <div className="mt-4 text-sm text-[#5A646B]">
-          Home / Products / {product.categoryLabel || "Product Category"} /{" "}
-          <span className="text-[#252C32]">{product.title}</span>
-        </div>
+        <nav aria-label="Breadcrumb" className="mt-4 flex items-center gap-2 text-sm text-[#5A646B] flex-wrap">
+          <Link href="/" className="hover:text-[#048A05] transition font-medium">Home</Link>
+          <span className="text-[#B0BABF]">/</span>
+          <Link href="/products" className="hover:text-[#048A05] transition font-medium">Products</Link>
+          <span className="text-[#B0BABF]">/</span>
+          {product.categoryLabel ? (
+            <>
+              <span className="text-[#5A646B]">{product.categoryLabel}</span>
+              <span className="text-[#B0BABF]">/</span>
+            </>
+          ) : null}
+          <span className="text-[#252C32] font-medium truncate max-w-[320px]">{product.title}</span>
+        </nav>
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
           <div>

@@ -8,6 +8,7 @@ import type { CatalogId } from '@/types/common.types';
 
 type PackageItem = {
     id: CatalogId;
+    slug?: string;
     title: string;
     mini_description: string;
     image: string;
@@ -41,7 +42,7 @@ const PackagesGrid = ({
                             image={p.image}
                             price={p.finalPrice ?? p.price}
                             availability={p.availability}
-                            href={`/packages/${p.id}`}
+                            href={`/packages/${p.slug || p.id}`}
                         />
                     </div>
                 ))}
@@ -61,7 +62,7 @@ const PackagesGrid = ({
                     items.map((p) => (
                         <div key={p.id} className="relative">
                          
-                            <Link href={`/packages/${p.id}`}>
+                            <Link href={`/packages/${p.slug || p.id}`}>
                                 <PackageCard
                                     title={p.title}
                                     mini_description={p.mini_description}

@@ -5,6 +5,7 @@ import type { CatalogId } from '@/types/common.types';
 
 type ProductItem = {
     id: CatalogId;
+    slug?: string;
     title: string;
     mini_description: string;
     price: number;
@@ -42,7 +43,7 @@ const ProductsGrid = ({
                         availability={p.availability}
                         stockQuantity={p.stockQuantity}
                         warrantyYears={p.warrantyYears}
-                        href={`/products/${p.id}`}
+                        href={`/products/${p.slug || p.id}`}
                         id={p.id}
                         isFavorite={favorites.includes(p.id)}
                         onToggleFavorite={() => onToggleFavorite(p.id)}
@@ -73,7 +74,7 @@ const ProductsGrid = ({
                             image={p.image}
                             availability={p.availability}
                             stockQuantity={p.stockQuantity}
-                            href={`/products/${p.id}`}
+                            href={`/products/${p.slug || p.id}`}
                             isFavorite={favorites.includes(p.id)}
                             onToggleFavorite={() => onToggleFavorite(p.id)}
                             onGetQuote={() => onGetQuote?.(p)}
