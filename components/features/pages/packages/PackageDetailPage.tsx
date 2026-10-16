@@ -52,6 +52,13 @@ const PackageDetailPage = () => {
   // Single unified Cost & Savings Modal state
   const [showCostSavingsModal, setShowCostSavingsModal] = useState(false);
 
+  // Canonical slug URL synchronization: If accessed via raw UUID, rewrite address bar to clean slug
+  React.useEffect(() => {
+    if (data?.slug && id && id !== data.slug) {
+      window.history.replaceState(null, "", `/packages/${data.slug}`);
+    }
+  }, [data?.slug, id]);
+
   React.useEffect(() => {
     let localDraft: any = null;
     try {
@@ -310,22 +317,39 @@ const PackageDetailPage = () => {
               ) : null}
             </div>
 
-            {/* Clean Single Financing Line with See Cost & Savings Button */}
-            {data.solarFinanceEnabled ? (
-              <div className="mt-2 text-xs text-[#5A646B] flex items-center gap-1.5 flex-wrap">
-                <span>
-                  Or from <strong className="text-[#048A05]">₦{estimatedMonthlyInstallment.toLocaleString()}/mo</strong> with financing
-                </span>
-                <span className="text-gray-300">·</span>
+            {/* Solar Financing & Energy Savings Callout Card */}
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30 p-3.5 shadow-xs">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#048A05] text-white shrink-0 shadow-xs">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-[#101828]">
+                      {data.solarFinanceEnabled ? (
+                        <>Spread payment from <strong className="text-[#048A05]">₦{estimatedMonthlyInstallment.toLocaleString()}/mo</strong></>
+                      ) : (
+                        <>Compare with Generator & NEPA Expenses</>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#5A646B]">
+                      See fuel elimination & grid electricity savings
+                    </p>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setShowCostSavingsModal(true)}
-                  className="font-semibold text-[#048A05] hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-[#048A05]/30 hover:border-[#048A05] px-3 py-1.5 text-xs font-semibold text-[#048A05] hover:bg-[#EBFAEB] transition shadow-xs cursor-pointer"
                 >
-                  See cost & savings &rarr;
+                  <span>See Cost & Savings</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
-            ) : null}
+            </div>
 
             {activeDraft && String(activeDraft.packageId) === String(data.id) && (
               <div className="mt-4 flex items-center justify-between rounded-xl border border-[#048A05]/30 bg-[#EBFAEB] p-3 text-xs">

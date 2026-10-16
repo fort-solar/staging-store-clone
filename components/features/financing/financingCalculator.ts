@@ -106,10 +106,13 @@ export function calculateFinancingBreakdown(
 export interface FuelSavingsResult {
   monthlyFuelSpend: number;
   monthlyMaintenanceSpend: number;
+  monthlyGridSpend: number;
+  totalMonthlyCurrentSpend: number;
   totalMonthlyGeneratorSpend: number;
   annualGeneratorSpend: number;
+  annualCurrentSpend: number;
   solarMonthlyInstallment: number;
-  netMonthlyCashflow: number; // positive = saves money every month compared to generator
+  netMonthlyCashflow: number; // positive = saves money every month compared to generator + NEPA
   paybackPeriodMonths: number;
   paybackPeriodYears: number;
   fiveYearSavings: number;
@@ -123,34 +126,38 @@ export function calculateFuelVsSolarROI(
   monthlyInstallment: number,
   monthlyFuelSpend: number,
   monthlyMaintenanceSpend: number = 0,
+  monthlyGridSpend: number = 0,
   estimatedFuelCostPerLiter: number = 1150
 ): FuelSavingsResult {
   const safeFuel = Math.max(0, monthlyFuelSpend);
   const safeMaint = Math.max(0, monthlyMaintenanceSpend);
+  const safeGrid = Math.max(0, monthlyGridSpend);
   const totalMonthlyGen = safeFuel + safeMaint;
+  const totalMonthlyCurrent = totalMonthlyGen + safeGrid;
   const annualGen = totalMonthlyGen * 12;
+  const annualCurrent = totalMonthlyCurrent * 12;
 
-  const netMonthlyCashflow = totalMonthlyGen - monthlyInstallment;
+  const netMonthlyCashflow = totalMonthlyCurrent - monthlyInstallment;
   const paybackPeriodMonths =
-    totalMonthlyGen > 0 ? Math.max(1, Math.round((systemPrice / totalMonthlyGen) * 10) / 10) : 0;
+    totalMonthlyCurrent > 0 ? Math.max(1, Math.round((systemPrice / totalMonthlyCurrent) * 10) / 10) : 0;
   const paybackPeriodYears = Math.round((paybackPeriodMonths / 12) * 10) / 10;
 
-  // Assuming modest 8% annual fuel inflation over 5 and 10 years
-  let cumulativeGenSpend5 = 0;
-  let cumulativeGenSpend10 = 0;
-  let currentAnnualGen = annualGen;
+  // Assuming modest 8% annual energy (fuel + grid tariff) inflation over 5 and 10 years
+  let cumulativeCurrentSpend5 = 0;
+  let cumulativeCurrentSpend10 = 0;
+  let currentAnnualSpend = annualCurrent;
   for (let yr = 1; yr <= 10; yr++) {
-    if (yr <= 5) cumulativeGenSpend5 += currentAnnualGen;
-    cumulativeGenSpend10 += currentAnnualGen;
-    currentAnnualGen *= 1.08;
+    if (yr <= 5) cumulativeCurrentSpend5 += currentAnnualSpend;
+    cumulativeCurrentSpend10 += currentAnnualSpend;
+    currentAnnualSpend *= 1.08;
   }
 
   // Solar maintenance assumption: System Price + modest 2% annual solar maintenance after year 2
   const solarCost5 = systemPrice * 1.05;
   const solarCost10 = systemPrice * 1.15;
 
-  const fiveYearSavings = Math.max(0, Math.round(cumulativeGenSpend5 - solarCost5));
-  const tenYearSavings = Math.max(0, Math.round(cumulativeGenSpend10 - solarCost10));
+  const fiveYearSavings = Math.max(0, Math.round(cumulativeCurrentSpend5 - solarCost5));
+  const tenYearSavings = Math.max(0, Math.round(cumulativeCurrentSpend10 - solarCost10));
 
   const annualFuelLitersSaved = Math.round(
     (safeFuel * 12) / Math.max(500, estimatedFuelCostPerLiter)
@@ -161,8 +168,11 @@ export function calculateFuelVsSolarROI(
   return {
     monthlyFuelSpend: safeFuel,
     monthlyMaintenanceSpend: safeMaint,
+    monthlyGridSpend: safeGrid,
+    totalMonthlyCurrentSpend: totalMonthlyCurrent,
     totalMonthlyGeneratorSpend: totalMonthlyGen,
     annualGeneratorSpend: annualGen,
+    annualCurrentSpend: annualCurrent,
     solarMonthlyInstallment: monthlyInstallment,
     netMonthlyCashflow,
     paybackPeriodMonths,
@@ -173,3 +183,4 @@ export function calculateFuelVsSolarROI(
     annualCo2AvoidedKg,
   };
 }
+

@@ -15,6 +15,7 @@ type PackageItem = {
     price: number;
     availability: string;
     finalPrice?: number;
+    discountPercentage?: number;
     packageIncludes?: Array<{ label: string; qty: string }>;
     powers?: string[];
 };
@@ -41,6 +42,8 @@ const PackagesGrid = ({
                             mini_description={p.mini_description}
                             image={p.image}
                             price={p.finalPrice ?? p.price}
+                            priceOriginal={p.price}
+                            discountPercentage={p.discountPercentage}
                             availability={p.availability}
                             href={`/packages/${p.slug || p.id}`}
                         />
@@ -68,6 +71,8 @@ const PackagesGrid = ({
                                     mini_description={p.mini_description}
                                     image={p.image}
                                     price={p.finalPrice ?? p.price}
+                                    priceOriginal={p.price}
+                                    discountPercentage={p.discountPercentage}
                                     packageIncludes={p.packageIncludes}
                                     powers={p.powers}
                                 />
@@ -77,7 +82,6 @@ const PackagesGrid = ({
                 }
             </div>
         </div>
-
     )
 }
 

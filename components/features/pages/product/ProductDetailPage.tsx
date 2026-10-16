@@ -57,6 +57,13 @@ const ProductDetailPage = () => {
   const { toggleProductFavorite } = useCustomerFavoriteToggle();
   const { requireCustomerLogin } = useCustomerLoginGate();
 
+  // Canonical slug URL synchronization: If accessed via raw UUID, rewrite address bar to clean slug
+  React.useEffect(() => {
+    if (product?.slug && id && id !== product.slug) {
+      window.history.replaceState(null, "", `/products/${product.slug}`);
+    }
+  }, [product?.slug, id]);
+
   const activeImage = selectedImage || product?.image || "";
   const maxProductQuantity = product ? getProductCartMaxQuantity(product) ?? 1 : 1;
   const isOutOfStock = !product || product.availability === "Out Of Stock" || product.stockQuantity <= 0;

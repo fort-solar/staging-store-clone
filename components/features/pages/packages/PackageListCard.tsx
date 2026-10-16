@@ -7,6 +7,9 @@ const PackageListCard = ({
   title,
   mini_description,
   image,
+  price,
+  priceOriginal,
+  discountPercentage,
   href,
 }: {
   title: string;
@@ -14,12 +17,19 @@ const PackageListCard = ({
   image: string;
   price: number;
   availability: string;
+  priceOriginal?: number;
+  discountPercentage?: number;
   href: string;
 }) => {
   return (
     <div className="group flex flex-col sm:flex-row gap-4 rounded-xl border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#048A05] transition-colors">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg sm:w-44 sm:shrink-0">
         <Image src={image} alt={title} fill className="object-cover" />
+        {discountPercentage && discountPercentage > 0 ? (
+          <div className="absolute top-2 left-2 z-10 rounded-full bg-rose-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-md">
+            -{discountPercentage}% OFF
+          </div>
+        ) : null}
       </div>
       <div className="flex-1 flex flex-col gap-2 p-5 lg:p-2">
          <div className='flex gap-2 lg:gap-0 flex-col lg:flex-row lg:justify-between lg:items-center'>
@@ -36,6 +46,16 @@ const PackageListCard = ({
         </div>
        
         <p className="text-sm text-[#5A646B]">{mini_description}</p>
+        <div className="mt-auto flex items-baseline gap-2 pt-2">
+          <span className="text-base font-bold text-[#111827]">
+            ₦{price.toLocaleString("en-NG")}
+          </span>
+          {priceOriginal && priceOriginal > price ? (
+            <span className="text-xs text-[#9AA5AC] line-through">
+              ₦{priceOriginal.toLocaleString("en-NG")}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );

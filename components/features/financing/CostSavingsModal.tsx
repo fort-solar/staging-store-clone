@@ -35,11 +35,13 @@ export function CostSavingsModal({
   const [downPaymentPct, setDownPaymentPct] = useState<number>(DEFAULT_MIN_DOWNPAYMENT_PCT);
   const [tenureMonths, setTenureMonths] = useState<number>(12);
 
-  // Generator fuel & maintenance inputs (NUMBER INPUTS, NOT sliders)
+  // Generator fuel, NEPA/grid electricity & maintenance inputs (NUMBER INPUTS, NOT sliders)
   const [fuelSpendInput, setFuelSpendInput] = useState<string>("85000");
+  const [gridSpendInput, setGridSpendInput] = useState<string>("35000");
   const [maintSpendInput, setMaintSpendInput] = useState<string>("15000");
 
   const monthlyFuel = Math.max(0, Number(fuelSpendInput) || 0);
+  const monthlyGrid = Math.max(0, Number(gridSpendInput) || 0);
   const monthlyMaint = Math.max(0, Number(maintSpendInput) || 0);
 
   // Financing calculation
@@ -52,15 +54,16 @@ export function CostSavingsModal({
     );
   }, [systemPrice, downPaymentPct, tenureMonths]);
 
-  // Fuel vs Solar ROI calculation
+  // Fuel & Grid vs Solar ROI calculation
   const roiResult = useMemo(() => {
     return calculateFuelVsSolarROI(
       systemPrice,
       financingResult.monthlyPayment,
       monthlyFuel,
-      monthlyMaint
+      monthlyMaint,
+      monthlyGrid
     );
-  }, [systemPrice, financingResult.monthlyPayment, monthlyFuel, monthlyMaint]);
+  }, [systemPrice, financingResult.monthlyPayment, monthlyFuel, monthlyMaint, monthlyGrid]);
 
   if (!isOpen) return null;
 
@@ -253,7 +256,7 @@ export function CostSavingsModal({
           </div>
         </div>
 
-        {/* Section 2: Generator Fuel & Maintenance Offset Engine */}
+        {/* Section 2: Generator Fuel, NEPA Grid & Power Bill Offset Engine */}
         <div className="mt-8 pt-8 border-t border-neutral-200 dark:border-neutral-800">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
@@ -261,22 +264,22 @@ export function CostSavingsModal({
                 How Much Are You Currently Spending on Power?
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Enter your monthly generator expenses below to see how solar replaces ongoing generator burn.
+                Enter your monthly generator fuel, NEPA / grid bill, and maintenance expenses to calculate your net savings.
               </p>
             </div>
             <div className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-              Total Monthly Generator Cost:{" "}
+              Total Current Monthly Energy Cost:{" "}
               <strong className="text-rose-600 dark:text-rose-400 text-sm">
-                ₦{roiResult.totalMonthlyGeneratorSpend.toLocaleString()}
+                ₦{roiResult.totalMonthlyCurrentSpend.toLocaleString()}
               </strong>
             </div>
           </div>
 
           {/* Number Inputs (NO SLIDERS) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
             <div>
               <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                Monthly Generator Fuel Spend (₦) *
+                Monthly Generator Fuel (₦) *
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-xs text-neutral-400 font-bold">₦</span>
@@ -290,11 +293,31 @@ export function CostSavingsModal({
                   className="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
+              <span className="text-[10px] text-neutral-400 mt-1 block">Petrol or diesel generator burn</span>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                Monthly Generator Servicing & Oil Spend (₦) *
+                Monthly NEPA / Grid Spend (₦) *
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-xs text-neutral-400 font-bold">₦</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={gridSpendInput}
+                  onChange={(e) => setGridSpendInput(e.target.value)}
+                  placeholder="e.g. 35000"
+                  className="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+              <span className="text-[10px] text-neutral-400 mt-1 block">Prepaid meter units or DisCo bill</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                Generator Servicing & Oil (₦) *
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-xs text-neutral-400 font-bold">₦</span>
@@ -308,17 +331,18 @@ export function CostSavingsModal({
                   className="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
+              <span className="text-[10px] text-neutral-400 mt-1 block">Oil changes, repairs & filters</span>
             </div>
           </div>
 
           {/* Comparison Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
             <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800">
-              <span className="text-[11px] text-neutral-500 dark:text-neutral-400 block">Annual Generator Burn</span>
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400 block">Annual Power Burn</span>
               <strong className="text-base text-neutral-900 dark:text-white mt-1 block">
-                ₦{roiResult.annualGeneratorSpend.toLocaleString()}
+                ₦{roiResult.annualCurrentSpend.toLocaleString()}
               </strong>
-              <span className="text-[10px] text-neutral-400">12 months generator spend</span>
+              <span className="text-[10px] text-neutral-400">12 mo fuel + NEPA + service</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800">
@@ -333,7 +357,7 @@ export function CostSavingsModal({
                 {roiResult.netMonthlyCashflow >= 0 ? "+" : ""}₦
                 {roiResult.netMonthlyCashflow.toLocaleString()}
               </strong>
-              <span className="text-[10px] text-neutral-400">vs monthly installment</span>
+              <span className="text-[10px] text-neutral-400">vs monthly solar payment</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800">
@@ -341,7 +365,7 @@ export function CostSavingsModal({
               <strong className="text-base text-neutral-900 dark:text-white mt-1 block">
                 {roiResult.paybackPeriodYears > 0 ? `${roiResult.paybackPeriodYears} Years` : "—"}
               </strong>
-              <span className="text-[10px] text-neutral-400">Break-even vs fuel</span>
+              <span className="text-[10px] text-neutral-400">Break-even on system</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800">
@@ -349,7 +373,7 @@ export function CostSavingsModal({
               <strong className="text-base text-emerald-600 dark:text-emerald-400 mt-1 block">
                 ₦{roiResult.fiveYearSavings.toLocaleString()}
               </strong>
-              <span className="text-[10px] text-neutral-400">Cumulative generator savings</span>
+              <span className="text-[10px] text-neutral-400">Cumulative energy savings</span>
             </div>
           </div>
         </div>

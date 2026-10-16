@@ -7,6 +7,8 @@ const PackageCard = ({
     mini_description,
     image,
     price,
+    priceOriginal,
+    discountPercentage,
     packageIncludes = [],
     powers = [],
 }: {
@@ -14,6 +16,8 @@ const PackageCard = ({
     mini_description: string;
     image: string;
     price: number;
+    priceOriginal?: number;
+    discountPercentage?: number;
     packageIncludes?: Array<{ label: string; qty: string }>;
     powers?: string[];
 }) => {
@@ -30,6 +34,11 @@ const PackageCard = ({
                     alt={title}
                     className="object-cover transition duration-500 group-hover:scale-[1.03]"
                 />
+                {discountPercentage && discountPercentage > 0 ? (
+                    <div className="absolute top-2.5 left-2.5 z-10 rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-md">
+                        -{discountPercentage}% OFF
+                    </div>
+                ) : null}
             </div>
 
             <div className="flex flex-1 flex-col gap-4 px-1 pb-2 pt-5">
@@ -70,9 +79,16 @@ const PackageCard = ({
                 </div>
 
                 <div className="mt-auto flex items-center justify-between gap-3">
-                    <p className="text-base font-semibold text-[#111827]">
-                        ₦{price.toLocaleString("en-NG")}
-                    </p>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                        <p className="text-base font-semibold text-[#111827]">
+                            ₦{price.toLocaleString("en-NG")}
+                        </p>
+                        {priceOriginal && priceOriginal > price ? (
+                            <span className="text-xs text-[#9AA5AC] line-through">
+                                ₦{priceOriginal.toLocaleString("en-NG")}
+                            </span>
+                        ) : null}
+                    </div>
                     <span className="text-sm font-medium text-[#048A05]">
                         View Package
                     </span>
