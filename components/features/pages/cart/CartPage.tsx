@@ -473,12 +473,12 @@ const CartPage = () => {
                         ? "Free Delivery Threshold Met (Orders ≥ ₦1,500,000)"
                         : "Free Delivery Included"
                       : hasWarehouseOnlyProduct
-                      ? "Regional Warehouse Pickup Only (One or more items ineligible for waybill)"
-                      : "Standard Nationwide Waybill Delivery (Calculated at checkout based on destination)"}
+                      ? "Regional Warehouse / Depot Pickup (One or more items require freight pickup)"
+                      : "Standard Nationwide Delivery (Calculated at checkout based on destination)"}
                   </span>
                 </div>
                 <span className="shrink-0">
-                  {shipping === 0 ? "Free Nationwide Delivery" : "(4-5 Working Days Waybill)"}
+                  {shipping === 0 ? "Free Nationwide Delivery" : "(3-5 Business Days)"}
                 </span>
               </div>
             )}

@@ -278,20 +278,20 @@ const PackageDetailPage = () => {
                       </div>
                     ) : null}
 
-                    {/* Included Products Gallery */}
-                    {(data.includedProducts ?? []).length ? (
+                    {/* Included Products Gallery - Only displayed if items actually have real product images */}
+                    {data.includedProducts?.some((item) => Boolean(item.image)) ? (
                       <div>
                         <h4 className="text-sm font-semibold text-[#252C32] mb-3">Included Products & Components</h4>
                         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                          {data.includedProducts?.map((item) =>
-                            item.image ? (
+                          {data.includedProducts
+                            .filter((item) => Boolean(item.image))
+                            .map((item) => (
                               <div key={item.id} className="rounded-xl border border-[#E4E9EC] bg-[#F8F9FA] p-3 text-center">
-                                <img src={item.image} alt={item.productName} className="h-28 w-full rounded-lg object-contain bg-white mb-2" />
+                                <img src={item.image!} alt={item.productName} className="h-28 w-full rounded-lg object-contain bg-white mb-2" />
                                 <p className="text-xs font-semibold text-[#252C32] truncate">{item.productName}</p>
                                 <p className="text-[11px] text-[#5A646B]">{item.categoryLabel}</p>
                               </div>
-                            ) : null
-                          )}
+                            ))}
                         </div>
                       </div>
                     ) : null}
@@ -461,7 +461,7 @@ const PackageDetailPage = () => {
                 <DeliveryIcon />
                 <div>
                   <p className="font-semibold">Nationwide Delivery & Installation</p>
-                  <p className="text-[#5A646B]">Certified installation dispatch available across all 36 states.</p>
+                  <p className="text-[#5A646B]">Certified professional installation available across all 36 states.</p>
                 </div>
               </div>
             </div>

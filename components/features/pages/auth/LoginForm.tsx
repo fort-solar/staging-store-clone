@@ -51,13 +51,12 @@ const LoginForm = () => {
 
     if (error) {
       setStatus({ tone: "error", message: error });
+      setIsSubmitting(false);
     } else {
       await refreshSession().catch(() => null);
       setStatus({ tone: "success", message: "Login successful. Redirecting..." });
-      router.push(redirectTo);
-      router.refresh();
+      window.location.assign(redirectTo);
     }
-    setIsSubmitting(false);
   };
 
   const handleGoogleAuth = async (idToken: string) => {
@@ -69,14 +68,12 @@ const LoginForm = () => {
 
     if (error) {
       setStatus({ tone: "error", message: error });
+      setIsSubmitting(false);
     } else {
       await refreshSession().catch(() => null);
       setStatus({ tone: "success", message: "Login successful. Redirecting..." });
-      router.push(redirectTo);
-      router.refresh();
+      window.location.assign(redirectTo);
     }
-
-    setIsSubmitting(false);
   };
 
   return (

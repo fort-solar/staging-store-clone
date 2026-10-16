@@ -223,14 +223,20 @@ function toImageUrl(value: string | { src?: string } | null | undefined) {
   return value.src ?? PRODUCT_IMAGE_FALLBACK;
 }
 
-function collectProductImagesFromRecord(raw: Record<string, unknown>) {
+function getExplicitProductImages(raw: Record<string, unknown>): string[] {
   const mediaRecord = isRecord(raw.media) ? raw.media : null;
   const mediaImageUrls = mediaRecord ? readStringArray(mediaRecord, ["image_urls"]) : [];
   const explicitImages = readStringArray(raw, ["product_image_urls", "image_urls", "images"]);
   const fallbackImage = readString(raw, ["product_image_url", "image_url", "image"]);
 
-  const imageUrls = [...explicitImages, ...mediaImageUrls, fallbackImage]
-    .filter(Boolean)
+  return [...explicitImages, ...mediaImageUrls, fallbackImage]
+    .filter((value): value is string => typeof value === "string" && Boolean(value.trim()))
+    .filter((value, index, all) => all.indexOf(value) === index);
+}
+
+function collectProductImagesFromRecord(raw: Record<string, unknown>) {
+  const explicit = getExplicitProductImages(raw);
+  const imageUrls = explicit
     .map((value) => toImageUrl(value))
     .filter((value, index, all) => all.indexOf(value) === index);
 
@@ -241,12 +247,13 @@ function collectProductImages(product: UnifiedProductRecord) {
   return collectProductImagesFromRecord(product as unknown as Record<string, unknown>);
 }
 
-function getPrimaryProductImage(product: UnifiedProductRecord | null | undefined) {
+function getPrimaryProductImage(product: UnifiedProductRecord | null | undefined): string | null {
   if (!product) {
     return null;
   }
 
-  return collectProductImages(product)[0] ?? null;
+  const explicit = getExplicitProductImages(product as unknown as Record<string, unknown>);
+  return explicit[0] ? toImageUrl(explicit[0]) : null;
 }
 
 function buildAvailability(stockQuantity: number | undefined, isActive = true) {

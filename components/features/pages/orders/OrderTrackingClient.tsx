@@ -131,7 +131,7 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
               Sign In to View Your Order
             </h2>
             <p className="mt-2 text-sm text-gray-600 max-w-md leading-relaxed">
-              Please sign in to your Fortsolar customer account to track this order, check hardware dispatch status, and monitor installation milestones.
+              Please sign in to your Fortsolar customer account to track this order, check hardware delivery status, and monitor installation milestones.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
@@ -203,7 +203,7 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
       completed: order.status === "completed" || (!isFinancing && order.status !== "pending"),
       status: "current",
     },
-    { key: "shipped", label: "Equipment Shipped", description: "Package dispatched from warehouse.", completed: false, status: "upcoming" },
+    { key: "shipped", label: "Equipment Shipped", description: "Package shipped from fulfillment hub.", completed: false, status: "upcoming" },
     { key: "installer_assigned", label: "Installer Assigned", description: "Technician allocated.", completed: false, status: "upcoming" },
     { key: "installation_in_progress", label: "Installation In Progress", description: "On site wiring & setup.", completed: false, status: "upcoming" },
     { key: "installation_completed", label: "Installation Completed", description: "System verified and commissioned.", completed: false, status: "upcoming" },
@@ -603,7 +603,7 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
                       <span className="font-bold">Financing Approved & Completed</span>
                     </div>
                     <p className="mt-1 text-[11px] text-emerald-800">
-                      Payment confirmed by partner financing company. Installation dispatched.
+                      Payment confirmed by partner financing company. Installation scheduled.
                     </p>
                   </div>
                 ) : (

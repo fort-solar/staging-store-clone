@@ -119,17 +119,7 @@ export function AuthProvider({
       hasHandledSessionExpiryRef.current = false;
       syncClientAuthState(initialSession);
       setSession(initialSession);
-      return;
     }
-
-    setSession((currentSession) => {
-      if (!currentSession) {
-        return currentSession;
-      }
-
-      clearCustomerClientState();
-      return null;
-    });
   }, [initialSession]);
 
   useEffect(() => {
