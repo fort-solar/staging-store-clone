@@ -1,54 +1,6 @@
-export interface FinancingProfileOption {
-  id: string;
-  label: string;
-  subtitle: string;
-  icon: "salary" | "business" | "individual";
-  targetAudience: "salary_earner" | "business" | "individual";
-  defaultMonthlyRatePct: number;
-  minDownpaymentPct: number;
-  availableTenures: number[];
-  defaultInterestType: "flat" | "reducing";
-  recommendedPartner: string;
-}
-
-export const FINANCING_PROFILES: FinancingProfileOption[] = [
-  {
-    id: "salary_earner",
-    label: "Salary Earner",
-    subtitle: "Low monthly interest (~2.5%) for verified corporate & civil service employees",
-    icon: "salary",
-    targetAudience: "salary_earner",
-    defaultMonthlyRatePct: 2.5,
-    minDownpaymentPct: 30,
-    availableTenures: [6, 12, 18, 24],
-    defaultInterestType: "flat",
-    recommendedPartner: "CheckOff Solar Credit",
-  },
-  {
-    id: "business",
-    label: "Registered Business / SME",
-    subtitle: "Low commercial rate (~2.0%) for registered enterprises, clinics & schools",
-    icon: "business",
-    targetAudience: "business",
-    defaultMonthlyRatePct: 2.0,
-    minDownpaymentPct: 30,
-    availableTenures: [6, 12, 18, 24],
-    defaultInterestType: "reducing",
-    recommendedPartner: "Altpower SME Financing",
-  },
-  {
-    id: "individual",
-    label: "Individual / Retail",
-    subtitle: "Flexible consumer solar credit (~4.0% flat) for general private buyers",
-    icon: "individual",
-    targetAudience: "individual",
-    defaultMonthlyRatePct: 4.0,
-    minDownpaymentPct: 30,
-    availableTenures: [6, 12],
-    defaultInterestType: "flat",
-    recommendedPartner: "Fortsolar Standard",
-  },
-];
+export const DEFAULT_BASE_MONTHLY_RATE_PCT = 4.0; // 4% monthly flat rate (48% p.a.)
+export const DEFAULT_MIN_DOWNPAYMENT_PCT = 30; // 30% minimum equity
+export const DEFAULT_AVAILABLE_TENURES = [3, 6, 9, 12]; // Standard tenure options in months
 
 export interface AmortizationRow {
   month: number;
@@ -67,19 +19,23 @@ export interface CalculationResult {
   tenureMonths: number;
   monthlyRatePct: number;
   annualRatePct: number;
-  interestType: "flat" | "reducing";
+  interestType: "flat";
   monthlyPayment: number;
   totalInterest: number;
   totalRepayment: number;
+  totalCostWithFinancing: number;
   schedule: AmortizationRow[];
 }
 
+/**
+ * Standard Solar Financing Breakdown
+ * Calculates flat monthly installment at standard 4% monthly flat rate (48% p.a.).
+ */
 export function calculateFinancingBreakdown(
   systemPrice: number,
-  downPaymentPct: number,
-  tenureMonths: number,
-  monthlyRatePct: number,
-  interestType: "flat" | "reducing" = "flat"
+  downPaymentPct: number = DEFAULT_MIN_DOWNPAYMENT_PCT,
+  tenureMonths: number = 12,
+  monthlyRatePct: number = DEFAULT_BASE_MONTHLY_RATE_PCT
 ): CalculationResult {
   const safePrice = Math.max(0, systemPrice);
   const safeDownPct = Math.min(90, Math.max(10, downPaymentPct));
@@ -88,10 +44,6 @@ export function calculateFinancingBreakdown(
 
   const downPaymentAmount = Math.round(safePrice * (safeDownPct / 100));
   const principalAmount = Math.max(0, safePrice - downPaymentAmount);
-
-  let monthlyPayment = 0;
-  let totalInterest = 0;
-  const schedule: AmortizationRow[] = [];
 
   if (principalAmount <= 0) {
     return {
@@ -102,68 +54,36 @@ export function calculateFinancingBreakdown(
       tenureMonths: safeTenure,
       monthlyRatePct: safeRate,
       annualRatePct: safeRate * 12,
-      interestType,
+      interestType: "flat",
       monthlyPayment: 0,
       totalInterest: 0,
       totalRepayment: 0,
+      totalCostWithFinancing: safePrice,
       schedule: [],
     };
   }
 
-  if (interestType === "reducing") {
-    const monthlyRate = safeRate / 100;
-    if (monthlyRate === 0) {
-      monthlyPayment = principalAmount / safeTenure;
-      totalInterest = 0;
-    } else {
-      const compoundFactor = Math.pow(1 + monthlyRate, safeTenure);
-      monthlyPayment = principalAmount * ((monthlyRate * compoundFactor) / (compoundFactor - 1));
-    }
+  // Standard flat rate: Total Interest = Principal * (monthlyRatePct / 100) * tenureMonths
+  const totalInterest = Math.round(principalAmount * (safeRate / 100) * safeTenure);
+  const totalRepayment = principalAmount + totalInterest;
+  const monthlyPayment = Math.round(totalRepayment / safeTenure);
 
-    let currentBalance = principalAmount;
-    for (let m = 1; m <= safeTenure; m++) {
-      const interestForMonth = currentBalance * (safeRate / 100);
-      let principalForMonth = monthlyPayment - interestForMonth;
-      if (m === safeTenure || currentBalance - principalForMonth < 0) {
-        principalForMonth = currentBalance;
-      }
-      const ending = Math.max(0, currentBalance - principalForMonth);
-      totalInterest += interestForMonth;
+  const schedule: AmortizationRow[] = [];
+  const monthlyPrincipalPortion = Math.round(principalAmount / safeTenure);
+  const monthlyInterestPortion = Math.round(totalInterest / safeTenure);
+  let currentBalance = principalAmount;
 
-      schedule.push({
-        month: m,
-        beginningBalance: currentBalance,
-        monthlyPayment: principalForMonth + interestForMonth,
-        principalPayment: principalForMonth,
-        interestPayment: interestForMonth,
-        endingBalance: ending,
-      });
-
-      currentBalance = ending;
-    }
-  } else {
-    // Flat Rate (Amortization Calculator default pattern)
-    // Total Interest = Principal * (Rate/100) * (Tenure/12)
-    // Rate is annual rate = monthlyRatePct * 12
-    totalInterest = principalAmount * (safeRate / 100) * safeTenure;
-    monthlyPayment = (principalAmount + totalInterest) / safeTenure;
-
-    const monthlyPrincipalPortion = principalAmount / safeTenure;
-    const monthlyInterestPortion = totalInterest / safeTenure;
-    let currentBalance = principalAmount;
-
-    for (let m = 1; m <= safeTenure; m++) {
-      const ending = Math.max(0, currentBalance - monthlyPrincipalPortion);
-      schedule.push({
-        month: m,
-        beginningBalance: currentBalance,
-        monthlyPayment: monthlyPayment,
-        principalPayment: monthlyPrincipalPortion,
-        interestPayment: monthlyInterestPortion,
-        endingBalance: m === safeTenure ? 0 : ending,
-      });
-      currentBalance = ending;
-    }
+  for (let m = 1; m <= safeTenure; m++) {
+    const ending = Math.max(0, currentBalance - monthlyPrincipalPortion);
+    schedule.push({
+      month: m,
+      beginningBalance: currentBalance,
+      monthlyPayment: monthlyPayment,
+      principalPayment: monthlyPrincipalPortion,
+      interestPayment: monthlyInterestPortion,
+      endingBalance: m === safeTenure ? 0 : ending,
+    });
+    currentBalance = ending;
   }
 
   return {
@@ -174,10 +94,11 @@ export function calculateFinancingBreakdown(
     tenureMonths: safeTenure,
     monthlyRatePct: safeRate,
     annualRatePct: safeRate * 12,
-    interestType,
-    monthlyPayment: Math.round(monthlyPayment),
-    totalInterest: Math.round(totalInterest),
-    totalRepayment: Math.round(principalAmount + totalInterest),
+    interestType: "flat",
+    monthlyPayment,
+    totalInterest,
+    totalRepayment,
+    totalCostWithFinancing: downPaymentAmount + totalRepayment,
     schedule,
   };
 }
@@ -188,7 +109,7 @@ export interface FuelSavingsResult {
   totalMonthlyGeneratorSpend: number;
   annualGeneratorSpend: number;
   solarMonthlyInstallment: number;
-  netMonthlyCashflow: number; // positive = saves money every month compared to gen
+  netMonthlyCashflow: number; // positive = saves money every month compared to generator
   paybackPeriodMonths: number;
   paybackPeriodYears: number;
   fiveYearSavings: number;
@@ -224,7 +145,7 @@ export function calculateFuelVsSolarROI(
     currentAnnualGen *= 1.08;
   }
 
-  // Solar cost: System Price + modest 2% annual solar maintenance after year 2
+  // Solar maintenance assumption: System Price + modest 2% annual solar maintenance after year 2
   const solarCost5 = systemPrice * 1.05;
   const solarCost10 = systemPrice * 1.15;
 

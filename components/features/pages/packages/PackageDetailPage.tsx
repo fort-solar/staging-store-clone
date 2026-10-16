@@ -3,13 +3,11 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Sparkles, Fuel } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaShare, FaTiktok, FaYoutube } from "react-icons/fa";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { FinancingIcon } from "@/components/features/icons/FinancingIcon";
-import FinancingBreakdownModal from "@/components/features/financing/FinancingBreakdownModal";
-import FuelSavingsDrawer from "@/components/features/financing/FuelSavingsDrawer";
-import FinancingApplicationModal from "@/components/features/financing/FinancingApplicationModal";
+import { CostSavingsModal } from "@/components/features/financing/CostSavingsModal";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import HeartIcon from "@/components/features/icons/HeartIcon";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
@@ -30,6 +28,7 @@ const PackageDetailPage = () => {
   const [query, setQuery] = useState("");
   const params = useParams<{ id: string }>();
   const [showFeatures, setShowFeatures] = useState(true);
+  const [showSpecsGallery, setShowSpecsGallery] = useState(true);
   const [selectedImage, setSelectedImage] = useState("");
   const router = useRouter();
   const id = params?.id;
@@ -48,11 +47,8 @@ const PackageDetailPage = () => {
     packageTitle: string;
   } | null>(null);
 
-  // Financing & ROI Modals State
-  const [showBreakdownModal, setShowBreakdownModal] = useState(false);
-  const [showFuelDrawer, setShowFuelDrawer] = useState(false);
-  const [showApplicationModal, setShowApplicationModal] = useState(false);
-  const [selectedFinancingPlan, setSelectedFinancingPlan] = useState<any>(null);
+  // Single unified Cost & Savings Modal state
+  const [showCostSavingsModal, setShowCostSavingsModal] = useState(false);
 
   React.useEffect(() => {
     let localDraft: any = null;
@@ -84,6 +80,16 @@ const PackageDetailPage = () => {
         .catch((err) => console.warn("Failed to get draft order:", err));
     }
   }, [session]);
+
+  const packagePrice = data ? (data.finalPrice ?? data.price) : 0;
+
+  // Standard 4% monthly flat rate, 30% downpayment, 12 months tenure
+  const estimatedMonthlyInstallment = useMemo(() => {
+    if (!packagePrice) return 0;
+    const principal = packagePrice * 0.70;
+    const totalInterest = principal * 0.04 * 12;
+    return Math.round((principal + totalInterest) / 12);
+  }, [packagePrice]);
 
   const handleOrderPackage = (withFinancing = false) => {
     if (!data) return;
@@ -165,6 +171,7 @@ const PackageDetailPage = () => {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
+          {/* Left Column: Image Gallery, Overview, Specifications */}
           <div>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[88px_1fr]">
               <div className="flex gap-3 lg:flex-col">
@@ -210,71 +217,69 @@ const PackageDetailPage = () => {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-[#252C32]">Package Thumbnail</h3>
-                <div className="mt-4 rounded-2xl bg-white p-3">
-                  <img src={data.thumbnail || data.image} alt={`${data.title} thumbnail`} className="aspect-[4/3] w-full rounded-xl object-cover" />
+              {/* Collapsible Package Specifications & Gallery (Merged cleanly without duplicate thumbnail) */}
+              <div className="rounded-2xl bg-white p-5 border border-[#E4E9EC]">
+                <div
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setShowSpecsGallery(!showSpecsGallery)}
+                >
+                  <h3 className="text-lg font-semibold text-[#252C32]">Package Specifications & Gallery</h3>
+                  <span className="text-neutral-500">
+                    {showSpecsGallery ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                  </span>
                 </div>
-              </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-[#252C32]">Datasheets</h3>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {data.datasheets?.length ? (
-                    data.datasheets.map((asset) => (
-                      <div key={asset.url} className="rounded-2xl bg-white p-4">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <strong className="truncate text-sm text-[#252C32]">{asset.name}</strong>
-                          <a href={asset.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#048A05]">
-                            Open
-                          </a>
+                {showSpecsGallery && (
+                  <div className="mt-4 space-y-6 pt-4 border-t border-[#E4E9EC]">
+                    {/* Datasheets */}
+                    {data.datasheets?.length ? (
+                      <div>
+                        <h4 className="text-sm font-semibold text-[#252C32] mb-3">Technical Datasheets</h4>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {data.datasheets.map((asset) => (
+                            <div key={asset.url} className="rounded-xl border border-[#E4E9EC] bg-[#F8F9FA] p-3 flex items-center justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold text-[#252C32] truncate">{asset.name}</p>
+                                <span className="text-[10px] text-[#5A646B] uppercase">{asset.kind || "Document"}</span>
+                              </div>
+                              <a
+                                href={asset.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-bold text-[#048A05] hover:underline shrink-0"
+                              >
+                                View &rarr;
+                              </a>
+                            </div>
+                          ))}
                         </div>
-                        {asset.kind === "image" ? (
-                          <img src={asset.url} alt={asset.name} className="h-48 w-full rounded-xl object-cover" />
-                        ) : asset.kind === "pdf" ? (
-                          <iframe src={asset.url} title={asset.name} className="h-48 w-full rounded-xl border border-[#E4E9EC]" />
-                        ) : (
-                          <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-[#E4E9EC] bg-[#F8F9FA] text-sm text-[#5A646B]">
-                            Preview unavailable
-                          </div>
-                        )}
                       </div>
-                    ))
-                  ) : (
-                    <EmptyStatePanel
-                      title="No datasheets available"
-                      description="This package does not have any published datasheets yet."
-                      className="rounded-2xl bg-white min-h-48"
-                    />
-                  )}
-                </div>
-              </div>
+                    ) : null}
 
-              <div>
-                <h3 className="text-lg font-semibold text-[#252C32]">Product Images in This Package</h3>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {(data.includedProducts ?? []).length ? (
-                    data.includedProducts?.map((item) =>
-                      item.image ? (
-                        <div key={item.id} className="rounded-2xl bg-white p-3">
-                          <img src={item.image} alt={item.productName} className="h-40 w-full rounded-xl object-cover" />
-                          <p className="mt-3 text-sm font-semibold text-[#252C32]">{item.productName}</p>
-                          <p className="text-xs text-[#5A646B]">{item.categoryLabel}</p>
+                    {/* Included Products Gallery */}
+                    {(data.includedProducts ?? []).length ? (
+                      <div>
+                        <h4 className="text-sm font-semibold text-[#252C32] mb-3">Included Products & Components</h4>
+                        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                          {data.includedProducts?.map((item) =>
+                            item.image ? (
+                              <div key={item.id} className="rounded-xl border border-[#E4E9EC] bg-[#F8F9FA] p-3 text-center">
+                                <img src={item.image} alt={item.productName} className="h-28 w-full rounded-lg object-contain bg-white mb-2" />
+                                <p className="text-xs font-semibold text-[#252C32] truncate">{item.productName}</p>
+                                <p className="text-[11px] text-[#5A646B]">{item.categoryLabel}</p>
+                              </div>
+                            ) : null
+                          )}
                         </div>
-                      ) : null,
-                    )
-                  ) : (
-                    <EmptyStatePanel
-                      title="No product gallery available"
-                      description="This package does not have published product images yet."
-                      className="rounded-2xl bg-white min-h-48"
-                    />
-                  )}
-                </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
+          {/* Right Column: Pricing, Financing, Action Buttons */}
           <div>
             <div className="flex items-center gap-2 text-sm text-[#F59E0B]">
               {"★★★★★"}
@@ -284,9 +289,10 @@ const PackageDetailPage = () => {
             <h1 className="mt-2 text-2xl font-semibold text-[#252C32]">{data.title}</h1>
             <p className="mt-2 text-sm text-[#5A646B]">{data.overview}</p>
 
+            {/* Price Display */}
             <div className="mt-4 flex items-center gap-3">
-              <span className="text-xl font-semibold text-[#252C32]">
-                ₦{(data.finalPrice ?? data.price).toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+              <span className="text-2xl font-bold text-[#252C32]">
+                ₦{packagePrice.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
               </span>
               {data.discountPercentage ? (
                 <span className="text-sm text-[#9AA5AC] line-through">
@@ -295,31 +301,25 @@ const PackageDetailPage = () => {
               ) : null}
             </div>
 
-            {/* Financing Breakdown & Generator Fuel ROI Hyperlinks */}
+            {/* Clean Single Financing Line with See Cost & Savings Button */}
             {data.solarFinanceEnabled ? (
-              <div className="mt-2.5 flex items-center gap-3 flex-wrap text-xs">
+              <div className="mt-2 text-xs text-[#5A646B] flex items-center gap-1.5 flex-wrap">
+                <span>
+                  Or from <strong className="text-[#048A05]">₦{estimatedMonthlyInstallment.toLocaleString()}/mo</strong> with financing
+                </span>
+                <span className="text-gray-300">·</span>
                 <button
                   type="button"
-                  onClick={() => setShowBreakdownModal(true)}
-                  className="inline-flex items-center gap-1.5 font-bold text-[#048A05] hover:text-[#036a04] hover:underline cursor-pointer"
+                  onClick={() => setShowCostSavingsModal(true)}
+                  className="font-semibold text-[#048A05] hover:underline cursor-pointer"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-[#048A05]" />
-                  <span>See financing breakdown & monthly payments &rarr;</span>
-                </button>
-                <span className="text-gray-300">•</span>
-                <button
-                  type="button"
-                  onClick={() => setShowFuelDrawer(true)}
-                  className="inline-flex items-center gap-1 font-semibold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
-                >
-                  <Fuel className="h-3.5 w-3.5 text-amber-600" />
-                  <span>Compare vs generator fuel ROI</span>
+                  See cost & savings &rarr;
                 </button>
               </div>
             ) : null}
 
             {activeDraft && String(activeDraft.packageId) === String(data.id) && (
-              <div className="mt-3 flex items-center justify-between rounded-xl border border-[#048A05]/30 bg-[#EBFAEB] p-3 text-xs">
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-[#048A05]/30 bg-[#EBFAEB] p-3 text-xs">
                 <span className="text-[#048A05] font-medium">
                   ✓ You have a saved draft configuration for this package.
                 </span>
@@ -333,88 +333,98 @@ const PackageDetailPage = () => {
               </div>
             )}
 
-            <div className="mt-4 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => handleOrderPackage(false)}
-                className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3 text-sm font-semibold text-white cursor-pointer hover:opacity-95 transition"
-              >
-                Order System Package
-              </button>
-              <button onClick={() => togglePackageFavorite(data.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC] cursor-pointer">
-                <HeartIcon filled={favorites.includes(data.id)} className={favorites.includes(data.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
-              </button>
+            {/* Primary Action Buttons */}
+            <div className="mt-5 space-y-2.5">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleOrderPackage(false)}
+                  className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3 text-sm font-semibold text-white cursor-pointer hover:opacity-95 transition shadow-sm text-center"
+                >
+                  Order System Package
+                </button>
+                <button
+                  onClick={() => togglePackageFavorite(data.id)}
+                  className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC] cursor-pointer hover:bg-neutral-50 transition"
+                  title="Save to favorites"
+                >
+                  <HeartIcon
+                    filled={favorites.includes(data.id)}
+                    className={favorites.includes(data.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"}
+                  />
+                </button>
+              </div>
+
+              {data.solarFinanceEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => handleOrderPackage(true)}
+                  className="w-full rounded-xl border-2 border-[#048A05] bg-white py-2.5 text-sm font-semibold text-[#048A05] hover:bg-[#EBFAEB]/50 transition cursor-pointer text-center"
+                >
+                  Buy with Financing
+                </button>
+              ) : null}
+
+              <div>
+                <a
+                  href={`https://wa.me/2347066524793?text=${encodeURIComponent(
+                    `Hi Fortsolar, I'm interested in the "${data.title}" package. Can I talk to an engineer about it?`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex w-full items-center justify-center rounded-xl border border-[#D0D5DD] bg-white py-2.5 text-sm font-semibold text-[#3B3B3B] transition hover:bg-slate-50 cursor-pointer"
+                >
+                  Talk to an Engineer
+                </a>
+              </div>
             </div>
 
-            <div className="mt-3">
-              <a
-                href={`https://wa.me/2347066524793?text=${encodeURIComponent(
-                  `Hi Fortsolar, I'm interested in the "${data.title}" package. Can I talk to an engineer about it?`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full items-center justify-center rounded-xl border border-[#D0D5DD] bg-white py-3 text-sm font-semibold text-[#3B3B3B] transition hover:bg-slate-50 cursor-pointer"
+            {/* Package Includes Dropdown */}
+            <div className="mt-6 p-4 text-sm rounded-xl border border-[#E4E9EC]">
+              <div
+                className="flex items-center justify-between font-semibold text-[#252C32] cursor-pointer"
+                onClick={() => setShowFeatures(!showFeatures)}
               >
-                Talk to an Engineer
-              </a>
-            </div>
-
-            <div className="mt-6 p-4 text-sm">
-              <div className="flex items-center justify-between font-semibold text-[#252C32]">
                 <span>Package Includes</span>
-                <span onClick={() => setShowFeatures(!showFeatures)}>
+                <span>
                   {showFeatures ? <ChevronDown className="h-5 w-5 text-gray-500" /> : <ChevronUp className="h-5 w-5 text-gray-500" />}
                 </span>
               </div>
               {showFeatures ? (
                 <div className="mt-3 text-[#5A646B]">
                   {data.packageIncludes.map((item) => (
-                    <div key={item.label} className="flex justify-between border-b py-3">
+                    <div key={item.label} className="flex justify-between border-b border-neutral-100 py-2.5 text-xs">
                       <span>{item.label}</span>
-                      <span className="text-[#252C32]">{item.qty}</span>
+                      <span className="font-semibold text-[#252C32]">{item.qty}</span>
                     </div>
                   ))}
                 </div>
               ) : null}
             </div>
 
+            {/* Financing & Delivery Badges */}
             <div className="mt-4 space-y-3">
               {data.solarFinanceEnabled ? (
-                <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
+                <div className="flex items-center gap-3 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
                   <FinancingIcon />
-                  <div className="flex-1">
+                  <div>
                     <p className="font-semibold text-[#048A05]">Solar Financing Available</p>
                     <p className="mt-0.5 text-[#5A646B]">
-                      Request structured monthly instalment terms with our verified financing partners (CheckOff, Altpower, Sterling).
+                      Structured monthly instalments available at checkout with verified lending partners.
                     </p>
-                    <div className="mt-2.5 flex items-center gap-3 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setShowBreakdownModal(true)}
-                        className="inline-flex items-center font-bold text-[#048A05] underline hover:text-[#036a04] cursor-pointer"
-                      >
-                        Calculator & Breakdown &rarr;
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowApplicationModal(true)}
-                        className="inline-flex items-center px-3 py-1 rounded-lg bg-[#048A05] text-white font-semibold hover:opacity-95 transition cursor-pointer"
-                      >
-                        Apply in 3 Steps
-                      </button>
-                    </div>
                   </div>
                 </div>
               ) : null}
-              <div className="flex gap-4 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
+              <div className="flex items-center gap-3 rounded-xl bg-[#F8F9FA] p-3 text-xs text-[#3B3B3B]">
                 <DeliveryIcon />
                 <div>
-                  <p>Free Delivery</p>
-                  <p className="cursor-pointer hover:underline">Enter your postal code for Delivery Availability</p>
+                  <p className="font-semibold">Nationwide Delivery & Installation</p>
+                  <p className="text-[#5A646B]">Certified installation dispatch available across all 36 states.</p>
                 </div>
               </div>
             </div>
 
+            {/* Included Products List */}
             <div className="mt-6 rounded-2xl border border-[#E4E9EC] bg-white p-4">
               <h3 className="text-lg font-semibold text-[#252C32]">Included Products</h3>
               <div className="mt-4 space-y-3">
@@ -449,6 +459,7 @@ const PackageDetailPage = () => {
           </div>
         </div>
 
+        {/* Other Related Packages */}
         <div className="mt-12 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[#252C32]">Other Related Packages</h2>
           <Link href="/packages" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-4 py-2 text-sm text-white">
@@ -460,47 +471,16 @@ const PackageDetailPage = () => {
         </div>
       </div>
 
-      {/* Interactive Financing Breakdown Modal */}
-      <FinancingBreakdownModal
-        isOpen={showBreakdownModal}
-        onClose={() => setShowBreakdownModal(false)}
-        packageTitle={data.title}
-        packagePrice={data.finalPrice ?? data.price}
-        packageId={data.id}
-        onProceedToApply={(plan) => {
-          setSelectedFinancingPlan(plan);
-          setShowBreakdownModal(false);
-          setShowApplicationModal(true);
-        }}
-        onOpenFuelComparison={() => {
-          setShowBreakdownModal(false);
-          setShowFuelDrawer(true);
-        }}
-      />
-
-      {/* Generator Fuel vs Solar ROI Drawer */}
-      <FuelSavingsDrawer
-        isOpen={showFuelDrawer}
-        onClose={() => setShowFuelDrawer(false)}
-        packageTitle={data.title}
-        packagePrice={data.finalPrice ?? data.price}
-        monthlyInstallment={selectedFinancingPlan?.monthlyPayment}
-        onSelectPlan={() => {
-          setShowFuelDrawer(false);
-          setShowApplicationModal(true);
-        }}
-      />
-
-      {/* Frictionless 3-Step Financing Intake Modal */}
-      <FinancingApplicationModal
-        isOpen={showApplicationModal}
-        onClose={() => setShowApplicationModal(false)}
-        packageId={data.id}
-        packageTitle={data.title}
-        packagePrice={data.finalPrice ?? data.price}
-        initialPlan={selectedFinancingPlan}
-        onSuccess={() => {
-          // Success is handled within the modal state
+      {/* Unified Cost & Savings Modal */}
+      <CostSavingsModal
+        isOpen={showCostSavingsModal}
+        onClose={() => setShowCostSavingsModal(false)}
+        systemPrice={packagePrice}
+        packageName={data.title}
+        packageSlug={String(data.id)}
+        onBuyOutright={() => handleOrderPackage(false)}
+        onBuyWithFinancing={(terms) => {
+          handleOrderPackage(true);
         }}
       />
     </div>

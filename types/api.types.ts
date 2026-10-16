@@ -518,6 +518,11 @@ export type CustomerOrderCreatePayload = {
     financing_nin?: string | null;
     financing_bvn_consent?: boolean;
     financing_profile_type?: string | null;
+    employment_or_business_name?: string | null;
+    estimated_monthly_income_range?: string | null;
+    preferred_downpayment_pct?: number | null;
+    preferred_tenure_months?: number | null;
+    financing_terms?: Record<string, any> | null;
   };
 };
 

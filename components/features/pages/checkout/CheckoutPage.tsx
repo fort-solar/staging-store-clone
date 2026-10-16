@@ -18,7 +18,6 @@ import {
   createCustomerOrder,
   initializeCustomerOrderPayment,
   verifyCustomerPayment,
-  uploadFile,
   getDraftOrder,
   saveDraftOrder,
   deleteDraftOrder,
@@ -170,50 +169,35 @@ const CheckoutPage = () => {
     }
   }, [isPackageCheckout, queryFinancing]);
 
-  // Define financing calculator states
+  // Define financing calculator states (Standard 4% monthly flat rate)
   const [downpaymentPct, setDownpaymentPct] = useState(30);
   const [tenureMonths, setTenureMonths] = useState(12);
 
-  // Profile type and BVN/Legal consent
+  // Qualification profile fields (Frictionless 3-step intake: no uploads, no BVN/NIN)
   const [profileType, setProfileType] = useState<"individual" | "salary_earner" | "business">("individual");
-  const [bvn, setBvn] = useState("");
-  const [nin, setNin] = useState("");
-  const [bvnConsent, setBvnConsent] = useState(false);
+  const [employerOrBusinessName, setEmployerOrBusinessName] = useState("");
+  const [incomeRange, setIncomeRange] = useState("₦500,000 – ₦1,000,000 / month");
   const [legalConsent, setLegalConsent] = useState(false);
 
-  const [govIdFile, setGovIdFile] = useState<File | null>(null);
-  const [govIdUploadId, setGovIdUploadId] = useState<string | null>(null);
-  const [isUploadingGovId, setIsUploadingGovId] = useState(false);
-  const [govIdProgress, setGovIdProgress] = useState<number | null>(null);
-  const [govIdError, setGovIdError] = useState<string | null>(null);
-
-  const [utilityBillFile, setUtilityBillFile] = useState<File | null>(null);
-  const [utilityBillUploadId, setUtilityBillUploadId] = useState<string | null>(null);
-  const [isUploadingUtilityBill, setIsUploadingUtilityBill] = useState(false);
-  const [utilityBillProgress, setUtilityBillProgress] = useState<number | null>(null);
-  const [utilityBillError, setUtilityBillError] = useState<string | null>(null);
-
-  const [bankStatementFile, setBankStatementFile] = useState<File | null>(null);
-  const [bankStatementUploadId, setBankStatementUploadId] = useState<string | null>(null);
-  const [isUploadingBankStatement, setIsUploadingBankStatement] = useState(false);
-  const [bankStatementProgress, setBankStatementProgress] = useState<number | null>(null);
-  const [bankStatementError, setBankStatementError] = useState<string | null>(null);
-
-  const [cacDocumentFile, setCacDocumentFile] = useState<File | null>(null);
-  const [cacDocumentUploadId, setCacDocumentUploadId] = useState<string | null>(null);
-  const [isUploadingCacDocument, setIsUploadingCacDocument] = useState(false);
-  const [cacDocumentProgress, setCacDocumentProgress] = useState<number | null>(null);
-  const [cacDocumentError, setCacDocumentError] = useState<string | null>(null);
+  // Dedicated success screen state upon financing submission
+  const [submittedFinancingInfo, setSubmittedFinancingInfo] = useState<{
+    orderId: string;
+    packageTitle: string;
+    totalAmount: number;
+    downpaymentAmount: number;
+    financedAmount: number;
+    tenureMonths: number;
+    monthlyInstallment: number;
+    profileType: "individual" | "salary_earner" | "business";
+    employerOrBusinessName: string;
+    incomeRange: string;
+  } | null>(null);
 
   // Financing configuration loaded from backend
   const [financingSettings, setFinancingSettings] = useState<{
     min_downpayment_pct: number;
-    short_term_rate: number;
-    long_term_rate: number;
+    base_monthly_rate_pct?: number;
     tenures: number[];
-    individual_rate: number;
-    salary_earner_rate: number;
-    business_rate: number;
   } | null>(null);
 
   useEffect(() => {
@@ -221,181 +205,16 @@ const CheckoutPage = () => {
       .then((res) => {
         if (res?.success && res.data) {
           setFinancingSettings(res.data);
-          setDownpaymentPct(res.data.min_downpayment_pct);
+          if (res.data.min_downpayment_pct) {
+            setDownpaymentPct((prev) => Math.max(prev, res.data.min_downpayment_pct));
+          }
           if (res.data.tenures && res.data.tenures.length > 0) {
-            setTenureMonths(res.data.tenures[0]);
+            setTenureMonths(res.data.tenures[res.data.tenures.length - 1] || 12);
           }
         }
       })
       .catch((err) => console.error("Error loading financing settings:", err));
   }, []);
-
-  const performUploadWithProgress = (
-    file: File,
-    onProgress: (percent: number) => void,
-    onSuccess: (uploadId: string) => void,
-    onError: (errMessage: string) => void
-  ) => {
-    const xhr = new XMLHttpRequest();
-    const formData = new FormData();
-    formData.append("file", file);
-
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        onProgress(percent);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const res = JSON.parse(xhr.responseText);
-          if (res.success && res.data?.id) {
-            onSuccess(res.data.id);
-          } else {
-            onError(res.message || "Failed to upload file.");
-          }
-        } catch (e) {
-          onError("Invalid response from server.");
-        }
-      } else {
-        let errMsg = "File upload failed.";
-        try {
-          const res = JSON.parse(xhr.responseText);
-          if (res.message) errMsg = res.message;
-        } catch (e) {}
-        onError(errMsg);
-      }
-    };
-
-    xhr.onerror = () => {
-      onError("Network error. Check your connection.");
-    };
-
-    xhr.ontimeout = () => {
-      onError("Upload timed out (120s limit exceeded). Please try a smaller file or faster connection.");
-    };
-
-    xhr.timeout = 120000; // 120 seconds (2 minutes)
-    xhr.open("POST", "/api/proxy/api/v1/uploads");
-    xhr.send(formData);
-
-    return () => {
-      xhr.abort();
-    };
-  };
-
-  // Document upload handler
-  const handleDocumentChange = async (file: File, docType: 'govId' | 'utilityBill' | 'bankStatement' | 'cac') => {
-    const MAX_SIZE = 5242880; // 5MB
-
-    if (docType === 'govId') {
-      setGovIdFile(file);
-      setGovIdUploadId(null);
-      setGovIdProgress(0);
-      setGovIdError(null);
-      
-      if (file.size > MAX_SIZE) {
-        setGovIdError("File exceeds the 5MB size limit.");
-        return;
-      }
-      
-      setIsUploadingGovId(true);
-      performUploadWithProgress(
-        file,
-        (pct) => setGovIdProgress(pct),
-        (id) => {
-          setGovIdUploadId(id);
-          setIsUploadingGovId(false);
-          setGovIdProgress(100);
-        },
-        (errMsg) => {
-          setGovIdError(errMsg);
-          setIsUploadingGovId(false);
-          setGovIdProgress(null);
-        }
-      );
-    } else if (docType === 'utilityBill') {
-      setUtilityBillFile(file);
-      setUtilityBillUploadId(null);
-      setUtilityBillProgress(0);
-      setUtilityBillError(null);
-      
-      if (file.size > MAX_SIZE) {
-        setUtilityBillError("File exceeds the 5MB size limit.");
-        return;
-      }
-      
-      setIsUploadingUtilityBill(true);
-      performUploadWithProgress(
-        file,
-        (pct) => setUtilityBillProgress(pct),
-        (id) => {
-          setUtilityBillUploadId(id);
-          setIsUploadingUtilityBill(false);
-          setUtilityBillProgress(100);
-        },
-        (errMsg) => {
-          setUtilityBillError(errMsg);
-          setIsUploadingUtilityBill(false);
-          setUtilityBillProgress(null);
-        }
-      );
-    } else if (docType === 'bankStatement') {
-      setBankStatementFile(file);
-      setBankStatementUploadId(null);
-      setBankStatementProgress(0);
-      setBankStatementError(null);
-      
-      if (file.size > MAX_SIZE) {
-        setBankStatementError("File exceeds the 5MB size limit.");
-        return;
-      }
-      
-      setIsUploadingBankStatement(true);
-      performUploadWithProgress(
-        file,
-        (pct) => setBankStatementProgress(pct),
-        (id) => {
-          setBankStatementUploadId(id);
-          setIsUploadingBankStatement(false);
-          setBankStatementProgress(100);
-        },
-        (errMsg) => {
-          setBankStatementError(errMsg);
-          setIsUploadingBankStatement(false);
-          setBankStatementProgress(null);
-        }
-      );
-    } else if (docType === 'cac') {
-      setCacDocumentFile(file);
-      setCacDocumentUploadId(null);
-      setCacDocumentProgress(0);
-      setCacDocumentError(null);
-      
-      if (file.size > MAX_SIZE) {
-        setCacDocumentError("File exceeds the 5MB size limit.");
-        return;
-      }
-      
-      setIsUploadingCacDocument(true);
-      performUploadWithProgress(
-        file,
-        (pct) => setCacDocumentProgress(pct),
-        (id) => {
-          setCacDocumentUploadId(id);
-          setIsUploadingCacDocument(false);
-          setCacDocumentProgress(100);
-        },
-        (errMsg) => {
-          setCacDocumentError(errMsg);
-          setIsUploadingCacDocument(false);
-          setCacDocumentProgress(null);
-        }
-      );
-    }
-  };
 
   const serializeDraft = () => {
     return {
@@ -412,14 +231,9 @@ const CheckoutPage = () => {
       downpaymentPct,
       tenureMonths,
       profileType,
-      bvn,
-      nin,
-      bvnConsent,
+      employerOrBusinessName,
+      incomeRange,
       legalConsent,
-      govIdUploadId,
-      utilityBillUploadId,
-      bankStatementUploadId,
-      cacDocumentUploadId,
     };
   };
 
@@ -448,14 +262,9 @@ const CheckoutPage = () => {
     downpaymentPct,
     tenureMonths,
     profileType,
-    bvn,
-    nin,
-    bvnConsent,
+    employerOrBusinessName,
+    incomeRange,
     legalConsent,
-    govIdUploadId,
-    utilityBillUploadId,
-    bankStatementUploadId,
-    cacDocumentUploadId,
     session,
   ]);
 
@@ -500,15 +309,10 @@ const CheckoutPage = () => {
     if (draft.downpaymentPct) setDownpaymentPct(draft.downpaymentPct);
     if (draft.tenureMonths) setTenureMonths(draft.tenureMonths);
     if (draft.profileType) setProfileType(draft.profileType);
-    if (draft.bvn) setBvn((prev) => prev || draft.bvn);
-    if (draft.nin) setNin((prev) => prev || draft.nin);
-    if (draft.bvnConsent !== undefined) setBvnConsent(draft.bvnConsent);
+    if (draft.employerOrBusinessName) setEmployerOrBusinessName((prev) => prev || draft.employerOrBusinessName);
+    if (draft.incomeRange) setIncomeRange((prev) => prev || draft.incomeRange);
     if (draft.legalConsent !== undefined) setLegalConsent(draft.legalConsent);
-    if (draft.govIdUploadId) setGovIdUploadId((prev) => prev || draft.govIdUploadId);
-    if (draft.utilityBillUploadId) setUtilityBillUploadId((prev) => prev || draft.utilityBillUploadId);
-    if (draft.bankStatementUploadId) setBankStatementUploadId((prev) => prev || draft.bankStatementUploadId);
-    if (draft.cacDocumentUploadId) setCacDocumentUploadId((prev) => prev || draft.cacDocumentUploadId);
-  }, []);
+  }, [isPackageCheckout, queryFinancing]);
 
   // Load draft order on mount and apply directly
   useEffect(() => {
@@ -785,41 +589,23 @@ const CheckoutPage = () => {
   const total = Math.max(0, subtotal + shippingAmount + installationFee - totalDiscount);
 
   const calculatorResults = useMemo(() => {
-    if (!financingSettings) return null;
-    const downpaymentVal = (total * downpaymentPct) / 100;
-    const financedAmount = total - downpaymentVal;
-    let monthlyInstallment = 0;
-    let interest = 0;
-    let apr = 0;
-
-    if (financingSettings) {
-      if (profileType === "individual") {
-        apr = financingSettings.individual_rate ?? financingSettings.short_term_rate ?? 25.20;
-        const tenureInYears = tenureMonths / 12;
-        interest = financedAmount * (apr / 100) * tenureInYears;
-        const totalRepayable = financedAmount + interest;
-        monthlyInstallment = totalRepayable / tenureMonths;
-      } else {
-        apr = profileType === "salary_earner" 
-          ? (financingSettings.salary_earner_rate ?? 20.00) 
-          : (financingSettings.business_rate ?? 18.00);
-        const r = (apr / 100) / 12;
-        const n = tenureMonths;
-        if (r > 0) {
-          monthlyInstallment = (financedAmount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-        } else {
-          monthlyInstallment = financedAmount / n;
-        }
-      }
-    }
+    const downpaymentVal = Math.round((total * downpaymentPct) / 100);
+    const financedAmount = Math.max(0, total - downpaymentVal);
+    // Standard flat rate: 4% per month (48% p.a.)
+    const monthlyRate = (financingSettings?.base_monthly_rate_pct ?? 4) / 100;
+    const totalInterest = Math.round(financedAmount * monthlyRate * tenureMonths);
+    const totalRepayable = financedAmount + totalInterest;
+    const monthlyInstallment = tenureMonths > 0 ? Math.round(totalRepayable / tenureMonths) : 0;
 
     return {
       downpaymentVal,
       financedAmount,
+      totalInterest,
+      totalRepayable,
       monthlyInstallment,
-      apr,
+      monthlyRatePct: financingSettings?.base_monthly_rate_pct ?? 4,
     };
-  }, [total, downpaymentPct, tenureMonths, financingSettings, profileType]);
+  }, [total, downpaymentPct, tenureMonths, financingSettings]);
 
   const quoteProducts = useMemo(() => {
     return cartDetails
@@ -902,13 +688,15 @@ const CheckoutPage = () => {
 
     // 3. Validate Financing (if requestFinancing is true and hasPackage is true)
     if (hasPackage && requestFinancing) {
-      if (!bvn || bvn.trim().length < 11) errors.bvn = true;
-      if (!nin || nin.trim().length < 11) errors.nin = true;
-      if (!bvnConsent) errors.bvnConsent = true;
-      if (!govIdUploadId) errors.uploadsGovId = true;
-      if (!utilityBillUploadId) errors.uploadsUtilityBill = true;
-      if (!bankStatementUploadId) errors.uploadsBankStatement = true;
-      if (profileType === "business" && !cacDocumentUploadId) errors.uploadsCac = true;
+      if (!employerOrBusinessName.trim()) {
+        errors.employerOrBusinessName = true;
+      }
+      if (!incomeRange.trim()) {
+        errors.incomeRange = true;
+      }
+      if (downpaymentPct < (financingSettings?.min_downpayment_pct ?? 30)) {
+        errors.downpaymentPct = true;
+      }
     }
 
     // 4. Validate Installation Site Details
@@ -933,14 +721,14 @@ const CheckoutPage = () => {
       } else if (errors.installationType || errors.buildingType || errors.roofStyle || errors.roofMaterial) {
         primaryErrorMessage = "Please select all required installation site details.";
       } else if (hasPackage && requestFinancing) {
-        if (errors.bvn) {
-          primaryErrorMessage = "Please enter a valid 11-digit BVN.";
-        } else if (errors.nin) {
-          primaryErrorMessage = "Please enter a valid 11-digit NIN.";
-        } else if (errors.bvnConsent) {
-          primaryErrorMessage = "You must consent to BVN verification to apply for financing.";
-        } else if (errors.uploadsGovId || errors.uploadsUtilityBill || errors.uploadsBankStatement || errors.uploadsCac) {
-          primaryErrorMessage = "Please upload all required files to continue.";
+        if (errors.employerOrBusinessName) {
+          primaryErrorMessage = profileType === "business"
+            ? "Please enter your registered business or company name."
+            : "Please enter your employer or organization name.";
+        } else if (errors.incomeRange) {
+          primaryErrorMessage = "Please select your monthly income or turnover range.";
+        } else if (errors.downpaymentPct) {
+          primaryErrorMessage = `Minimum down payment is ${financingSettings?.min_downpayment_pct ?? 30}%.`;
         }
       } else if (errors.shippingFullName || errors.shippingEmail || errors.shippingPhone || errors.shippingAddressLine1) {
         primaryErrorMessage = "Please fill in all required shipping address fields.";
@@ -962,7 +750,7 @@ const CheckoutPage = () => {
         elementId = "billing-section";
       } else if (firstErrorKey.startsWith("installation") || firstErrorKey === "buildingType" || firstErrorKey === "roofStyle" || firstErrorKey === "roofMaterial") {
         elementId = "installation-section";
-      } else if (firstErrorKey === "bvn" || firstErrorKey === "bvnConsent" || firstErrorKey.startsWith("uploads")) {
+      } else if (firstErrorKey === "employerOrBusinessName" || firstErrorKey === "incomeRange" || firstErrorKey === "downpaymentPct") {
         elementId = "financing-section";
       } else if (firstErrorKey === "legalConsent") {
         elementId = "terms-section";
@@ -1027,14 +815,21 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           ? {
               bundle_id: primaryPackage.sourceId,
               financing_requested: requestFinancing,
-              financing_id_upload_id: govIdUploadId,
-              financing_statement_upload_id: bankStatementUploadId,
-              financing_cac_upload_id: profileType === "business" ? cacDocumentUploadId : null,
-              financing_utility_bill_upload_id: utilityBillUploadId,
-              financing_bvn: bvn,
-              financing_nin: nin,
-              financing_bvn_consent: bvnConsent,
               financing_profile_type: profileType,
+              employment_or_business_name: employerOrBusinessName.trim() || undefined,
+              estimated_monthly_income_range: incomeRange || undefined,
+              preferred_downpayment_pct: downpaymentPct,
+              preferred_tenure_months: tenureMonths,
+              financing_terms: calculatorResults
+                ? {
+                    downpayment_amount: calculatorResults.downpaymentVal,
+                    financed_principal: calculatorResults.financedAmount,
+                    monthly_installment: calculatorResults.monthlyInstallment,
+                    monthly_rate_pct: calculatorResults.monthlyRatePct,
+                    tenure_months: tenureMonths,
+                    rate_structure: "flat",
+                  }
+                : undefined,
             }
           : undefined,
       };
@@ -1047,23 +842,32 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
       }
 
       if (requestFinancing) {
-        setCheckoutStatus({
-          tone: "success",
-          message: "Your order and financing application have been submitted successfully! Our partners are reviewing your documents, and we will update you soon.",
-        });
-        if (!isPackageCheckout) {
-          clearCustomerCart();
-          replaceCart([]);
-        }
         try {
           localStorage.removeItem("fortsolar:active_package_order");
           localStorage.removeItem("fortsolar:checkout_draft");
           localStorage.removeItem("fortsolar:applied_coupon");
         } catch (e) {}
-        deleteDraftOrder().catch((err) => console.warn(err));
-        setTimeout(() => {
-          router.push("/settings");
-        }, 4000);
+        void deleteDraftOrder().catch((err) => console.warn(err));
+
+        if (!isPackageCheckout) {
+          clearCustomerCart();
+          replaceCart([]);
+        }
+
+        setSubmittedFinancingInfo({
+          orderId,
+          packageTitle: primaryPackage?.title || selectedPackage?.title || "Solar System Package",
+          totalAmount: total,
+          downpaymentAmount: calculatorResults?.downpaymentVal ?? 0,
+          financedAmount: calculatorResults?.financedAmount ?? 0,
+          tenureMonths,
+          monthlyInstallment: calculatorResults?.monthlyInstallment ?? 0,
+          profileType,
+          employerOrBusinessName: employerOrBusinessName.trim(),
+          incomeRange,
+        });
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
 
@@ -1188,98 +992,140 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
     );
   };
 
-  const renderDocumentUpload = (
-    label: string,
-    file: File | null,
-    uploadId: string | null,
-    isUploading: boolean,
-    onFileChange: (file: File) => void,
-    accept = "image/*,application/pdf",
-    hasError = false,
-    progress: number | null = null,
-    errorMsg: string | null = null,
-  ) => {
-    return (
-      <div
-        className={cn(
-          "flex flex-col gap-2 rounded-xl border border-dashed p-4 transition-all duration-200",
-          hasError || errorMsg
-            ? "border-red-500 bg-red-50/30 shadow-sm"
-            : "border-[#B0BABF] bg-gray-50/50",
-        )}
-      >
-        <span className="text-xs font-semibold text-[#252C32]">{label}</span>
-        <div className="flex items-center gap-3">
-          <input
-            type="file"
-            accept={accept}
-            onChange={(e) => {
-              const selected = e.target.files?.[0];
-              if (selected) {
-                onFileChange(selected);
-                
-                let key = "";
-                if (label.includes("ID")) key = "uploadsGovId";
-                else if (label.includes("Utility")) key = "uploadsUtilityBill";
-                else if (label.includes("Statement")) key = "uploadsBankStatement";
-                else if (label.includes("CAC")) key = "uploadsCac";
-                if (key && validationErrors[key]) {
-                  setValidationErrors((prev) => {
-                    const next = { ...prev };
-                    delete next[key];
-                    return next;
-                  });
-                }
-              }
-            }}
-            className="hidden"
-            id={`file-upload-${label.replace(/[^a-zA-Z0-9]+/g, "-")}`}
-          />
-          <label
-            htmlFor={`file-upload-${label.replace(/[^a-zA-Z0-9]+/g, "-")}`}
-            className="cursor-pointer rounded-lg border border-[#B0BABF] bg-white px-3 py-2 text-xs font-semibold text-[#252C32] hover:bg-gray-50 transition"
-          >
-            Choose File
-          </label>
-          <span className="text-xs text-[#5A646B] truncate max-w-[150px]">
-            {file ? file.name : "No file chosen"}
-          </span>
-        </div>
-        
-        {isUploading && (
-          <div className="space-y-1 mt-1">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-[#1FA21B] font-medium animate-pulse">
-                {progress === 100 ? "Processing file..." : "Uploading..."}
-              </span>
-              <span className="text-[#1FA21B] font-bold">{progress ?? 0}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-              <div 
-                className="bg-[#1FA21B] h-1.5 rounded-full transition-all duration-200" 
-                style={{ width: `${progress ?? 0}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
-        
-        {!isUploading && uploadId && (
-          <span className="text-xs text-[#048A05] font-semibold flex items-center gap-1 mt-1">
-            ✓ Upload complete
-          </span>
-        )}
-        
-        {errorMsg && (
-          <span className="text-xs text-red-500 font-semibold mt-1">
-            ⚠ {errorMsg}
-          </span>
-        )}
-      </div>
-    );
-  };
-
   if (!session && !isRefreshing) {
     return null;
+  }
+
+  if (submittedFinancingInfo) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] py-24">
+        <DashboardHeader query={query} onQueryChange={setQuery} />
+
+        <div className="mx-auto w-full max-w-3xl px-4 py-8 space-y-6">
+          <div className="rounded-3xl border border-[#E4E9EC] bg-white p-6 sm:p-10 shadow-sm text-center space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#EBFAEB] text-[#1FA21B]">
+              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#252C32]">
+              Financing Application Received!
+            </h1>
+            <p className="text-sm text-[#5A646B] max-w-lg mx-auto leading-relaxed">
+              Your order <span className="font-bold text-[#252C32]">#{submittedFinancingInfo.orderId}</span> for{" "}
+              <span className="font-semibold text-[#252C32]">{submittedFinancingInfo.packageTitle}</span> has been submitted to our financing partner network.
+            </p>
+
+            {/* Repayment overview card */}
+            <div className="rounded-2xl border border-[#048A05]/20 bg-[#EBFAEB]/30 p-5 text-left space-y-4 my-6">
+              <div className="flex items-center justify-between border-b border-[#048A05]/15 pb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#048A05]">
+                  Proposed Payment Plan
+                </span>
+                <span className="text-xs font-semibold text-[#048A05] bg-[#1FA21B]/15 px-2.5 py-0.5 rounded-full">
+                  Underwriting in Review
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                  <span className="text-[#5A646B] block">Package Value</span>
+                  <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                    {formatNaira(submittedFinancingInfo.totalAmount)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[#5A646B] block">Down Payment Due</span>
+                  <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                    {formatNaira(submittedFinancingInfo.downpaymentAmount)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[#5A646B] block">Amount to Finance</span>
+                  <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                    {formatNaira(submittedFinancingInfo.financedAmount)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[#5A646B] block">Tenure</span>
+                  <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                    {submittedFinancingInfo.tenureMonths} Months
+                  </p>
+                </div>
+                <div className="col-span-2 sm:col-span-2">
+                  <span className="text-[#5A646B] block">Estimated Monthly Payment</span>
+                  <p className="font-black text-lg text-[#048A05] mt-0.5">
+                    {formatNaira(submittedFinancingInfo.monthlyInstallment)}
+                    <span className="text-xs font-normal text-[#5A646B]"> / month</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Next steps timeline */}
+            <div className="text-left border-t border-[#E9EEF0] pt-6 space-y-4">
+              <h3 className="font-bold text-sm text-[#252C32]">What Happens Next?</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
+                    1
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#252C32]">Partner Review & Underwriting</h4>
+                    <p className="text-xs text-[#5A646B] mt-0.5 leading-relaxed">
+                      Our accredited financing partner will review your qualification within 24 to 48 business hours.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
+                    2
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#252C32]">Final Agreement Confirmation</h4>
+                    <p className="text-xs text-[#5A646B] mt-0.5 leading-relaxed">
+                      You will receive a call and email notification to verify details and accept your approved financing terms.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
+                    3
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#252C32]">Disbursement & Priority Installation</h4>
+                    <p className="text-xs text-[#5A646B] mt-0.5 leading-relaxed">
+                      Once terms are accepted and your initial down payment is confirmed, your Fortsolar system is scheduled for priority dispatch and professional installation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-6 flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => router.push(`/settings`)}
+                className="rounded-xl bg-[#1FA21B] px-6 py-3 text-sm font-semibold text-white hover:bg-[#188015] transition shadow-sm"
+              >
+                View Order in Dashboard
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push(`/packages`)}
+                className="rounded-xl border border-[#D0D5DD] bg-white px-6 py-3 text-sm font-semibold text-[#344054] hover:bg-gray-50 transition"
+              >
+                Browse Solar Packages
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -1317,9 +1163,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
 
 
             <section id="shipping-section" className="rounded-2xl border border-[#E9EEF0] p-5">
-              <h1 className="text-2xl font-semibold text-[#252C32]">Shipping Address</h1>
-              <p className="mt-1 text-sm text-[#5A646B]">
-                Use a valid delivery address and contact details for order updates.
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
+                  1
+                </span>
+                <h1 className="text-xl font-bold text-[#252C32]">Delivery Address & Contact Details</h1>
+              </div>
+              <p className="mt-1 text-sm text-[#5A646B] pl-8">
+                Use a valid delivery address and contact details for order delivery and installation planning.
               </p>
               <div className="mt-5">
                 {renderAddressForm(
@@ -1453,256 +1304,238 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
             )}
 
             {requestFinancing && (
-              <section id="financing-section" className="rounded-2xl border border-[#E9EEF0] p-5 space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-[#252C32]">Financing Calculator & Application</h2>
-                  <p className="mt-1 text-sm text-[#5A646B]">
-                    Select your target downpayment and terms, then upload required documentation.
+              <section id="financing-section" className="rounded-2xl border border-[#E9EEF0] bg-white p-6 shadow-sm space-y-6">
+                <div className="border-b border-[#E9EEF0] pb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
+                      2
+                    </span>
+                    <h2 className="text-xl font-bold text-[#252C32]">Financing & Payment Plan</h2>
+                  </div>
+                  <p className="mt-1 text-sm text-[#5A646B] pl-8">
+                    Customize your payment plan. No BVN, NIN, or document uploads required at checkout.
                   </p>
                 </div>
 
-                {financingSettings && calculatorResults && (() => {
-                  const tenuresList = [3, 6, 9, 12, 15, 18, 21, 24];
-                  const currentTenureIndex = tenuresList.indexOf(tenureMonths) !== -1 ? tenuresList.indexOf(tenureMonths) : 2;
-                  
-                  return (
-                    <div className="rounded-xl border border-[#048A0530] bg-[#EBFAEB]/20 p-4 space-y-4">
-                      <h3 className="font-semibold text-sm text-[#048A05]">
-                        Repayment Estimator ({profileType === "individual" ? "Flat Rate APR" : "Reducing Balance"})
-                      </h3>
-                      
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                          <label className="block text-xs font-medium text-[#5A646B] mb-2">
-                            Down Payment Percentage: <span className="font-bold text-[#252C32]">{downpaymentPct}%</span>
-                          </label>
-                          <input
-                            type="range"
-                            min={financingSettings.min_downpayment_pct}
-                            max="80"
-                            step="5"
-                            value={downpaymentPct}
-                            onChange={(e) => setDownpaymentPct(Number(e.target.value))}
-                            className="w-full accent-[#1FA21B]"
-                          />
-                          <span className="text-[10px] text-[#5A646B]">Minimum: {financingSettings.min_downpayment_pct}%</span>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-[#5A646B] mb-1">
-                            Select tenure: <span className="font-bold text-[#252C32]">{tenureMonths} Months</span>
-                          </label>
-                          <div className="py-2">
-                            <input
-                              type="range"
-                              min="0"
-                              max={tenuresList.length - 1}
-                              step="1"
-                              value={currentTenureIndex}
-                              onChange={(e) => {
-                                const idx = Number(e.target.value);
-                                setTenureMonths(tenuresList[idx]);
-                              }}
-                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#1FA21B]"
-                            />
-                            <div className="flex justify-between text-[10px] text-[#5A646B] font-semibold mt-1 px-1">
-                              {tenuresList.map((t) => (
-                                <span
-                                  key={t}
-                                  className={`cursor-pointer hover:text-[#048A05] transition ${
-                                    tenureMonths === t ? "text-[#048A05] font-bold" : ""
-                                  }`}
-                                  onClick={() => setTenureMonths(t)}
-                                >
-                                  {t} mo
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-[#048A0515] pt-3 grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <span className="text-[#5A646B]">Down Payment Amount:</span>
-                          <p className="font-bold text-sm text-[#252C32]">{formatNaira(calculatorResults.downpaymentVal)}</p>
-                        </div>
-                        <div>
-                          <span className="text-[#5A646B]">Amount Financed:</span>
-                          <p className="font-bold text-sm text-[#252C32]">{formatNaira(calculatorResults.financedAmount)}</p>
-                        </div>
-                        <div>
-                          <span className="text-[#5A646B]">Monthly Installment:</span>
-                          <p className="font-bold text-lg text-[#048A05]">{formatNaira(calculatorResults.monthlyInstallment)} / mo</p>
-                        </div>
-                        <div>
-                          <span className="text-[#5A646B]">Interest APR ({profileType === "individual" ? "Flat-Rate" : "Reducing Balance"}):</span>
-                          <p className="font-bold text-sm text-[#252C32]">{calculatorResults.apr}% APR</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <div className="border-t border-[#E9EEF0] pt-5">
-                  <span className="block text-sm font-semibold text-[#252C32] mb-3">Applicant Profile Type</span>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input
-                        type="radio"
-                        name="profileType"
-                        checked={profileType === "individual"}
-                        onChange={() => setProfileType("individual")}
-                        className="accent-[#1FA21B]"
-                      />
-                      Individual
+                {/* Sub-step A: Down Payment */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold text-[#252C32]">
+                      Equity Down Payment
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input
-                        type="radio"
-                        name="profileType"
-                        checked={profileType === "salary_earner"}
-                        onChange={() => setProfileType("salary_earner")}
-                        className="accent-[#1FA21B]"
-                      />
-                      Salary Earner
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input
-                        type="radio"
-                        name="profileType"
-                        checked={profileType === "business"}
-                        onChange={() => setProfileType("business")}
-                        className="accent-[#1FA21B]"
-                      />
-                      Registered Business / Corporate
-                    </label>
+                    <span className="text-xs text-[#5A646B]">
+                      Minimum: {financingSettings?.min_downpayment_pct ?? 30}%
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                    {[30, 40, 50, 60].map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setDownpaymentPct(pct)}
+                        className={cn(
+                          "flex flex-col items-center justify-center rounded-xl border py-3 px-2 text-center transition font-semibold text-sm",
+                          downpaymentPct === pct
+                            ? "border-[#1FA21B] bg-[#EBFAEB] text-[#048A05] ring-2 ring-[#1FA21B]/30"
+                            : "border-[#E4E9EC] bg-white text-[#5A646B] hover:border-[#B0BABF] hover:bg-gray-50",
+                        )}
+                      >
+                        <span>{pct}%</span>
+                        <span className="text-[10px] font-normal text-[#5A646B]">
+                          {pct === 30 ? "Min. Equity" : `${pct}% Equity`}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {renderDocumentUpload(
-                    "Government-issued ID *",
-                    govIdFile,
-                    govIdUploadId,
-                    isUploadingGovId,
-                    (file) => handleDocumentChange(file, "govId"),
-                    "image/*,application/pdf",
-                    !!validationErrors.uploadsGovId,
-                    govIdProgress,
-                    govIdError,
-                  )}
-                  {renderDocumentUpload(
-                    "Utility Bill *",
-                    utilityBillFile,
-                    utilityBillUploadId,
-                    isUploadingUtilityBill,
-                    (file) => handleDocumentChange(file, "utilityBill"),
-                    "image/*,application/pdf",
-                    !!validationErrors.uploadsUtilityBill,
-                    utilityBillProgress,
-                    utilityBillError,
-                  )}
-                  {renderDocumentUpload(
-                    "6-Month Bank Statement *",
-                    bankStatementFile,
-                    bankStatementUploadId,
-                    isUploadingBankStatement,
-                    (file) => handleDocumentChange(file, "bankStatement"),
-                    "image/*,application/pdf",
-                    !!validationErrors.uploadsBankStatement,
-                    bankStatementProgress,
-                    bankStatementError,
-                  )}
-                  {profileType === "business" &&
-                    renderDocumentUpload(
-                      "CAC Registration Documents *",
-                      cacDocumentFile,
-                      cacDocumentUploadId,
-                      isUploadingCacDocument,
-                      (file) => handleDocumentChange(file, "cac"),
-                      "image/*,application/pdf",
-                      !!validationErrors.uploadsCac,
-                      cacDocumentProgress,
-                      cacDocumentError,
-                    )}
+                {/* Sub-step B: Tenure */}
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-[#252C32]">
+                    Repayment Tenure
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                    {(financingSettings?.tenures ?? [3, 6, 9, 12]).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setTenureMonths(t)}
+                        className={cn(
+                          "flex flex-col items-center justify-center rounded-xl border py-3 px-2 text-center transition font-semibold text-sm",
+                          tenureMonths === t
+                            ? "border-[#1FA21B] bg-[#EBFAEB] text-[#048A05] ring-2 ring-[#1FA21B]/30"
+                            : "border-[#E4E9EC] bg-white text-[#5A646B] hover:border-[#B0BABF] hover:bg-gray-50",
+                        )}
+                      >
+                        <span>{t} Months</span>
+                        <span className="text-[10px] font-normal text-[#5A646B]">
+                          {t === 12 ? "Standard term" : "Flexible term"}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
+                {/* Repayment Summary Card */}
+                {calculatorResults && (
+                  <div className="rounded-xl border border-[#048A05]/20 bg-[#EBFAEB]/30 p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-[#048A05]">
+                        Estimated Repayment Plan
+                      </span>
+                      <span className="rounded-full bg-[#1FA21B]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#048A05]">
+                        4.0% Flat / Month
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                      <div>
+                        <span className="text-[#5A646B] block">Down Payment ({downpaymentPct}%):</span>
+                        <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                          {formatNaira(calculatorResults.downpaymentVal)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[#5A646B] block">Amount Financed:</span>
+                        <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                          {formatNaira(calculatorResults.financedAmount)}
+                        </p>
+                      </div>
+                      <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 sm:border-l sm:pl-4 border-[#048A05]/15 pt-2 sm:pt-0">
+                        <span className="text-[#5A646B] block">Monthly Installment:</span>
+                        <p className="font-black text-lg text-[#048A05] mt-0.5">
+                          {formatNaira(calculatorResults.monthlyInstallment)}
+                          <span className="text-xs font-normal text-[#5A646B]">/mo</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] leading-relaxed text-[#5A646B] border-t border-[#048A05]/15 pt-3">
+                      Estimates based on standard 4% monthly flat rate. Final financing terms, tenure, and approved rates are confirmed upon partner review.
+                    </p>
+                  </div>
+                )}
+
+                {/* Step 3: Qualification Profile */}
                 <div className="border-t border-[#E9EEF0] pt-5 space-y-4">
-                  <div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
+                      3
+                    </span>
+                    <h3 className="text-base font-bold text-[#252C32]">Quick Qualification Profile</h3>
+                  </div>
+                  <p className="text-xs text-[#5A646B] pl-8 -mt-2">
+                    Help our lending partners match the best underwriting tier for your profile.
+                  </p>
+
+                  <div className="pl-8 space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[#5A646B] mb-2">Bank Verification Number (BVN) *</label>
-                      <Input
-                        type="text"
-                        maxLength={11}
-                        placeholder="Enter 11-digit BVN"
-                        value={bvn}
-                        onChange={(e) => {
-                          setBvn(e.target.value.replace(/\D/g, ""));
-                          if (validationErrors.bvn) {
-                            setValidationErrors((prev) => {
-                              const next = { ...prev };
-                              delete next.bvn;
-                              return next;
-                            });
-                          }
-                        }}
-                        className={cn(
-                          "h-11 rounded-xl w-full transition-all duration-200",
-                          validationErrors.bvn && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
-                        )}
-                      />
+                      <label className="block text-xs font-semibold text-[#5A646B] mb-2">
+                        Applicant Category *
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {[
+                          { id: "individual", label: "Individual / Self-Employed" },
+                          { id: "salary_earner", label: "Salary Earner" },
+                          { id: "business", label: "Registered Business" },
+                        ].map((cat) => (
+                          <label
+                            key={cat.id}
+                            onClick={() => setProfileType(cat.id as any)}
+                            className={cn(
+                              "flex items-center gap-2.5 rounded-xl border p-3 cursor-pointer text-xs font-semibold transition",
+                              profileType === cat.id
+                                ? "border-[#1FA21B] bg-[#EBFAEB] text-[#048A05]"
+                                : "border-[#E4E9EC] bg-white text-[#252C32] hover:bg-gray-50",
+                            )}
+                          >
+                            <input
+                              type="radio"
+                              name="profileType"
+                              checked={profileType === cat.id}
+                              onChange={() => setProfileType(cat.id as any)}
+                              className="accent-[#1FA21B]"
+                            />
+                            <span>{cat.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-[#5A646B] mb-2">National Identification Number (NIN) *</label>
-                      <Input
-                        type="text"
-                        maxLength={11}
-                        placeholder="Enter 11-digit NIN"
-                        value={nin}
-                        onChange={(e) => {
-                          setNin(e.target.value.replace(/\D/g, ""));
-                          if (validationErrors.nin) {
-                            setValidationErrors((prev) => {
-                              const next = { ...prev };
-                              delete next.nin;
-                              return next;
-                            });
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className={cn(
+                          "block text-xs font-semibold mb-1.5",
+                          validationErrors.employerOrBusinessName ? "text-red-600" : "text-[#5A646B]",
+                        )}>
+                          {profileType === "business"
+                            ? "Registered Business / Enterprise Name *"
+                            : profileType === "salary_earner"
+                            ? "Employer / Organization Name *"
+                            : "Occupation / Source of Income *"}
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder={
+                            profileType === "business"
+                              ? "e.g. Fortsolar Energy Ltd"
+                              : profileType === "salary_earner"
+                              ? "e.g. Chevron Nigeria / Central Bank"
+                              : "e.g. Architect / Consultant / Trader"
                           }
-                        }}
-                        className={cn(
-                          "h-11 rounded-xl w-full transition-all duration-200",
-                          validationErrors.nin && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
-                        )}
-                      />
-                    </div>
-                  </div>
-                  </div>
+                          value={employerOrBusinessName}
+                          onChange={(e) => {
+                            setEmployerOrBusinessName(e.target.value);
+                            if (validationErrors.employerOrBusinessName) {
+                              setValidationErrors((prev) => {
+                                const next = { ...prev };
+                                delete next.employerOrBusinessName;
+                                return next;
+                              });
+                            }
+                          }}
+                          className={cn(
+                            "h-11 rounded-xl w-full text-sm transition-all duration-200",
+                            validationErrors.employerOrBusinessName && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
+                          )}
+                        />
+                      </div>
 
-                  <div
-                    className={cn(
-                      "p-3 rounded-xl transition-all duration-200",
-                      validationErrors.bvnConsent && "bg-red-50 border border-red-200 shadow-sm",
-                    )}
-                  >
-                    <GradientCheckbox
-                      checked={bvnConsent}
-                      onChange={(event) => {
-                        setBvnConsent(event.target.checked);
-                        if (validationErrors.bvnConsent) {
-                          setValidationErrors((prev) => {
-                            const next = { ...prev };
-                            delete next.bvnConsent;
-                            return next;
-                          });
-                        }
-                      }}
-                      label="I hereby consent to Fortsolar performing legal verification of my BVN for credit scoring purposes."
-                      labelClassName="text-xs text-[#5A646B] leading-relaxed"
-                      indicatorClassName={validationErrors.bvnConsent ? "border-red-500 bg-red-50" : ""}
-                    />
+                      <div>
+                        <label className="block text-xs font-semibold text-[#5A646B] mb-1.5">
+                          {profileType === "business" ? "Monthly Turnover / Revenue *" : "Monthly Net Income *"}
+                        </label>
+                        <ComboboxField
+                          value={incomeRange}
+                          onValueChange={(val) => {
+                            setIncomeRange(val);
+                            if (validationErrors.incomeRange) {
+                              setValidationErrors((prev) => {
+                                const next = { ...prev };
+                                delete next.incomeRange;
+                                return next;
+                              });
+                            }
+                          }}
+                          placeholder="Select monthly income / turnover"
+                          options={[
+                            { value: "Under ₦500,000 / month", label: "Under ₦500,000 / month" },
+                            { value: "₦500,000 – ₦1,000,000 / month", label: "₦500,000 – ₦1,000,000 / month" },
+                            { value: "₦1,000,000 – ₦2,500,000 / month", label: "₦1,000,000 – ₦2,500,000 / month" },
+                            { value: "₦2,500,000 – ₦5,000,000 / month", label: "₦2,500,000 – ₦5,000,000 / month" },
+                            { value: "Above ₦5,000,000 / month", label: "Above ₦5,000,000 / month" },
+                          ]}
+                          className="w-full h-11 px-3 rounded-xl border text-sm bg-white border-[#E4E9EC] outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-blue-800 flex items-start gap-2.5">
+                      <span className="text-base leading-none">🛡️</span>
+                      <p className="leading-relaxed">
+                        <strong>Frictionless Application:</strong> No documents or ID uploads are needed today. After your order is placed, an underwriting specialist from our lending partner network will contact you to verify your details and issue your formal repayment agreement.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -1746,14 +1579,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         });
                       }
                     }}
-                    label="I agree to the Terms of Service, Refund Policy, and consent to the collection and secure handling of my personal and financial data."
+                    label="I agree to the Terms of Service, Privacy Policy, and Fortsolar standard installation guidelines."
                     labelClassName="text-xs text-[#5A646B]"
                     indicatorClassName={validationErrors.legalConsent ? "border-red-500 bg-red-50" : ""}
                   />
                 </div>
                 
                 <p className="text-[10px] text-[#5A646B] leading-normal font-normal">
-                  <strong>Refund & Verification Policy:</strong> By completing this transaction, you agree to Fortsolar's standardized return and replacement guidelines. Verification documents and financial application materials will be processed and stored securely in accordance with standard data privacy guidelines and transmitted via encrypted pathways only.
+                  <strong>Terms & Privacy:</strong> By completing this order, you agree to Fortsolar's terms and warranty coverage. Customer details are securely handled in strict accordance with data privacy regulations.
                 </p>
               </div>
             </section>
