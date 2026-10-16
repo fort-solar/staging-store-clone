@@ -1010,11 +1010,10 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#252C32]">
-              Financing Application Received!
+              Financing Request Received!
             </h1>
             <p className="text-sm text-[#5A646B] max-w-lg mx-auto leading-relaxed">
-              Your order <span className="font-bold text-[#252C32]">#{submittedFinancingInfo.orderId}</span> for{" "}
-              <span className="font-semibold text-[#252C32]">{submittedFinancingInfo.packageTitle}</span> has been submitted to our financing partner network.
+              Your financing request for <span className="font-semibold text-[#252C32]">{submittedFinancingInfo.packageTitle}</span> (Ref <span className="font-bold text-[#252C32]">#{submittedFinancingInfo.orderId}</span>) has been submitted for partner review.
             </p>
 
             {/* Repayment overview card */}
@@ -1024,7 +1023,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                   Proposed Payment Plan
                 </span>
                 <span className="text-xs font-semibold text-[#048A05] bg-[#1FA21B]/15 px-2.5 py-0.5 rounded-full">
-                  Underwriting in Review
+                  Status: Financing in Progress
                 </span>
               </div>
 
@@ -1072,9 +1071,9 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                     1
                   </span>
                   <div>
-                    <h4 className="text-xs font-bold text-[#252C32]">Partner Review & Underwriting</h4>
+                    <h4 className="text-xs font-bold text-[#252C32]">Review & Financing Partner Assignment</h4>
                     <p className="text-xs text-[#5A646B] mt-0.5 leading-relaxed">
-                      Our accredited financing partner will review your qualification within 24 to 48 business hours.
+                      Our team reviews your system needs and matches your request to the most suitable accredited financing partner.
                     </p>
                   </div>
                 </div>
@@ -1084,9 +1083,9 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                     2
                   </span>
                   <div>
-                    <h4 className="text-xs font-bold text-[#252C32]">Final Agreement Confirmation</h4>
+                    <h4 className="text-xs font-bold text-[#252C32]">Partner Intake Form & Status Update</h4>
                     <p className="text-xs text-[#5A646B] mt-0.5 leading-relaxed">
-                      You will receive a call and email notification to verify details and accept your approved financing terms.
+                      Your order updates to <strong>Financing in Progress</strong>. You will receive an intake form to complete and return to the financing partner (with Fortsolar in copy) for formal underwriting.
                     </p>
                   </div>
                 </div>
@@ -1096,9 +1095,9 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                     3
                   </span>
                   <div>
-                    <h4 className="text-xs font-bold text-[#252C32]">Disbursement & Priority Installation</h4>
+                    <h4 className="text-xs font-bold text-[#252C32]">Agreement Approval & Installation</h4>
                     <p className="text-xs text-[#5A646B] mt-0.5 leading-relaxed">
-                      Once terms are accepted and your initial down payment is confirmed, your Fortsolar system is scheduled for priority dispatch and professional installation.
+                      Once terms are approved and your initial down payment is confirmed, your Fortsolar system package is dispatched and certified professional installation is scheduled.
                     </p>
                   </div>
                 </div>
@@ -1112,7 +1111,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                 onClick={() => router.push(`/settings`)}
                 className="rounded-xl bg-[#1FA21B] px-6 py-3 text-sm font-semibold text-white hover:bg-[#188015] transition shadow-sm"
               >
-                View Order in Dashboard
+                Track Request in Dashboard
               </button>
               <button
                 type="button"
@@ -1138,7 +1137,36 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
       <DashboardHeader query={query} onQueryChange={setQuery} />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <div className="text-sm text-[#5A646B]">Store / Checkout</div>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-[#5A646B] flex-wrap">
+          <Link href="/" className="hover:text-[#048A05] transition font-medium">
+            Store
+          </Link>
+          <span className="text-[#B0BABF]">/</span>
+          {isPackageCheckout || primaryPackage ? (
+            <>
+              <Link href="/packages" className="hover:text-[#048A05] transition font-medium">
+                Packages
+              </Link>
+              <span className="text-[#B0BABF]">/</span>
+              <Link
+                href={`/packages/${targetPackageId || primaryPackage?.sourceId}`}
+                className="hover:text-[#048A05] transition font-medium truncate max-w-[220px]"
+                title={primaryPackage?.title || selectedPackage?.title}
+              >
+                {primaryPackage?.title || selectedPackage?.title || "Package"}
+              </Link>
+              <span className="text-[#B0BABF]">/</span>
+            </>
+          ) : (
+            <>
+              <Link href="/cart" className="hover:text-[#048A05] transition font-medium">
+                Cart
+              </Link>
+              <span className="text-[#B0BABF]">/</span>
+            </>
+          )}
+          <span className="font-semibold text-[#252C32]">Checkout</span>
+        </nav>
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-6">
@@ -1530,11 +1558,16 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-blue-800 flex items-start gap-2.5">
-                      <span className="text-base leading-none">🛡️</span>
-                      <p className="leading-relaxed">
-                        <strong>Frictionless Application:</strong> No documents or ID uploads are needed today. After your order is placed, an underwriting specialist from our lending partner network will contact you to verify your details and issue your formal repayment agreement.
-                      </p>
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5 text-xs text-[#252C32] flex items-start gap-2.5">
+                      <span className="text-base leading-none">📋</span>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-[#048A05]">
+                          How Your Financing Request is Processed
+                        </p>
+                        <p className="leading-relaxed text-[#5A646B]">
+                          When you submit this request, Fortsolar reviews your energy requirements and qualification profile to match you with an accredited financing partner. Your order status will update to <strong className="text-[#252C32]">Financing in Progress</strong>, and you will receive an intake form to complete and send to the financing partner (with Fortsolar in copy) to finalize your agreement.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1724,10 +1757,10 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                 className="mt-5 w-full rounded-xl bg-[#1FA21B] py-3 text-center font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting
-                  ? (requestFinancing ? "Submitting application..." : "Starting payment...")
+                  ? (requestFinancing ? "Submitting financing request..." : "Starting payment...")
                   : isVerifyingPayment
                     ? "Verifying payment..."
-                    : (requestFinancing ? "Apply for Financing" : "Proceed to Payment")}
+                    : (requestFinancing ? "Submit Financing Request" : "Proceed to Payment")}
               </button>
 
               {checkoutStatus && checkoutStatus.tone === "error" && (

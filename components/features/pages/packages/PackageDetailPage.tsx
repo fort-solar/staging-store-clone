@@ -287,7 +287,6 @@ const PackageDetailPage = () => {
             </div>
 
             <h1 className="mt-2 text-2xl font-semibold text-[#252C32]">{data.title}</h1>
-            <p className="mt-2 text-sm text-[#5A646B]">{data.overview}</p>
 
             {/* Price Display */}
             <div className="mt-4 flex items-center gap-3">
