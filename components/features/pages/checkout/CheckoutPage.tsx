@@ -1379,7 +1379,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                     <h2 className="text-xl font-bold text-[#252C32]">Financing & Payment Plan</h2>
                   </div>
                   <p className="mt-1 text-sm text-[#5A646B] pl-8">
-                    Customize your payment plan. No BVN, NIN, or document uploads required at checkout.
+                    Select your preferred down payment and tenure to estimate your monthly plan.
                   </p>
                 </div>
 

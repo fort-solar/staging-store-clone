@@ -1419,10 +1419,10 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             ) : order.status === "pending" ? (
                               <Button
                                 onClick={() => handlePayOrder(order.id)}
-                                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg"
+                                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg cursor-pointer"
                                 disabled={isPayingOrderId === order.id}
                               >
-                                {isPayingOrderId === order.id ? "Processing Payment..." : "Pay Order Deposit"}
+                                {isPayingOrderId === order.id ? "Processing Payment..." : `Complete Payment (${formatCurrency(order.totalAmount, order.currency || "NGN")})`}
                               </Button>
                             ) : null}
                           </div>

@@ -68,6 +68,8 @@ export const publicEnv = {
 } as const;
 
 export const FORTSOLAR_GOOGLE_REVIEW_URL = publicEnv.googleReviewUrl;
+export const FORTSOLAR_WHATSAPP_NUMBER =
+  readNonEmptyEnv(process.env.NEXT_PUBLIC_FORTSOLAR_WHATSAPP_NUMBER, "2347066524793") ?? "2347066524793";
 
 export const serverEnv = {
   fortsolarApiBaseUrl: serverFortsolarApiBaseUrl,

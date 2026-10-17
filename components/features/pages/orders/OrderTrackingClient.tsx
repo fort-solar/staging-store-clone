@@ -27,9 +27,14 @@ import {
   Maximize2,
   X,
 } from "lucide-react";
+import Script from "next/script";
 import { GoogleIcon } from "@/components/features/icons/GoogleIcon";
 import { FORTSOLAR_GOOGLE_REVIEW_URL } from "@/lib/env";
-import { getCustomerOrderDetail } from "@/lib/customer";
+import {
+  getCustomerOrderDetail,
+  initializeCustomerOrderPayment,
+  verifyCustomerPayment,
+} from "@/lib/customer";
 import { cn } from "@/lib/utils";
 
 function humanizeStatus(value: string | null | undefined) {
@@ -56,6 +61,56 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentActionMessage, setPaymentActionMessage] = useState<string | null>(null);
+
+  async function handleInitiatePayment() {
+    if (!orderId || isProcessingPayment) return;
+    setIsProcessingPayment(true);
+    setPaymentActionMessage("Connecting to secure payment gateway...");
+    try {
+      const res = await initializeCustomerOrderPayment(orderId);
+      const { accessCode, amountKobo, authorizationUrl, publicKey, reference } = res.data;
+
+      if ((window as any).PaystackPop?.setup) {
+        const handler = (window as any).PaystackPop.setup({
+          key: publicKey,
+          email: order?.billing?.email || order?.customerEmail || order?.shipping?.address?.email || "",
+          amount: amountKobo,
+          ref: reference,
+          access_code: accessCode,
+          currency: "NGN",
+          callback: async (response: { reference: string }) => {
+            setPaymentActionMessage("Confirming payment...");
+            try {
+              await verifyCustomerPayment({
+                reference: response.reference,
+              });
+              setPaymentActionMessage("Payment confirmed successfully!");
+              const refreshed: any = await getCustomerOrderDetail(orderId);
+              if (refreshed?.data) {
+                setOrder(refreshed.data);
+              }
+            } catch (err) {
+              setPaymentActionMessage(err instanceof Error ? err.message : "Payment confirmation failed.");
+            } finally {
+              setIsProcessingPayment(false);
+            }
+          },
+          onClose: () => {
+            setPaymentActionMessage(null);
+            setIsProcessingPayment(false);
+          },
+        });
+        handler.openIframe();
+      } else if (authorizationUrl) {
+        window.location.assign(authorizationUrl);
+      }
+    } catch (err) {
+      setPaymentActionMessage(err instanceof Error ? err.message : "Unable to initialize payment.");
+      setIsProcessingPayment(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -186,7 +241,12 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
   }
 
   const isFinancing = Boolean(order.isFinancing || order.type === "FINANCING");
-  const isPackage = Boolean(order.isPackageOrder || order.type === "QUOTE" || isFinancing);
+  const isPackage = Boolean(order.isPackageOrder || order.type === "PACKAGE" || order.type === "QUOTE" || isFinancing);
+  const isPaid = Boolean(
+    order.status === "processing" ||
+    order.status === "completed" ||
+    (order.payment && (order.payment.status === "completed" || order.payment.status === "success"))
+  );
   const stages = order.stepperStages || [
     {
       key: "processing",
@@ -587,7 +647,7 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
                       ? order.status === "completed"
                         ? "Total Financed"
                         : "Package Value (Financing)"
-                      : order.status === "completed"
+                      : isPaid
                       ? "Total Paid"
                       : "Total Amount Due"}
                   </span>
@@ -596,28 +656,162 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
               </div>
 
               {isFinancing ? (
-                order.status === "completed" ? (
-                  <div className="rounded-2xl bg-emerald-50/80 border border-emerald-200 p-3.5 text-xs text-emerald-900">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                      <span className="font-bold">Financing Approved & Completed</span>
+                (() => {
+                  const finDetails = order.financingDetails;
+                  const finStatus = finDetails?.status || order.financingStatus;
+                  const isFinanced = finStatus === "financed" || order.status === "completed";
+                  const isFinancingApproved = finStatus === "approved";
+                  const isFinancingDeclined = finStatus === "declined";
+                  const isDownpaymentPaid = Boolean(order.payment && order.payment.status === "success");
+                  const collectsByFortsolar = finDetails?.downpaymentCollectedBy !== "partner";
+
+                  if (isFinanced) {
+                    return (
+                      <div className="rounded-2xl bg-emerald-50/80 border border-emerald-200 p-4 text-xs text-emerald-950 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <span className="font-bold text-sm">Financing Confirmed & Active</span>
+                        </div>
+                        <p className="text-[11px] text-emerald-800 leading-relaxed">
+                          Disbursement received from the lending partner. Equipment fulfillment and site installation are in progress.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  if (isFinancingApproved) {
+                    return (
+                      <div className="rounded-2xl bg-gradient-to-br from-emerald-50/90 via-white to-emerald-50/40 border border-emerald-300 p-4 text-xs space-y-3.5 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-emerald-100 pb-2.5">
+                          <div className="flex items-center gap-2 text-emerald-900">
+                            <CheckCircle2 className="h-4 w-4 text-[#048A05] shrink-0" />
+                            <span className="font-bold text-sm">Approved Financing Terms</span>
+                          </div>
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
+                            Approved
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="rounded-xl border border-emerald-100 bg-white p-2.5">
+                            <span className="text-[10px] text-gray-400 block font-medium">Financed Amount</span>
+                            <span className="font-bold text-gray-800 mt-0.5 block">
+                              {formatCurrency(finDetails?.approvedAmount || order.totals?.total)}
+                            </span>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-white p-2.5">
+                            <span className="text-[10px] text-gray-400 block font-medium">Tenure</span>
+                            <span className="font-bold text-gray-800 mt-0.5 block">
+                              {finDetails?.approvedTenureMonths || 12} Months
+                            </span>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-white p-2.5">
+                            <span className="text-[10px] text-gray-400 block font-medium">Monthly Installment</span>
+                            <span className="font-bold text-[#048A05] mt-0.5 block">
+                              {formatCurrency(finDetails?.approvedMonthlyInstallment)}
+                              <span className="text-[10px] font-normal text-gray-500">/mo</span>
+                            </span>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-white p-2.5">
+                            <span className="text-[10px] text-gray-400 block font-medium">Required Down Payment</span>
+                            <span className="font-bold text-gray-900 mt-0.5 block">
+                              {formatCurrency(finDetails?.approvedDownpaymentAmount)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {finDetails?.approvedRateNote && (
+                          <p className="text-[11px] text-gray-500 italic">
+                            {finDetails.approvedRateNote}
+                          </p>
+                        )}
+
+                        {collectsByFortsolar ? (
+                          !isDownpaymentPaid ? (
+                            <div className="space-y-2 pt-1 border-t border-emerald-100">
+                              <button
+                                type="button"
+                                onClick={handleInitiatePayment}
+                                disabled={isProcessingPayment}
+                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#048A05] hover:bg-[#036B04] text-white py-3 px-4 text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
+                              >
+                                {isProcessingPayment ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <ShieldCheck className="h-4 w-4" />
+                                )}
+                                <span>
+                                  Pay Down Payment ({formatCurrency(finDetails?.approvedDownpaymentAmount)})
+                                </span>
+                              </button>
+                              <p className="text-[10px] text-center text-gray-500">
+                                Secure online payment via Paystack to confirm and schedule installation.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="rounded-xl bg-emerald-100/70 p-2.5 text-center text-xs font-semibold text-emerald-900">
+                              ✓ Equity Down Payment Confirmed
+                            </div>
+                          )
+                        ) : (
+                          <div className="rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-900 leading-relaxed">
+                            Your down payment is collected directly by your financing partner according to their instructions.
+                          </div>
+                        )}
+
+                        {paymentActionMessage && (
+                          <p className="text-xs text-center text-emerald-700 font-medium">
+                            {paymentActionMessage}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (isFinancingDeclined) {
+                    return (
+                      <div className="rounded-2xl bg-rose-50/90 border border-rose-200 p-4 text-xs text-rose-950 space-y-3">
+                        <div className="flex items-center gap-2 text-rose-900">
+                          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                          <span className="font-bold text-sm">Financing Request Declined</span>
+                        </div>
+                        <p className="text-[11px] text-rose-800 leading-relaxed">
+                          {finDetails?.declineReason || "The financing partner was unable to approve this request based on their current underwriting guidelines."}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleInitiatePayment}
+                          disabled={isProcessingPayment}
+                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gray-900 hover:bg-black text-white py-2.5 px-4 text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
+                        >
+                          {isProcessingPayment ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <span>Pay Outright Instead ({formatCurrency(order.totals?.total)})</span>
+                          )}
+                        </button>
+                        {paymentActionMessage && (
+                          <p className="text-xs text-center text-rose-700 font-medium">
+                            {paymentActionMessage}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3.5 text-xs text-amber-950">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span className="font-bold">Financing Application Under Review</span>
+                      </div>
+                      <p className="mt-1 text-[11px] text-amber-900 leading-relaxed">
+                        Our underwriting team and lending partners are reviewing your request. You will receive an update once terms are approved.
+                      </p>
                     </div>
-                    <p className="mt-1 text-[11px] text-emerald-800">
-                      Payment confirmed by partner financing company. Installation scheduled.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3.5 text-xs text-amber-950">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-amber-600 shrink-0" />
-                      <span className="font-bold">Financing Application Under Review</span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-amber-900 leading-relaxed">
-                      No direct online payment required here. Agreement terms, down payment, and underwriting are finalized directly via phone and email consultation.
-                    </p>
-                  </div>
-                )
-              ) : order.status === "completed" || (order.payment && order.payment.status === "success") ? (
+                  );
+                })()
+              ) : isPaid ? (
                 <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100 p-3.5 text-xs text-emerald-900">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -625,11 +819,30 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 text-xs text-blue-900">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-600 shrink-0" />
-                    <span className="font-semibold">Awaiting Payment Confirmation</span>
+                <div className="space-y-3">
+                  <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 text-xs text-blue-900">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-blue-600 shrink-0" />
+                      <span className="font-semibold">Awaiting Payment Confirmation</span>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleInitiatePayment}
+                    disabled={isProcessingPayment}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#048A05] hover:bg-[#036B04] text-white py-2.5 px-4 text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {isProcessingPayment ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span>Complete Payment ({formatCurrency(order.totals?.total, order.currency)})</span>
+                    )}
+                  </button>
+                  {paymentActionMessage && (
+                    <p className="text-xs text-center text-rose-700 font-medium">
+                      {paymentActionMessage}
+                    </p>
+                  )}
                 </div>
               )}
             </section>
@@ -694,6 +907,9 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
           </div>
         </div>
       )}
+
+      {/* Paystack Inline Gateway */}
+      <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
     </div>
   );
 }

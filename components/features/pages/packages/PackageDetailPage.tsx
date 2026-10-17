@@ -24,6 +24,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { getDraftOrder, saveDraftOrder } from "@/lib/customer";
 import { GoogleReviewsBadge } from "@/components/features/reviews/GoogleReviewsBadge";
 import { GoogleReviewsCard } from "@/components/features/reviews/GoogleReviewsCard";
+import { FORTSOLAR_WHATSAPP_NUMBER } from "@/lib/env";
 
 const PackageDetailPage = () => {
   const { session } = useAuth();
@@ -409,7 +410,7 @@ const PackageDetailPage = () => {
 
               <div>
                 <a
-                  href={`https://wa.me/2347066524793?text=${encodeURIComponent(
+                  href={`https://wa.me/${FORTSOLAR_WHATSAPP_NUMBER}?text=${encodeURIComponent(
                     `Hi Fortsolar, I'm interested in the "${data.title}" package. Can I talk to an engineer about it?`
                   )}`}
                   target="_blank"

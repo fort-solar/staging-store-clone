@@ -22,6 +22,7 @@ import { clampCartQuantity, getProductCartMaxQuantity } from "@/lib/cart";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { GoogleReviewsBadge } from "@/components/features/reviews/GoogleReviewsBadge";
 import { GoogleReviewsCard } from "@/components/features/reviews/GoogleReviewsCard";
+import { FORTSOLAR_WHATSAPP_NUMBER } from "@/lib/env";
 import type { CatalogId } from "@/types/common.types";
 
 type QuoteProduct = {
@@ -366,7 +367,7 @@ const ProductDetailPage = () => {
 
             <div className="mt-3">
               <a
-                href={`https://wa.me/2347066524793?text=${encodeURIComponent(
+                href={`https://wa.me/${FORTSOLAR_WHATSAPP_NUMBER}?text=${encodeURIComponent(
                   `Hi Fortsolar, I'm interested in the product "${product.title}". Can I talk to an engineer about it?`
                 )}`}
                 target="_blank"
