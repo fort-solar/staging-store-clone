@@ -183,8 +183,8 @@ table th, table td { max-width: 18rem; overflow: hidden; text-overflow: ellipsis
 .dark body { color-scheme: dark; }
 .dark [class*="bg-white"], .dark [class*="bg-[#FAFAFA]"], .dark [class*="bg-[#F9FBFA]"] { background-color: var(--card) !important; }
 .dark [class*="bg-[#F8FAFC]"], .dark [class*="bg-[#F7F8FA]"], .dark [class*="bg-[#F2F4F7]"] { background-color: var(--muted) !important; }
-.dark [class*="text-[#202020]"], .dark [class*="text-[#1F2937]"], .dark [class*="text-[#111827]"], .dark [class*="text-[#0F172A]"], .dark [class*="text-[#252C32]"] { color: var(--foreground) !important; }
-.dark [class*="text-[#3B3B3B]"], .dark [class*="text-[#4B5563]"], .dark [class*="text-[#5B6472]"], .dark [class*="text-[#6B7280]"] { color: var(--muted-foreground) !important; }
+.dark [class*="text-[#202020]"], .dark [class*="text-[#1F2937]"], .dark [class*="text-[#111827]"], .dark [class*="text-[#0F172A]"], .dark [class*="text-[#252C32]"], .dark [class*="text-gray-900"], .dark [class*="text-gray-800"], .dark [class*="text-black"], .dark [class*="text-slate-900"], .dark [class*="text-slate-800"], .dark [class*="text-zinc-900"], .dark [class*="text-neutral-900"] { color: var(--foreground) !important; }
+.dark [class*="text-[#3B3B3B]"], .dark [class*="text-[#4B5563]"], .dark [class*="text-[#5B6472]"], .dark [class*="text-[#6B7280]"], .dark [class*="text-gray-700"], .dark [class*="text-gray-600"], .dark [class*="text-slate-700"], .dark [class*="text-slate-600"] { color: var(--muted-foreground) !important; }
 .dark [class*="border-[#"] { border-color: var(--border) !important; }
 html, body {
   overflow-x: hidden;
