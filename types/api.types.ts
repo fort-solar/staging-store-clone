@@ -50,6 +50,7 @@ export type AuthUser = {
   status: string;
   avatar_url: string | null;
   emailVerified: boolean;
+  theme_preference?: "light" | "dark" | "system" | null;
   createdAt: string;
 };
 
@@ -90,7 +91,7 @@ export type AuthProfileUpdateApiResponse = ApiSuccessResponse & {
 export type SessionSnapshot = {
   portal: PortalRole;
   session: AuthSession;
-  user: Pick<AuthUser, "id" | "email" | "salutation" | "name" | "fullName" | "role" | "adminRole" | "avatar_url" | "status" | "phone" | "address" | "emailVerified">;
+  user: Pick<AuthUser, "id" | "email" | "salutation" | "name" | "fullName" | "role" | "adminRole" | "avatar_url" | "status" | "phone" | "address" | "emailVerified" | "theme_preference">;
   expiresAt: string | null;
 };
 
@@ -289,7 +290,7 @@ export type NotificationSocketConfigApiResponse = ApiSuccessResponse & {
 
 export type ClientAuthState = {
   session: Pick<AuthSession, "userId" | "email" | "fullName" | "role" | "signedInAt">;
-  user: Pick<AuthUser, "id" | "email" | "salutation" | "fullName" | "name" | "phone" | "address" | "role" | "status" | "emailVerified">;
+  user: Pick<AuthUser, "id" | "email" | "salutation" | "fullName" | "name" | "phone" | "address" | "role" | "status" | "emailVerified" | "theme_preference">;
   portal: PortalRole;
   expiresAt: string | null;
 };

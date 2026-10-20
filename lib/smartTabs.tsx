@@ -143,23 +143,23 @@ export function SmartTabs({
     <div className="w-full">
       <div
         ref={containerRef}
-        className="relative flex flex-wrap  items-center lg:gap-10 rounded-sm border border-[#F0F0F0] bg-[#FAFAFA] p-1 overflow-hidden"
+        className="relative flex flex-wrap items-center gap-1 sm:gap-2 rounded-2xl border border-slate-200/90 bg-slate-100/80 dark:border-slate-800 dark:bg-slate-900/90 p-1.5 overflow-hidden backdrop-blur-sm"
       >
         {visibleTabs.map((tab) => (
           <Button
-        asChild
+            asChild
             key={tab.key}
             onClick={() => onChange(tab.key)}
-            className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition  ${
+            className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 border-0 ${
               activeTab === tab.key
-                ? "bg-white text-[#202020] shadow-sm hover:bg-white hover:opacity-90"
-                : "text-[#7C7C7C] hover:text-[#202020] bg-transparent hover:bg-white"
+                ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white dark:border dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-transparent hover:bg-white/60 dark:hover:bg-slate-800/50"
             }`}
           >
             <Link href={isDesktop ? tab.link : tab.mobileLink ?? tab.link} className="flex items-center gap-1.5">
               <span>{tab.label}</span>
               {tab.unreadCount && tab.unreadCount > 0 ? (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white leading-none">
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E11D48] px-1.5 text-[10px] font-bold text-white leading-none">
                   {tab.unreadCount}
                 </span>
               ) : null}
@@ -172,17 +172,17 @@ export function SmartTabs({
             <button
               ref={moreBtnRef}
               onClick={() => setIsMoreOpen((v) => !v)}
-              className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition ${
+              className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all ${
                 overflowTabs.some((t) => t.key === activeTab)
-                  ? "bg-white text-[#202020] shadow-sm"
-                  : "text-[#7C7C7C] hover:text-[#202020]"
+                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               More <span className="ml-1 text-xs">▾</span>
             </button>
 
             {isMoreOpen && (
-              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-md border border-[#EAEAEA] bg-white shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl z-50">
                 {overflowTabs.map((tab) => (
                   <button
                     key={tab.key}
@@ -190,13 +190,15 @@ export function SmartTabs({
                       onChange(tab.key);
                       setIsMoreOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-[#F6F6F6] ${
-                      activeTab === tab.key ? "font-semibold text-[#202020]" : "text-[#3B3B3B]"
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                      activeTab === tab.key
+                        ? "font-semibold text-slate-900 dark:text-white bg-slate-100/80 dark:bg-slate-800"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/70"
                     } flex items-center justify-between`}
                   >
                     <span>{tab.label}</span>
                     {tab.unreadCount && tab.unreadCount > 0 ? (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white leading-none">
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E11D48] px-1.5 text-[10px] font-bold text-white leading-none">
                         {tab.unreadCount}
                       </span>
                     ) : null}

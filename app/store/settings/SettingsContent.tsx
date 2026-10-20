@@ -185,9 +185,9 @@ function ProfileInfoRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-[#F0F0F0] py-3 text-sm">
-      <span className="text-[#7C7C7C]">{label}</span>
-      <span className="font-medium text-[#202020]">{value}</span>
+    <div className="flex items-center justify-between gap-3 border-b border-[#F0F0F0] dark:border-slate-800 py-3 text-sm">
+      <span className="shrink-0 text-[#7C7C7C] dark:text-slate-400">{label}</span>
+      <span className="font-medium text-[#202020] dark:text-slate-200 text-right min-w-0 break-all">{value}</span>
     </div>
   );
 }
@@ -200,16 +200,16 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-[#E7E7E7] bg-[#FAFAFA] p-4">
-      <p className="text-xs text-[#5B5B5B]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-[#202020]">{value}</p>
+    <div className="rounded-2xl border border-[#E7E7E7] dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#161f36] p-4">
+      <p className="text-xs text-[#5B5B5B] dark:text-slate-400">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-[#202020] dark:text-white">{value}</p>
     </div>
   );
 }
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-2xl border border-[#E4E9EC] bg-[#FAFAFA] px-6 py-10 text-center text-sm text-[#5A646B]">
+    <div className="rounded-2xl border border-[#E4E9EC] dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#161f36] px-6 py-10 text-center text-sm text-[#5A646B] dark:text-slate-400">
       {message}
     </div>
   );
@@ -269,6 +269,21 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     phone: "",
     address: "",
   });
+  const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">(() => {
+    if (typeof window === "undefined") return "system";
+    return (localStorage.getItem("fortsolar:theme_preference") as "light" | "dark" | "system") || "system";
+  });
+
+  const handleThemeChange = (next: "light" | "dark" | "system") => {
+    setThemeMode(next);
+    localStorage.setItem("fortsolar:theme_preference", next);
+    const isDark = next === "dark" || (next === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    localStorage.setItem("fortsolar:appearance", isDark ? "dark" : "light");
+    document.documentElement.classList.toggle("dark", isDark);
+    window.dispatchEvent(new Event("fortsolar:theme-change"));
+    void updateCurrentUserProfile({ theme_preference: next }).catch(() => {});
+  };
+
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
@@ -341,7 +356,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       phone: currentUser?.phone ?? "",
       address: currentUser?.address ?? "",
     });
-  }, [currentUser?.address, currentUser?.email, currentUser?.fullName, currentUser?.phone, currentUser?.salutation]);
+
+    if (currentUser?.theme_preference) {
+      setThemeMode(currentUser.theme_preference);
+      localStorage.setItem("fortsolar:theme_preference", currentUser.theme_preference);
+    }
+  }, [currentUser?.address, currentUser?.email, currentUser?.fullName, currentUser?.phone, currentUser?.salutation, currentUser?.theme_preference]);
 
   useEffect(() => {
     setLocalQuoteRequests(readStoredQuoteRequests());
@@ -538,6 +558,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
         name: fullName,
         phone: profileForm.phone,
         address: profileForm.address,
+        theme_preference: themeMode,
       });
       setProfileStatus({
         tone: "success",
@@ -933,7 +954,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   }
 
   return (
-    <div className="min-h-screen bg-white py-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0f1d] py-20 transition-colors">
       <Script
         src="https://js.paystack.co/v1/inline.js"
         strategy="afterInteractive"
@@ -941,16 +962,16 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       <DashboardHeader query={query} onQueryChange={setQuery} />
       <div className="mx-auto mt-20 w-full max-w-6xl px-6 py-6 lg:mt-0">
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-          <aside className="rounded-t-3xl border border-[#ECECEC] bg-white p-6 lg:py-10">
+          <aside className="rounded-t-3xl border border-[#ECECEC] dark:border-slate-800 bg-white dark:bg-[#111827] p-6 lg:py-10 shadow-xs">
             <div className="flex flex-col items-center gap-4 text-center">
-              <div className="flex h-28 w-28 items-center justify-center rounded-[28px] border border-[#E3E3E3] bg-[#F3F4F6] text-4xl font-semibold text-[#5B5B5B]">
+              <div className="flex h-28 w-28 items-center justify-center rounded-[28px] border border-[#E3E3E3] dark:border-slate-700 bg-[#F3F4F6] dark:bg-slate-800 text-4xl font-semibold text-[#5B5B5B] dark:text-slate-300">
                 {currentUser?.fullName?.charAt(0)?.toUpperCase() ?? "C"}
               </div>
               <div>
-                <p className="text-2xl font-semibold text-[#202020]">
+                <p className="text-2xl font-semibold text-[#202020] dark:text-white">
                   {[currentUser?.salutation, currentUser?.fullName].filter(Boolean).join(" ") || "Customer User"}
                 </p>
-                <span className="mt-2 inline-flex items-center rounded-full bg-[#EAF7E8] px-4 py-1 text-sm font-medium text-[#1E8E1E]">
+                <span className="mt-2 inline-flex items-center rounded-full bg-[#EAF7E8] dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-4 py-1 text-sm font-medium text-[#1E8E1E] dark:text-emerald-400">
                   Customer
                 </span>
               </div>
@@ -980,12 +1001,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
             </div>
 
             {isLoadingSummary ? (
-              <p className="mt-4 text-sm text-[#7C7C7C]">Refreshing your account summary...</p>
+              <p className="mt-4 text-sm text-[#7C7C7C] dark:text-slate-400">Refreshing your account summary...</p>
             ) : null}
           </aside>
 
           <section
-            className="rounded-t-3xl border border-[#ECECEC] bg-white p-6 sm:p-8"
+            className="rounded-t-3xl border border-[#ECECEC] dark:border-slate-800 bg-white dark:bg-[#111827] p-6 sm:p-8 shadow-xs"
             id="section"
           >
             <div className="flex flex-col gap-6">
@@ -1008,8 +1029,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
               {activeTab === "profile" ? (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-[#202020]">Personal Details</h2>
-                    <p className="text-sm text-[#7C7C7C]">
+                    <h2 className="text-2xl font-semibold text-[#202020] dark:text-white">Personal Details</h2>
+                    <p className="text-sm text-[#7C7C7C] dark:text-slate-400">
                       Keep your contact and delivery details up to date.
                     </p>
                   </div>
@@ -1028,7 +1049,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
 
                   <div className="grid gap-4 lg:grid-cols-2">
                     <div className="flex flex-col gap-1.5 lg:col-span-2">
-                      <label className="text-xs font-semibold uppercase tracking-wider text-[#475569]">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-[#475569] dark:text-slate-400">
                         Title / Salutation Prefix
                       </label>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[160px_1fr]">
@@ -1040,7 +1061,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               salutation: e.target.value,
                             }))
                           }
-                          className="h-12 rounded-xl border border-[#CBD5E1] bg-white px-3 text-sm font-medium text-[#0F172A] outline-none transition focus:border-[#048a05] focus:ring-1 focus:ring-[#048a05]"
+                          className="h-12 rounded-xl border border-[#CBD5E1] dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm font-medium text-[#0F172A] dark:text-slate-100 outline-none transition focus:border-[#048a05] focus:ring-1 focus:ring-[#048a05]"
                         >
                           <option value="Mr.">Mr.</option>
                           <option value="Mrs.">Mrs.</option>
@@ -1059,7 +1080,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               }))
                             }
                             placeholder="e.g. Prof., Chief, Alhaji, Dr."
-                            className="h-12 rounded-xl"
+                            className="h-12 rounded-xl bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white"
                           />
                         )}
                       </div>
@@ -1074,7 +1095,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         }))
                       }
                       placeholder="First name"
-                      className="h-12 rounded-xl"
+                      className="h-12 rounded-xl bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white"
                     />
                     <Input
                       value={profileForm.lastName}
@@ -1085,9 +1106,9 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         }))
                       }
                       placeholder="Last name"
-                      className="h-12 rounded-xl"
+                      className="h-12 rounded-xl bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white"
                     />
-                    <Input value={profileForm.email} readOnly className="h-12 rounded-xl" />
+                    <Input value={profileForm.email} readOnly className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800/50 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-slate-300 opacity-80" />
                     <Input
                       value={profileForm.phone}
                       onChange={(event) =>
@@ -1097,7 +1118,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         }))
                       }
                       placeholder="Phone number"
-                      className="h-12 rounded-xl"
+                      className="h-12 rounded-xl bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white"
                     />
                     <Input
                       value={profileForm.address}
@@ -1108,15 +1129,59 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         }))
                       }
                       placeholder="Delivery address"
-                      className="h-12 rounded-xl lg:col-span-2"
+                      className="h-12 rounded-xl lg:col-span-2 bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white"
                     />
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-[#475569] dark:text-slate-400">
+                      Appearance Theme
+                    </label>
+                    <div className="grid grid-cols-3 gap-2 max-w-sm">
+                      <button
+                        type="button"
+                        onClick={() => handleThemeChange("light")}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl border text-sm font-medium transition-all gap-1.5 ${
+                          themeMode === "light"
+                            ? "border-[#048a05] bg-[#048a05]/10 text-[#048a05] font-semibold"
+                            : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <span className="text-lg">☀️</span>
+                        <span>Light</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleThemeChange("dark")}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl border text-sm font-medium transition-all gap-1.5 ${
+                          themeMode === "dark"
+                            ? "border-[#048a05] bg-[#048a05]/10 text-[#048a05] font-semibold"
+                            : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <span className="text-lg">🌙</span>
+                        <span>Dark</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleThemeChange("system")}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl border text-sm font-medium transition-all gap-1.5 ${
+                          themeMode === "system"
+                            ? "border-[#048a05] bg-[#048a05]/10 text-[#048a05] font-semibold"
+                            : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <span className="text-lg">💻</span>
+                        <span>System</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
                     <Button
                       onClick={handleProfileSave}
                       disabled={isSavingProfile}
-                      className="rounded-xl bg-[#1D9A1D] px-8 py-6 text-base font-semibold text-white hover:bg-[#048a05] lg:w-fit w-full"
+                      className="rounded-xl bg-[#048a05] hover:bg-[#037004] px-8 py-6 text-base font-semibold text-white shadow-sm lg:w-fit w-full"
                     >
                       {isSavingProfile ? "Saving..." : "Save Details"}
                     </Button>

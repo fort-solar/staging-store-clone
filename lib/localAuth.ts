@@ -33,6 +33,7 @@ export type MockUser = {
   role: UserRole;
   status: string;
   emailVerified: boolean;
+  theme_preference?: "light" | "dark" | "system" | null;
 };
 
 export type MockSession = {
@@ -83,6 +84,7 @@ function toClientAuthState(snapshot: SessionSnapshot): ClientAuthState {
       role: snapshot.user.role,
       status: snapshot.user.status,
       emailVerified: snapshot.user.emailVerified,
+      theme_preference: snapshot.user.theme_preference ?? null,
     },
     portal: snapshot.portal,
     expiresAt: snapshot.expiresAt,
@@ -111,6 +113,7 @@ function fromClientUserState(state: ClientAuthState): MockUser {
     role: state.user.role,
     status: state.user.status,
     emailVerified: state.user.emailVerified,
+    theme_preference: state.user.theme_preference ?? null,
   };
 }
 
@@ -187,6 +190,7 @@ export function sessionSnapshotToMockUser(snapshot: SessionSnapshot | null) {
     role: snapshot.user.role,
     status: snapshot.user.status,
     emailVerified: snapshot.user.emailVerified,
+    theme_preference: snapshot.user.theme_preference ?? null,
   } satisfies MockUser;
 }
 
@@ -384,10 +388,11 @@ export async function logoutUser() {
 }
 
 export async function updateCurrentUserProfile(values: {
-  name: string;
+  name?: string;
   salutation?: string;
-  phone: string;
-  address: string;
+  phone?: string;
+  address?: string;
+  theme_preference?: "light" | "dark" | "system";
 }) {
   const payload = await appRequest<AuthProfileUpdateApiResponse>("/api/v1/auth/me", {
     method: "PATCH",

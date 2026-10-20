@@ -177,20 +177,20 @@ const PackageDetailPage = () => {
   const galleryImages = data.galleryImages?.length ? data.galleryImages : [data.mainImage || data.image];
 
   return (
-    <div className="min-h-screen bg-white py-24">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0f1d] py-24 transition-colors">
       <DashboardHeader query={query} onQueryChange={setQuery} />
 
       <div className="mx-auto mt-26 w-full max-w-6xl px-4 lg:mt-0">
-        <button onClick={() => router.back()} className="flex cursor-pointer items-center gap-2 text-sm text-[#5A646B]">
+        <button onClick={() => router.back()} className="flex cursor-pointer items-center gap-2 text-sm text-[#5A646B] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
           <span className="text-lg">←</span>
           <span>Back</span>
         </button>
-        <nav aria-label="Breadcrumb" className="mt-4 flex items-center gap-2 text-sm text-[#5A646B] flex-wrap">
+        <nav aria-label="Breadcrumb" className="mt-4 flex items-center gap-2 text-sm text-[#5A646B] dark:text-slate-400 flex-wrap">
           <Link href="/" className="hover:text-[#048A05] transition font-medium">Home</Link>
-          <span className="text-[#B0BABF]">/</span>
+          <span className="text-[#B0BABF] dark:text-slate-600">/</span>
           <Link href="/packages" className="hover:text-[#048A05] transition font-medium">Packages</Link>
-          <span className="text-[#B0BABF]">/</span>
-          <span className="text-[#252C32] font-medium truncate max-w-[320px]">{data.title}</span>
+          <span className="text-[#B0BABF] dark:text-slate-600">/</span>
+          <span className="text-slate-900 dark:text-white font-medium truncate max-w-[320px]">{data.title}</span>
         </nav>
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
@@ -203,26 +203,26 @@ const PackageDetailPage = () => {
                     key={`${image}-${index}`}
                     type="button"
                     onClick={() => setSelectedImage(image)}
-                    className={`h-20 w-20 overflow-hidden rounded-lg border ${activeImage === image ? "border-[#048A05]" : "border-[#E9EEF0]"} bg-[#F3F4F6]`}
+                    className={`h-20 w-20 overflow-hidden rounded-lg border ${activeImage === image ? "border-[#048A05]" : "border-slate-200 dark:border-slate-800"} bg-slate-100 dark:bg-slate-800`}
                   >
                     <img src={image} alt={`${data.title} ${index + 1}`} className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
-              <div className="flex items-center justify-center rounded-2xl bg-[#F3F4F6] p-6">
+              <div className="flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 p-6">
                 <img src={activeImage} alt={data.title} className="h-96 w-full rounded-2xl object-contain" />
               </div>
             </div>
 
-            <div className="mt-8 space-y-6 rounded-2xl border bg-[#B8C0CC33] p-6">
+            <div className="mt-8 space-y-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-6 shadow-xs">
               <div>
-                <h2 className="text-xl font-semibold text-[#101828]">Package Overview</h2>
-                <p className="mt-2 text-sm text-[#333333]">{data.overview}</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Package Overview</h2>
+                <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{data.overview}</p>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-[#101828]">System Details</h3>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-[#333333]">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white">System Details</h3>
+                <ul className="mt-2 list-inside list-disc space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
                   {data.systemDetails.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -230,10 +230,10 @@ const PackageDetailPage = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-[#252C32]">What It Powers</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">What It Powers</h3>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {data.powers.map((item) => (
-                    <span key={item} className="rounded-lg border border-[#D6E4D6] bg-white px-3 py-1 text-sm text-[#3B3B3B]">
+                    <span key={item} className="rounded-lg border border-emerald-200/60 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-1 text-sm text-slate-800 dark:text-slate-200">
                       {item}
                     </span>
                   ))}
@@ -241,35 +241,33 @@ const PackageDetailPage = () => {
               </div>
 
               {/* Collapsible Package Specifications & Gallery (Merged cleanly without duplicate thumbnail) */}
-              <div className="rounded-2xl bg-white p-5 border border-[#E4E9EC]">
+              <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-5 border border-slate-200 dark:border-slate-700">
                 <div
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => setShowSpecsGallery(!showSpecsGallery)}
                 >
-                  <h3 className="text-lg font-semibold text-[#252C32]">Package Specifications & Gallery</h3>
-                  <span className="text-neutral-500">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Package Specifications & Gallery</h3>
+                  <span className="text-neutral-500 dark:text-slate-400">
                     {showSpecsGallery ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                   </span>
-                </div>
-
-                {showSpecsGallery && (
-                  <div className="mt-4 space-y-6 pt-4 border-t border-[#E4E9EC]">
+                </div>                {showSpecsGallery && (
+                  <div className="mt-4 space-y-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                     {/* Datasheets */}
                     {data.datasheets?.length ? (
                       <div>
-                        <h4 className="text-sm font-semibold text-[#252C32] mb-3">Technical Datasheets</h4>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Technical Datasheets</h4>
                         <div className="grid gap-3 sm:grid-cols-2">
                           {data.datasheets.map((asset) => (
-                            <div key={asset.url} className="rounded-xl border border-[#E4E9EC] bg-[#F8F9FA] p-3 flex items-center justify-between gap-3">
+                            <div key={asset.url} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex items-center justify-between gap-3 shadow-xs">
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-semibold text-[#252C32] truncate">{asset.name}</p>
-                                <span className="text-[10px] text-[#5A646B] uppercase">{asset.kind || "Document"}</span>
+                                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{asset.name}</p>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">{asset.kind || "Document"}</span>
                               </div>
                               <a
                                 href={asset.url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-xs font-bold text-[#048A05] hover:underline shrink-0"
+                                className="text-xs font-bold text-[#048A05] dark:text-emerald-400 hover:underline shrink-0"
                               >
                                 View &rarr;
                               </a>
@@ -282,15 +280,15 @@ const PackageDetailPage = () => {
                     {/* Included Products Gallery - Only displayed if items actually have real product images */}
                     {data.includedProducts?.some((item) => Boolean(item.image)) ? (
                       <div>
-                        <h4 className="text-sm font-semibold text-[#252C32] mb-3">Included Products & Components</h4>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Included Products & Components</h4>
                         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                           {data.includedProducts
                             .filter((item) => Boolean(item.image))
                             .map((item) => (
-                              <div key={item.id} className="rounded-xl border border-[#E4E9EC] bg-[#F8F9FA] p-3 text-center">
-                                <img src={item.image!} alt={item.productName} className="h-28 w-full rounded-lg object-contain bg-white mb-2" />
-                                <p className="text-xs font-semibold text-[#252C32] truncate">{item.productName}</p>
-                                <p className="text-[11px] text-[#5A646B]">{item.categoryLabel}</p>
+                              <div key={item.id} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-center shadow-xs">
+                                <img src={item.image!} alt={item.productName} className="h-28 w-full rounded-lg object-contain bg-slate-50 dark:bg-slate-900 mb-2 p-1" />
+                                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{item.productName}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">{item.categoryLabel}</p>
                               </div>
                             ))}
                         </div>
@@ -313,22 +311,22 @@ const PackageDetailPage = () => {
               <GoogleReviewsBadge />
             </div>
 
-            <h1 className="mt-2 text-2xl font-semibold text-[#252C32]">{data.title}</h1>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{data.title}</h1>
 
             {/* Price Display */}
             <div className="mt-4 flex items-center gap-3">
-              <span className="text-2xl font-bold text-[#252C32]">
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">
                 ₦{packagePrice.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
               </span>
               {data.discountPercentage ? (
-                <span className="text-sm text-[#9AA5AC] line-through">
+                <span className="text-sm text-[#9AA5AC] dark:text-slate-500 line-through">
                   ₦{data.price.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
                 </span>
               ) : null}
             </div>
 
             {/* Solar Financing & Energy Savings Callout Card */}
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30 p-3.5 shadow-xs">
+            <div className="mt-4 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5 shadow-xs">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2.5">
                   <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#048A05] text-white shrink-0 shadow-xs">
@@ -337,14 +335,14 @@ const PackageDetailPage = () => {
                     </svg>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-[#101828]">
+                    <div className="text-xs font-semibold text-slate-900 dark:text-white">
                       {data.solarFinanceEnabled ? (
-                        <>Spread payment from <strong className="text-[#048A05]">₦{estimatedMonthlyInstallment.toLocaleString()}/mo</strong></>
+                        <>Direct purchase or spread payments from <strong className="text-[#048A05] dark:text-emerald-400">₦{estimatedMonthlyInstallment.toLocaleString()}/mo</strong></>
                       ) : (
                         <>Compare with Generator & NEPA Expenses</>
                       )}
                     </div>
-                    <p className="text-[11px] text-[#5A646B]">
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
                       See fuel elimination & grid electricity savings
                     </p>
                   </div>
@@ -353,7 +351,7 @@ const PackageDetailPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowCostSavingsModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-[#048A05]/30 hover:border-[#048A05] px-3 py-1.5 text-xs font-semibold text-[#048A05] hover:bg-[#EBFAEB] transition shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-slate-800 border border-[#048A05]/30 hover:border-[#048A05] px-3 py-1.5 text-xs font-semibold text-[#048A05] dark:text-emerald-400 hover:bg-[#EBFAEB] dark:hover:bg-emerald-950/40 transition shadow-xs cursor-pointer"
                 >
                   <span>See Cost & Savings</span>
                   <span>&rarr;</span>
@@ -362,14 +360,14 @@ const PackageDetailPage = () => {
             </div>
 
             {activeDraft && String(activeDraft.packageId) === String(data.id) && (
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-[#048A05]/30 bg-[#EBFAEB] p-3 text-xs">
-                <span className="text-[#048A05] font-medium">
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-[#EBFAEB] dark:bg-emerald-950/30 p-3 text-xs">
+                <span className="text-[#048A05] dark:text-emerald-400 font-medium">
                   ✓ You have a saved draft configuration for this package.
                 </span>
                 <button
                   type="button"
                   onClick={() => handleOrderPackage(false)}
-                  className="font-semibold text-[#048A05] underline hover:text-[#036a04] cursor-pointer"
+                  className="font-semibold text-[#048A05] dark:text-emerald-400 underline hover:text-[#036a04] cursor-pointer"
                 >
                   Resume Setup &rarr;
                 </button>
@@ -388,25 +386,15 @@ const PackageDetailPage = () => {
                 </button>
                 <button
                   onClick={() => togglePackageFavorite(data.id)}
-                  className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC] cursor-pointer hover:bg-neutral-50 transition"
+                  className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-slate-700 transition"
                   title="Save to favorites"
                 >
                   <HeartIcon
                     filled={favorites.includes(data.id)}
-                    className={favorites.includes(data.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"}
+                    className={favorites.includes(data.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60 dark:text-slate-400"}
                   />
                 </button>
               </div>
-
-              {data.solarFinanceEnabled ? (
-                <button
-                  type="button"
-                  onClick={() => handleOrderPackage(true)}
-                  className="w-full rounded-xl border-2 border-[#048A05] bg-white py-2.5 text-sm font-semibold text-[#048A05] hover:bg-[#EBFAEB]/50 transition cursor-pointer text-center"
-                >
-                  Buy with Financing
-                </button>
-              ) : null}
 
               <div>
                 <a
@@ -415,30 +403,42 @@ const PackageDetailPage = () => {
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex w-full items-center justify-center rounded-xl border border-[#D0D5DD] bg-white py-2.5 text-sm font-semibold text-[#3B3B3B] transition hover:bg-slate-50 cursor-pointer"
+                  className="flex w-full items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
                 >
                   Talk to an Engineer
                 </a>
               </div>
+
+              {data.solarFinanceEnabled ? (
+                <div className="pt-1 text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleOrderPackage(true)}
+                    className="text-xs text-slate-500 dark:text-slate-400 hover:text-[#048A05] dark:hover:text-emerald-400 transition cursor-pointer underline underline-offset-2"
+                  >
+                    Prefer instalment payments? Explore flexible financing &rarr;
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             {/* Package Includes Dropdown */}
-            <div className="mt-6 p-4 text-sm rounded-xl border border-[#E4E9EC]">
+            <div className="mt-6 p-4 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827]">
               <div
-                className="flex items-center justify-between font-semibold text-[#252C32] cursor-pointer"
+                className="flex items-center justify-between font-semibold text-slate-900 dark:text-white cursor-pointer"
                 onClick={() => setShowFeatures(!showFeatures)}
               >
                 <span>Package Includes</span>
                 <span>
-                  {showFeatures ? <ChevronDown className="h-5 w-5 text-gray-500" /> : <ChevronUp className="h-5 w-5 text-gray-500" />}
+                  {showFeatures ? <ChevronDown className="h-5 w-5 text-gray-500 dark:text-slate-400" /> : <ChevronUp className="h-5 w-5 text-gray-500 dark:text-slate-400" />}
                 </span>
               </div>
               {showFeatures ? (
-                <div className="mt-3 text-[#5A646B]">
+                <div className="mt-3 text-slate-600 dark:text-slate-400">
                   {data.packageIncludes.map((item) => (
-                    <div key={item.label} className="flex justify-between border-b border-neutral-100 py-2.5 text-xs">
+                    <div key={item.label} className="flex justify-between border-b border-slate-100 dark:border-slate-800 py-2.5 text-xs">
                       <span>{item.label}</span>
-                      <span className="font-semibold text-[#252C32]">{item.qty}</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{item.qty}</span>
                     </div>
                   ))}
                 </div>
@@ -448,37 +448,37 @@ const PackageDetailPage = () => {
             {/* Financing & Delivery Badges */}
             <div className="mt-4 space-y-3">
               {data.solarFinanceEnabled ? (
-                <div className="flex items-center gap-3 rounded-xl bg-[#EBFAEB] p-3 text-xs text-[#3B3B3B]">
+                <div className="flex items-center gap-3 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/20 p-3 text-xs text-slate-700 dark:text-slate-300">
                   <FinancingIcon />
                   <div>
-                    <p className="font-semibold text-[#048A05]">Solar Financing Available</p>
-                    <p className="mt-0.5 text-[#5A646B]">
+                    <p className="font-semibold text-[#048A05] dark:text-emerald-400">Solar Financing Available</p>
+                    <p className="mt-0.5 text-slate-600 dark:text-slate-400">
                       Structured monthly instalments available at checkout with verified lending partners.
                     </p>
                   </div>
                 </div>
               ) : null}
-              <div className="flex items-center gap-3 rounded-xl bg-[#F8F9FA] p-3 text-xs text-[#3B3B3B]">
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-3 text-xs text-slate-700 dark:text-slate-300">
                 <DeliveryIcon />
                 <div>
-                  <p className="font-semibold">Nationwide Delivery & Installation</p>
-                  <p className="text-[#5A646B]">Certified professional installation available across all 36 states.</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">Nationwide Delivery & Installation</p>
+                  <p className="text-slate-600 dark:text-slate-400">Certified professional installation available across all 36 states.</p>
                 </div>
               </div>
             </div>
 
             {/* Included Products List */}
-            <div className="mt-6 rounded-2xl border border-[#E4E9EC] bg-white p-4">
-              <h3 className="text-lg font-semibold text-[#252C32]">Included Products</h3>
+            <div className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] p-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Included Products</h3>
               <div className="mt-4 space-y-3">
                 {(data.includedProducts ?? []).length ? (
                   data.includedProducts?.map((item) => (
-                    <div key={`${item.id}-${item.productName}`} className="flex items-center justify-between gap-3 rounded-xl border border-[#EEF1F4] px-3 py-3">
+                    <div key={`${item.id}-${item.productName}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 px-3 py-3">
                       <div>
-                        <p className="text-sm font-semibold text-[#252C32]">{item.productName}</p>
-                        <p className="text-xs text-[#5A646B]">{item.categoryLabel}</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.productName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{item.categoryLabel}</p>
                       </div>
-                      <span className="text-sm text-[#252C32]">x{item.quantity}</span>
+                      <span className="text-sm font-medium text-slate-900 dark:text-white">x{item.quantity}</span>
                     </div>
                   ))
                 ) : (
@@ -491,7 +491,7 @@ const PackageDetailPage = () => {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-3 text-[#5A646B]">
+            <div className="mt-4 flex items-center gap-3 text-[#5A646B] dark:text-slate-400">
               <FaTiktok />
               <FaYoutube />
               <FaInstagram />
@@ -504,7 +504,7 @@ const PackageDetailPage = () => {
 
         {/* Other Related Packages */}
         <div className="mt-12 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-[#252C32]">Other Related Packages</h2>
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Other Related Packages</h2>
           <Link href="/packages" className="rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-4 py-2 text-sm text-white">
             View All Packages
           </Link>

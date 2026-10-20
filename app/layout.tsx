@@ -91,7 +91,13 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.classList.toggle('dark',localStorage.getItem('fortsolar:appearance')==='dark')}catch(e){}` }} /></head>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{const p=localStorage.getItem('fortsolar:theme_preference')||localStorage.getItem('fortsolar:appearance')||localStorage.getItem('theme');const d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
