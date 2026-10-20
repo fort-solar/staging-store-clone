@@ -86,20 +86,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function formatDate(value: string | null | undefined) {
+function formatDate(value: string | number | Date | null | undefined) {
   if (!value) {
     return "N/A";
   }
 
-  const date = new Date(value);
+  const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return value;
+    return String(value);
   }
 
   return date.toLocaleString("en-NG", {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 }
 
@@ -153,6 +157,13 @@ function readStoredQuoteRequests() {
 function DetailValue({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === "") {
     return <span className="text-sm text-[#9A9A9A]">N/A</span>;
+  }
+
+  if (
+    typeof value === "string" &&
+    (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value))
+  ) {
+    return <span className="text-sm font-medium text-[#202020]">{formatDate(value)}</span>;
   }
 
   if (Array.isArray(value) || isRecord(value)) {
@@ -1448,18 +1459,14 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   <div>
                     <h2 className="text-2xl font-semibold text-[#202020]">My Installations</h2>
                     <p className="text-sm text-[#7C7C7C]">
-                      Follow installation progress and respond to approvals or issues.
+                      Track the progress, schedule, and completion of your solar installations.
                     </p>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <StatCard
                       label="Active Installations"
                       value={installationSummary.activeInstallations}
-                    />
-                    <StatCard
-                      label="Pending Approval"
-                      value={installationSummary.pendingApproval}
                     />
                     <StatCard
                       label="Completed Installations"
@@ -1476,76 +1483,64 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div>
                               <p className="text-lg font-semibold text-[#202020]">
-                                {installation.packageLabel}
+                                {installation.packageLabel || "Solar System Installation"}
                               </p>
                               <p className="text-xs text-[#7C7C7C]">
-                                Created {formatDate(installation.createdAt)}
+                                Booked {formatDate(installation.createdAt)}
                               </p>
                               <div className="mt-2 flex flex-wrap gap-2">
                                 <span className="inline-flex rounded-full bg-[#EAF7E8] px-3 py-1 text-xs font-medium text-[#048a05]">
                                   {humanizeStatus(installation.displayStatus || installation.status)}
                                 </span>
                                 <span className="inline-flex rounded-full bg-[#EEF5FF] px-3 py-1 text-xs font-medium text-[#1D4ED8]">
-                                  {humanizeStatus(installation.paymentStatus)}
+                                  Payment: {humanizeStatus(installation.paymentStatus)}
                                 </span>
                               </div>
                             </div>
 
                             <div className="text-right">
-                              <p className="text-sm text-[#7C7C7C]">
-                                Installer: {installation.installerName || "Unassigned"}
+                              <p className="text-sm font-medium text-[#202020]">
+                                {installation.installerName ? `Technician: ${installation.installerName}` : "Technician: Assigned by Fortsolar"}
                               </p>
-                              <p className="text-lg font-semibold text-[#202020]">
-                                {formatCurrency(installation.totalCost)}
-                              </p>
-                              <p className="text-xs text-[#7C7C7C]">
-                                Approval: {humanizeStatus(installation.customerApprovalStatus)}
+                              <p className="text-xs text-[#7C7C7C] mt-0.5">
+                                {installation.scheduledDate
+                                  ? `Scheduled: ${formatDate(installation.scheduledDate)}`
+                                  : "Schedule: In coordination"}
                               </p>
                             </div>
                           </div>
 
                           <div className="mt-4">
                             <div className="flex items-center justify-between text-xs text-[#7C7C7C]">
-                              <span>Progress</span>
-                              <span>{installation.progressPercent}%</span>
+                              <span>Installation Progress</span>
+                              <span className="font-semibold text-[#202020]">{installation.progressPercent}%</span>
                             </div>
                             <div className="mt-2 h-2 w-full rounded-full bg-[#E9EEF1]">
                               <div
-                                className="h-2 rounded-full bg-[#168ABD]"
+                                className="h-2 rounded-full bg-[#048a05] transition-all duration-300"
                                 style={{ width: `${Math.max(0, Math.min(100, installation.progressPercent))}%` }}
                               />
                             </div>
                           </div>
 
-                          <div className="mt-4 flex flex-wrap gap-3">
+                          <div className="mt-4 flex flex-wrap items-center gap-3">
                             <button
                               type="button"
                               onClick={() => void toggleInstallationDetail(installation.id)}
-                              className="text-sm font-semibold text-[#048a05]"
+                              className="text-sm font-semibold text-[#048a05] hover:underline cursor-pointer"
                             >
                               {expandedInstallationId === installation.id
                                 ? "Hide Installation Detail"
                                 : "View Installation Detail"}
                             </button>
 
-                            {installation.requiresApproval ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => void handleApproveInstallation(installation.id)}
-                                  className="rounded-xl bg-[#1D9A1D] px-4 py-2 text-sm font-semibold text-white"
-                                >
-                                  Approve Installation
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void handleReportInstallationIssue(installation.id)}
-                                  className="rounded-xl border border-[#BEBEBE] px-4 py-2 text-sm font-semibold text-[#202020]"
-                                >
-                                  Report Issue
-                                </button>
-                              </>
-                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => void handleReportInstallationIssue(installation.id)}
+                              className="rounded-xl border border-[#BEBEBE] px-3.5 py-1.5 text-xs font-semibold text-[#202020] hover:bg-gray-50 transition cursor-pointer"
+                            >
+                              Report Issue
+                            </button>
 
                             {Boolean(
                               installation.progressPercent >= 100 ||
@@ -1556,7 +1551,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                 href={FORTSOLAR_GOOGLE_REVIEW_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100/80 cursor-pointer shadow-2xs"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100/80 cursor-pointer shadow-2xs"
                               >
                                 <span>★ Leave a Review on Google</span>
                                 <span>↗</span>
@@ -1566,41 +1561,91 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
 
                           {expandedInstallationId === installation.id &&
                           installationDetails[installation.id] ? (
-                            <div className="mt-4 rounded-2xl bg-[#FAFAFA] p-4">
-                              <div className="grid gap-4 lg:grid-cols-2">
-                                {Object.entries(installationDetails[installation.id])
-                                  .filter(([key]) => key !== "proofOfWork" && key !== "id" && key !== "requiresApproval")
-                                  .map(([key, value]) => (
-                                    <div key={key} className="space-y-2">
-                                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7C7C7C]">
-                                        {humanizeStatus(key)}
-                                      </p>
-                                      <DetailValue value={value} />
-                                    </div>
-                                  ))}
+                            (() => {
+                              const details = installationDetails[installation.id] as any;
+                              const photos = details?.proofOfWork || [];
+                              const locationStr = [details.address, details.city, details.state].filter(Boolean).join(", ");
 
-                                {(() => {
-                                  const details = installationDetails[installation.id] as any;
-                                  const photos = details?.proofOfWork || [];
-                                  if (!photos.length) return null;
-                                  return (
-                                    <div className="mt-4 border-t border-gray-200 pt-4 col-span-2 space-y-3">
-                                      <p className="text-sm font-semibold text-[#202020]">Proof of Work Photos</p>
+                              return (
+                                <div className="mt-5 rounded-2xl border border-[#E7E7E7] bg-[#FAFAFA] p-5 space-y-5">
+                                  <div>
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#048a05]">
+                                      Installation Details &amp; Scope
+                                    </h4>
+                                    <p className="text-xs text-[#7C7C7C] mt-0.5">
+                                      Site, technical specifications, and execution schedule.
+                                    </p>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
+                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">System Package</span>
+                                      <p className="font-semibold text-[#202020]">
+                                        {details.packageLabel || "Residential Solar System"}
+                                      </p>
+                                      {details.systemSizeKw ? (
+                                        <p className="text-xs text-[#048a05] font-medium">{details.systemSizeKw} kW Capacity</p>
+                                      ) : null}
+                                    </div>
+
+                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
+                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Assigned Technician</span>
+                                      <p className="font-semibold text-[#202020]">
+                                        {details.installerName || "Assigned Fortsolar Technician"}
+                                      </p>
+                                      <p className="text-xs text-[#7C7C7C]">Certified Solar Engineer</p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
+                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Installation Site</span>
+                                      <p className="font-semibold text-[#202020] break-words">
+                                        {locationStr || "Address on File"}
+                                      </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
+                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Scheduled Date</span>
+                                      <p className="font-semibold text-[#202020]">
+                                        {details.scheduledDate ? formatDate(details.scheduledDate) : "To be scheduled"}
+                                      </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
+                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Status / Completed</span>
+                                      <p className="font-semibold text-[#202020]">
+                                        {details.completedDate ? formatDate(details.completedDate) : humanizeStatus(details.displayStatus || details.status)}
+                                      </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
+                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Booked On</span>
+                                      <p className="font-semibold text-[#202020]">
+                                        {formatDate(details.createdAt)}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {photos.length > 0 && (
+                                    <div className="border-t border-gray-200/80 pt-4 space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-xs font-bold uppercase tracking-wider text-[#202020]">Proof of Work Photos</p>
+                                        <span className="text-xs text-[#7C7C7C]">{photos.length} photos uploaded</span>
+                                      </div>
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         {photos.map((p: any) => (
-                                          <div key={p.id} className="rounded-lg overflow-hidden border border-gray-200 bg-white p-1">
-                                            <img src={p.url} alt={p.type || "photo"} className="w-full h-24 object-cover rounded-md" />
-                                            <div className="p-1 mt-1 text-[10px] text-[#7C7C7C] text-center capitalize font-medium">
-                                              {p.type} Photo
+                                          <div key={p.id} className="rounded-xl overflow-hidden border border-gray-200 bg-white p-1 shadow-2xs">
+                                            <img src={p.url} alt={p.type || "Installation proof photo"} className="w-full h-28 object-cover rounded-lg" />
+                                            <div className="p-1.5 text-[11px] text-[#7C7C7C] text-center capitalize font-medium truncate">
+                                              {p.type ? `${p.type} Photo` : "Installation Photo"}
                                             </div>
                                           </div>
                                         ))}
                                       </div>
                                     </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
+                                  )}
+                                </div>
+                              );
+                            })()
                           ) : null}
                         </div>
                       ))}
