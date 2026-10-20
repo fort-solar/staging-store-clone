@@ -160,7 +160,7 @@ const SignupForm = () => {
     <div className="space-y-8">
       <div className="space-y-3">
         <h1 className="text-3xl font-semibold text-[#0F172A]">
-          Start Your FortSolar Experience.
+          Start Your Fortsolar Experience.
         </h1>
         <p className="text-base text-[#6B7280]">
           Explore top-rated solar products, Package Packages, and reliable

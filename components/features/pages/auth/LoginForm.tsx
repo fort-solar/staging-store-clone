@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { AuthInput } from "@/components/features/pages/auth/AuthInput";
+import { PasswordInput } from "@/components/features/pages/auth/PasswordInput";
 import { AuthButton } from "@/components/features/pages/auth/AuthButton";
 import { AuthMessage } from "@/components/features/pages/auth/AuthMessage";
 import { GoogleAuthButton } from "@/components/features/pages/auth/GoogleAuthButton";
@@ -23,10 +24,18 @@ type LoginFormValues = {
 const LoginForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastAuthMethod, setLastAuthMethod] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshSession } = useAuth();
   const isGoogleAuthEnabled = Boolean(publicEnv.googleClientId);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      setLastAuthMethod(localStorage.getItem("fortsolar_last_auth_method"));
+    }
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -44,6 +53,9 @@ const LoginForm = () => {
 
     setIsSubmitting(true);
     setStatus(null);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fortsolar_last_auth_method", "password");
+    }
     const { error } = await loginMockUser({
       email: values.email,
       password: values.password,
@@ -64,6 +76,9 @@ const LoginForm = () => {
 
     setIsSubmitting(true);
     setStatus(null);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fortsolar_last_auth_method", "google");
+    }
     const { error } = await authenticateWithGoogle({ idToken });
 
     if (error) {
@@ -88,7 +103,13 @@ const LoginForm = () => {
 
       {isGoogleAuthEnabled ? (
         <div className="space-y-5">
-          <GoogleAuthButton
+          <div className="relative">
+            {lastAuthMethod === "google" && (
+              <span className="absolute -top-2.5 right-3 z-10 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200 shadow-2xs">
+                Last used
+              </span>
+            )}
+            <GoogleAuthButton
               onSuccess={(response) => {
                 if (!response.credential) {
                   setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
@@ -99,6 +120,7 @@ const LoginForm = () => {
               }}
               onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
             />
+          </div>
 
           <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">
             <span className="h-px flex-1 bg-[#E2E8F0]" />
@@ -122,9 +144,16 @@ const LoginForm = () => {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-[#111827]" htmlFor="password">
-              Password
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-[#111827]" htmlFor="password">
+                Password
+              </label>
+              {lastAuthMethod === "password" && (
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                  Last used
+                </span>
+              )}
+            </div>
             <Link
               href="/forgot-password"
               className="text-sm font-medium text-[#16A34A] hover:underline"
@@ -132,9 +161,9 @@ const LoginForm = () => {
               Forgot Password
             </Link>
           </div>
-          <AuthInput
+          <PasswordInput
+            label=""
             id="password"
-            type="password"
             placeholder="••••••••••••••"
             autoComplete="current-password"
             {...register("password", {

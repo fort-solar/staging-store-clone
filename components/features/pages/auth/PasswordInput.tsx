@@ -33,8 +33,14 @@ const PasswordInput = ({ label, error, className, required, ...props }: Password
         <button
           type="button"
           onClick={() => setIsVisible((prev) => !prev)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#0F172A]"
-          aria-label={isVisible ? "Hide password" : "Show password"}
+          onMouseDown={() => setIsVisible(true)}
+          onMouseUp={() => setIsVisible(false)}
+          onMouseLeave={() => setIsVisible(false)}
+          onTouchStart={() => setIsVisible(true)}
+          onTouchEnd={() => setIsVisible(false)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 select-none text-[#94A3B8] transition hover:text-[#0F172A] focus:outline-none"
+          aria-label={isVisible ? "Hide password (click or release to hide)" : "Show password (hold or click to view)"}
+          title={isVisible ? "Release or click to hide password" : "Hold or click to view password"}
         >
           {isVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>

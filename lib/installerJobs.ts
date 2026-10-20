@@ -45,7 +45,7 @@ export const installerJobs: InstallerJob[] = [
       "Commissioning: System startup, configuration, and client handover demo.",
     ],
     requirements: [
-      "Must possess valid FortSolar Installer ID.",
+      "Must possess valid Fortsolar Installer ID.",
       "Must have own installation toolkit (Drill, Ladder, Crimping Tool, Multimeter).",
       "Standard PPE (Safety boots, helmet) required on site.",
       "Ability to configure Cliff's Inverter settings is a plus.",
