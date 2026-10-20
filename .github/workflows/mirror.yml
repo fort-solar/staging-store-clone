@@ -19,22 +19,42 @@ jobs:
 
       - name: Re-author and Mirror Push
         run: |
-          # 1. Configure your personal profile on the fly
+          # 1. Ensure working directory is safe for Git
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          
+          # 2. Check out branch explicitly (avoids detached HEAD issues)
+          git checkout -B "${{ github.ref_name }}"
+          
+          # 3. Configure profile and committer identity
           git config --global user.name "fort-solar"
           git config --global user.email "fortsolarx@gmail.com"
+          export GIT_COMMITTER_NAME="fort-solar"
+          export GIT_COMMITTER_EMAIL="fortsolarx@gmail.com"
+          export GIT_AUTHOR_NAME="fort-solar"
+          export GIT_AUTHOR_EMAIL="fortsolarx@gmail.com"
+          export GIT_TERMINAL_PROMPT=0
           
-          # 2. Re-sign the top commit as you to satisfy Vercel
+          # 4. Re-sign the top commit to satisfy Vercel
           git commit --amend --no-edit --author="fort-solar <fortsolarx@gmail.com>"
           
-          # 3. Always mirror all branches to your main clone repo
-          MAIN_CLONE_URL="https://${{ secrets.PERSONAL_REPO_TOKEN }}@github.com/fort-solar/fortsolar-store-webapp-frontend-clone.git"
-          git push --force "$MAIN_CLONE_URL" HEAD:refs/heads/${{ github.ref_name }}
-          
-          # 4. Additionally mirror the staging branch to your dedicated staging clone repo
-          if [ "${{ github.ref_name }}" = "staging" ]; then
-            STAGING_CLONE_URL="https://${{ secrets.PERSONAL_REPO_TOKEN }}@github.com/fort-solar/staging-store-clone.git"
-            git push --force "$STAGING_CLONE_URL" HEAD:refs/heads/main HEAD:refs/heads/staging
+          # 5. Validate personal access token
+          if [ -z "${{ secrets.PERSONAL_REPO_TOKEN }}" ]; then
+            echo "::error::PERSONAL_REPO_TOKEN secret is not configured or empty in this repository's secrets."
+            exit 1
           fi
-
-
-
+          
+          # 6. Always mirror all branches to main clone repo
+          MAIN_CLONE_URL="https://x-access-token:${{ secrets.PERSONAL_REPO_TOKEN }}@github.com/fort-solar/fortsolar-store-webapp-frontend-clone.git"
+          if ! git push --force "$MAIN_CLONE_URL" HEAD:refs/heads/${{ github.ref_name }}; then
+            echo "::error::Failed to push to fortsolar-store-webapp-frontend-clone. Please verify PERSONAL_REPO_TOKEN is valid and has write access."
+            exit 1
+          fi
+          
+          # 7. Additionally mirror staging branch to dedicated staging clone repo
+          if [ "${{ github.ref_name }}" = "staging" ]; then
+            STAGING_CLONE_URL="https://x-access-token:${{ secrets.PERSONAL_REPO_TOKEN }}@github.com/fort-solar/staging-store-clone.git"
+            if ! git push --force "$STAGING_CLONE_URL" HEAD:refs/heads/main HEAD:refs/heads/staging; then
+              echo "::error::Failed to push to staging-store-clone. Please verify PERSONAL_REPO_TOKEN has write access."
+              exit 1
+            fi
+          fi
