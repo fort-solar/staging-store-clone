@@ -134,6 +134,14 @@ export function syncClientAuthState(snapshot: SessionSnapshot) {
   }
 
   window.localStorage.setItem(AUTH_STATE_KEY, JSON.stringify(toClientAuthState(snapshot)));
+
+  if (snapshot.user?.theme_preference) {
+    const pref = snapshot.user.theme_preference;
+    window.localStorage.setItem("fortsolar:store:theme_preference", pref);
+    const isDark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    window.localStorage.setItem("fortsolar:store:appearance", isDark ? "dark" : "light");
+    document.documentElement.classList.toggle("dark", isDark);
+  }
 }
 
 export function clearClientAuthState() {
@@ -142,6 +150,11 @@ export function clearClientAuthState() {
   }
 
   window.localStorage.removeItem(AUTH_STATE_KEY);
+  window.localStorage.removeItem("fortsolar:store:theme_preference");
+  window.localStorage.removeItem("fortsolar:store:appearance");
+  document.documentElement.classList.remove("dark");
+  document.documentElement.style.backgroundColor = "#ffffff";
+  document.documentElement.style.colorScheme = "light";
 }
 
 function clearCustomerPersistedState() {

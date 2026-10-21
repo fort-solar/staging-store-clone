@@ -270,17 +270,17 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     address: "",
   });
   const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">(() => {
-    if (typeof window === "undefined") return "system";
-    return (localStorage.getItem("fortsolar:theme_preference") as "light" | "dark" | "system") || "system";
+    if (typeof window === "undefined") return "light";
+    return (localStorage.getItem("fortsolar:store:theme_preference") as "light" | "dark" | "system") || "light";
   });
 
   const handleThemeChange = (next: "light" | "dark" | "system") => {
     setThemeMode(next);
-    localStorage.setItem("fortsolar:theme_preference", next);
+    localStorage.setItem("fortsolar:store:theme_preference", next);
     const isDark = next === "dark" || (next === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    localStorage.setItem("fortsolar:appearance", isDark ? "dark" : "light");
+    localStorage.setItem("fortsolar:store:appearance", isDark ? "dark" : "light");
     document.documentElement.classList.toggle("dark", isDark);
-    window.dispatchEvent(new Event("fortsolar:theme-change"));
+    window.dispatchEvent(new Event("fortsolar:store:theme-change"));
     void updateCurrentUserProfile({ theme_preference: next }).catch(() => {});
   };
 
@@ -358,8 +358,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     });
 
     if (currentUser?.theme_preference) {
-      setThemeMode(currentUser.theme_preference);
-      localStorage.setItem("fortsolar:theme_preference", currentUser.theme_preference);
+      const pref = currentUser.theme_preference;
+      setThemeMode(pref);
+      localStorage.setItem("fortsolar:store:theme_preference", pref);
+      const isDark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      localStorage.setItem("fortsolar:store:appearance", isDark ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", isDark);
     }
   }, [currentUser?.address, currentUser?.email, currentUser?.fullName, currentUser?.phone, currentUser?.salutation, currentUser?.theme_preference]);
 

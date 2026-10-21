@@ -94,7 +94,7 @@ export default async function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{const p=localStorage.getItem('fortsolar:theme_preference')||localStorage.getItem('fortsolar:appearance')||localStorage.getItem('theme');const d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');document.documentElement.style.backgroundColor='#0a0f1d';document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.backgroundColor='#ffffff';document.documentElement.style.colorScheme='light';}}catch(e){}`,
+            __html: `try{const p=localStorage.getItem('fortsolar:store:theme_preference')||localStorage.getItem('fortsolar:store:appearance');const d=p==='dark'||(p==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');document.documentElement.style.backgroundColor='#0a0f1d';document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.backgroundColor='#ffffff';document.documentElement.style.colorScheme='light';}}catch(e){}`,
           }}
         />
       </head>

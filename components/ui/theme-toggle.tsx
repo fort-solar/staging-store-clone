@@ -3,7 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
-const THEME_EVENT = "fortsolar:theme-change";
+const THEME_EVENT = "fortsolar:store:theme-change";
 
 function subscribe(callback: () => void) {
   window.addEventListener(THEME_EVENT, callback);
@@ -24,7 +24,8 @@ export function ThemeToggle() {
   function toggle() {
     const next = !dark;
     document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("fortsolar:appearance", next ? "dark" : "light");
+    localStorage.setItem("fortsolar:store:appearance", next ? "dark" : "light");
+    localStorage.setItem("fortsolar:store:theme_preference", next ? "dark" : "light");
     window.dispatchEvent(new Event(THEME_EVENT));
   }
 
