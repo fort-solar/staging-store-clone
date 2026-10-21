@@ -110,24 +110,18 @@ const LoginForm = () => {
 
       {isGoogleAuthEnabled ? (
         <div className="space-y-5">
-          <div className="relative">
-            {lastAuthMethod === "google" && (
-              <span className="absolute -top-2.5 right-3 z-10 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200 shadow-2xs">
-                Last used
-              </span>
-            )}
-            <GoogleAuthButton
-              onSuccess={(response) => {
-                if (!response.credential) {
-                  setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
-                  return;
-                }
+          <GoogleAuthButton
+            isLastUsed={lastAuthMethod === "google"}
+            onSuccess={(response) => {
+              if (!response.credential) {
+                setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
+                return;
+              }
 
-                void handleGoogleAuth(response.credential);
-              }}
-              onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
-            />
-          </div>
+              void handleGoogleAuth(response.credential);
+            }}
+            onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
+          />
 
           <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">
             <span className="h-px flex-1 bg-[#E2E8F0]" />

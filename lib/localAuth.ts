@@ -272,6 +272,18 @@ function syncAuthResponse(
   );
 
   syncClientAuthState(snapshot);
+
+  if (typeof window !== "undefined" && payload.user) {
+    try {
+      const provider = (payload.user as any).authProvider;
+      if (provider === "google") {
+        localStorage.setItem("fortsolar_last_auth_method", "google");
+      } else if (provider === "local") {
+        localStorage.setItem("fortsolar_last_auth_method", "password");
+      }
+    } catch {}
+  }
+
   return fromClientAuthState(toClientAuthState(snapshot));
 }
 
@@ -289,6 +301,13 @@ export const registerMockUser = async (
         role: payload.role,
       },
     });
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("fortsolar_last_auth_method", "password");
+        window.dispatchEvent(new Event("fortsolar:last-auth-method-change"));
+      } catch {}
+    }
 
     return {
       session: syncAuthResponse(response, payload.role),
@@ -318,6 +337,13 @@ export const loginMockUser = async (
       body: payload,
     });
 
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("fortsolar_last_auth_method", "password");
+        window.dispatchEvent(new Event("fortsolar:last-auth-method-change"));
+      } catch {}
+    }
+
     return {
       session: syncAuthResponse(response, "customer"),
     };
@@ -336,6 +362,13 @@ export async function authenticateWithGoogle(
       method: "POST",
       body: payload,
     });
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("fortsolar_last_auth_method", "google");
+        window.dispatchEvent(new Event("fortsolar:last-auth-method-change"));
+      } catch {}
+    }
 
     return {
       session: syncAuthResponse(response, "customer"),

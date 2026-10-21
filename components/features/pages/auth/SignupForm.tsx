@@ -34,10 +34,17 @@ type SignupFormValues = {
 const SignupForm = () => {
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastAuthMethod, setLastAuthMethod] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshSession } = useAuth();
   const isGoogleAuthEnabled = Boolean(publicEnv.googleClientId);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      setLastAuthMethod(localStorage.getItem("fortsolar_last_auth_method"));
+    }
+  }, []);
 
   const initialEmail = searchParams.get("email") || "";
   const initialName = searchParams.get("name") || "";
@@ -145,6 +152,11 @@ const SignupForm = () => {
   const handleGoogleAuth = async (idToken: string) => {
     setIsSubmitting(true);
     setStatus(null);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("fortsolar_last_auth_method", "google");
+      } catch {}
+    }
     const { session, user, error } = await authenticateWithGoogle({ idToken });
 
     if (error) {
@@ -185,16 +197,17 @@ const SignupForm = () => {
       {isGoogleAuthEnabled ? (
         <div className="space-y-5">
           <GoogleAuthButton
-              onSuccess={(response) => {
-                if (!response.credential) {
-                  setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
-                  return;
-                }
+            isLastUsed={lastAuthMethod === "google"}
+            onSuccess={(response) => {
+              if (!response.credential) {
+                setStatus({ tone: "error", message: "Google sign-in did not return an ID token." });
+                return;
+              }
 
-                void handleGoogleAuth(response.credential);
-              }}
-              onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
-            />
+              void handleGoogleAuth(response.credential);
+            }}
+            onError={() => setStatus({ tone: "error", message: "Google sign-in failed." })}
+          />
 
           <div className="flex items-center gap-4 text-xs uppercase tracking-[0.32em] text-[#94A3B8]">
             <span className="h-px flex-1 bg-[#E2E8F0]" />
