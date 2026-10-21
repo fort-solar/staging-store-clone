@@ -449,6 +449,20 @@ export type CustomerQuoteRecord = {
   quoteAssetUrl: string | null;
   quoteAssetKind: string | null;
   convertedPackageRequestId?: string | null;
+  tailoredPackageId?: string | null;
+  tailoredPackage?: {
+    id?: string;
+    name?: string;
+    systemSizeKw?: number;
+    price?: number;
+    panels?: string;
+    inverter?: string;
+    battery?: string;
+    warranty?: string;
+    description?: string;
+  } | null;
+  contactedOffline?: boolean;
+  offlineContactNotes?: string | null;
 };
 
 export type CustomerQuoteListApiResponse = ApiCollectionResponse<CustomerQuoteRecord>;

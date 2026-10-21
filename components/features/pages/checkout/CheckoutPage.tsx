@@ -81,6 +81,7 @@ const CheckoutPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryPackageId = searchParams?.get("packageId") || searchParams?.get("package");
+  const queryQuoteId = searchParams?.get("quoteId");
   const queryFinancing = searchParams?.get("financing");
   const queryDownpayment = searchParams?.get("downpayment");
   const queryTenure = searchParams?.get("tenure");
@@ -91,6 +92,7 @@ const CheckoutPage = () => {
     price?: number;
     image?: string;
     requestFinancing?: boolean;
+    quoteId?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -812,6 +814,11 @@ const CheckoutPage = () => {
       const resolvedBillingAddress = useShippingAsBilling ? shippingAddress : billingAddress;
       
       let finalNotes = notes.trim();
+      const linkedQuoteId = queryQuoteId || activePackageOrder?.quoteId;
+      if (linkedQuoteId) {
+        const quoteInfo = `Tailored System Package - Accepted from Quote #${linkedQuoteId}`;
+        finalNotes = finalNotes ? `${quoteInfo}\n${finalNotes}` : quoteInfo;
+      }
       if (requestInstallation || hasPackage) {
         const installationInfo = `
 Professional Installation Site Details
@@ -994,7 +1001,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           onChange={(event) => handleInputChange("fullName", event.target.value)}
           placeholder="Full name *"
           className={cn(
-            "h-11 rounded-xl transition-all duration-200",
+            "h-11 rounded-xl transition-all duration-200 bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white",
             hasError("fullName") && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
           )}
         />
@@ -1003,7 +1010,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           onChange={(event) => handleInputChange("email", event.target.value)}
           placeholder="Email address *"
           className={cn(
-            "h-11 rounded-xl transition-all duration-200",
+            "h-11 rounded-xl transition-all duration-200 bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white",
             hasError("email") && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
           )}
         />
@@ -1012,7 +1019,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           onChange={(event) => handleInputChange("phone", event.target.value)}
           placeholder="Phone number *"
           className={cn(
-            "h-11 rounded-xl transition-all duration-200",
+            "h-11 rounded-xl transition-all duration-200 bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white",
             hasError("phone") && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
           )}
         />
@@ -1022,7 +1029,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           onChange={(event) => handleInputChange("addressLine1", event.target.value)}
           placeholder="Street address *"
           className={cn(
-            "h-11 rounded-xl md:col-span-2 transition-all duration-200",
+            "h-11 rounded-xl md:col-span-2 transition-all duration-200 bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white",
             hasError("addressLine1") && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
           )}
         />
@@ -1166,7 +1173,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
   }
 
   return (
-    <div className="min-h-screen bg-white py-24">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0f1d] py-24 transition-colors">
       <Script
         src="https://js.paystack.co/v1/inline.js"
         strategy="afterInteractive"
@@ -1175,17 +1182,17 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
       <DashboardHeader query={query} onQueryChange={setQuery} />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-[#5A646B] flex-wrap">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 flex-wrap">
           <Link href="/" className="hover:text-[#048A05] transition font-medium">
             Store
           </Link>
-          <span className="text-[#B0BABF]">/</span>
+          <span className="text-[#B0BABF] dark:text-slate-600">/</span>
           {isPackageCheckout || primaryPackage ? (
             <>
               <Link href="/packages" className="hover:text-[#048A05] transition font-medium">
                 Packages
               </Link>
-              <span className="text-[#B0BABF]">/</span>
+              <span className="text-[#B0BABF] dark:text-slate-600">/</span>
               <Link
                 href={`/packages/${primaryPackage?.slug || selectedPackage?.slug || (activePackageOrder?.packageId ? String(activePackageOrder.packageId) : "") || targetPackageId}`}
                 className="hover:text-[#048A05] transition font-medium truncate max-w-[220px]"
@@ -1193,21 +1200,35 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               >
                 {primaryPackage?.title || selectedPackage?.title || activePackageOrder?.packageTitle || "Package"}
               </Link>
-              <span className="text-[#B0BABF]">/</span>
+              <span className="text-[#B0BABF] dark:text-slate-600">/</span>
             </>
           ) : (
             <>
               <Link href="/cart" className="hover:text-[#048A05] transition font-medium">
                 Cart
               </Link>
-              <span className="text-[#B0BABF]">/</span>
+              <span className="text-[#B0BABF] dark:text-slate-600">/</span>
             </>
           )}
-          <span className="font-semibold text-[#252C32]">Checkout</span>
+          <span className="font-semibold text-slate-900 dark:text-white">Checkout</span>
         </nav>
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-6">
+            {(queryQuoteId || activePackageOrder?.quoteId) ? (
+              <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/80 dark:bg-emerald-950/30 p-4 text-sm text-emerald-900 dark:text-emerald-200 shadow-xs">
+                <span className="text-xl">✓</span>
+                <div>
+                  <h4 className="font-bold text-emerald-950 dark:text-emerald-100">
+                    Tailored Proposal Accepted (Quote #{queryQuoteId || activePackageOrder?.quoteId})
+                  </h4>
+                  <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-300">
+                    This order finalizes your custom engineered solar system package agreed upon with our engineering team. Complete delivery and installation details below to finalize checkout.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             {checkoutStatus && checkoutStatus.tone !== "error" ? (
               <div
                 className={`rounded-2xl px-4 py-3 text-sm ${
@@ -1226,16 +1247,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               </div>
             ) : null}
 
-
-
-            <section id="shipping-section" className="rounded-2xl border border-[#E9EEF0] p-5">
+            <section id="shipping-section" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 shadow-xs transition-colors">
               <div className="flex items-center gap-2 mb-1">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
                   1
                 </span>
-                <h1 className="text-xl font-bold text-[#252C32]">Delivery Address & Contact Details</h1>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white">Delivery Address & Contact Details</h1>
               </div>
-              <p className="mt-1 text-sm text-[#5A646B] pl-8">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 pl-8">
                 Use a valid delivery address and contact details for order delivery and installation planning.
               </p>
               <div className="mt-5">
@@ -1248,11 +1267,11 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               </div>
             </section>
 
-            <section id="billing-section" className="rounded-2xl border border-[#E9EEF0] p-5">
+            <section id="billing-section" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 shadow-xs transition-colors">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-semibold text-[#252C32]">Billing Address</h2>
-                  <p className="mt-1 text-sm text-[#5A646B]">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Billing Address</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Match this to the cardholder or company billing details.
                   </p>
                 </div>
@@ -1260,7 +1279,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                   checked={useShippingAsBilling}
                   onChange={(event) => setUseShippingAsBilling(event.target.checked)}
                   label="Same as shipping"
-                  labelClassName="text-sm text-[#252C32]"
+                  labelClassName="text-sm text-slate-700 dark:text-slate-300"
                 />
               </div>
 
@@ -1277,14 +1296,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
              </section>
 
             {(requestInstallation || hasPackage) && (
-              <section id="installation-section" className="rounded-2xl border border-[#E9EEF0] p-5">
-                <h2 className="text-xl font-semibold text-[#252C32]">Installation Site Details</h2>
-                <p className="mt-1 text-sm text-[#5A646B]">
+              <section id="installation-section" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 shadow-xs transition-colors">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Installation Site Details</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   Please specify structural details of the installation site to help our engineers plan and assign the best installation team.
                 </p>
                 <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.installationType ? "text-red-600" : "text-[#5A646B]"}`}>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.installationType ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>
                       Installation Type *
                     </label>
                     <ComboboxField
@@ -1295,14 +1314,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Residential", label: "Residential" },
                         { value: "Commercial & Industrial (C&I)", label: "Commercial & Industrial (C&I)" },
                       ]}
-                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
-                        validationErrors.installationType ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none ${
+                        validationErrors.installationType ? "border-red-500 ring-1 ring-red-500" : ""
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.buildingType ? "text-red-600" : "text-[#5A646B]"}`}>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.buildingType ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>
                       Building Type *
                     </label>
                     <ComboboxField
@@ -1317,14 +1336,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Warehouse / Commercial Facility", label: "Warehouse / Commercial Facility" },
                         { value: "Other", label: "Other Structure" },
                       ]}
-                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
-                        validationErrors.buildingType ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none ${
+                        validationErrors.buildingType ? "border-red-500 ring-1 ring-red-500" : ""
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofStyle ? "text-red-600" : "text-[#5A646B]"}`}>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofStyle ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>
                       Roof Architecture / Style *
                     </label>
                     <ComboboxField
@@ -1338,14 +1357,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Gable Roof", label: "Gable Roof" },
                         { value: "Other", label: "Other Design" },
                       ]}
-                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
-                        validationErrors.roofStyle ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none ${
+                        validationErrors.roofStyle ? "border-red-500 ring-1 ring-red-500" : ""
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofMaterial ? "text-red-600" : "text-[#5A646B]"}`}>
+                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofMaterial ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>
                       Roof Material *
                     </label>
                     <ComboboxField
@@ -1360,8 +1379,8 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Asbestos / Fibre Cement", label: "Asbestos / Fibre Cement" },
                         { value: "Other", label: "Other Material" },
                       ]}
-                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white outline-none ${
-                        validationErrors.roofMaterial ? "border-red-500 ring-1 ring-red-500" : "border-[#E4E9EC]"
+                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none ${
+                        validationErrors.roofMaterial ? "border-red-500 ring-1 ring-red-500" : ""
                       }`}
                     />
                   </div>
@@ -1370,15 +1389,15 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
             )}
 
             {requestFinancing && (
-              <section id="financing-section" className="rounded-2xl border border-[#E9EEF0] bg-white p-6 shadow-sm space-y-6">
-                <div className="border-b border-[#E9EEF0] pb-4">
+              <section id="financing-section" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm space-y-6 transition-colors">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
                   <div className="flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
                       2
                     </span>
-                    <h2 className="text-xl font-bold text-[#252C32]">Financing & Payment Plan</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Financing & Payment Plan</h2>
                   </div>
-                  <p className="mt-1 text-sm text-[#5A646B] pl-8">
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 pl-8">
                     Select your preferred down payment and tenure to estimate your monthly plan.
                   </p>
                 </div>
@@ -1386,10 +1405,10 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                 {/* Sub-step A: Down Payment */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold text-[#252C32]">
+                    <label className="text-sm font-semibold text-slate-900 dark:text-white">
                       Equity Down Payment
                     </label>
-                    <span className="text-xs text-[#5A646B]">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
                       Minimum: {financingSettings?.min_downpayment_pct ?? 30}%
                     </span>
                   </div>
@@ -1402,12 +1421,12 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         className={cn(
                           "flex flex-col items-center justify-center rounded-xl border py-3 px-2 text-center transition font-semibold text-sm",
                           downpaymentPct === pct
-                            ? "border-[#1FA21B] bg-[#EBFAEB] text-[#048A05] ring-2 ring-[#1FA21B]/30"
-                            : "border-[#E4E9EC] bg-white text-[#5A646B] hover:border-[#B0BABF] hover:bg-gray-50",
+                            ? "border-[#1FA21B] bg-[#EBFAEB] dark:bg-emerald-950/40 text-[#048A05] dark:text-emerald-400 ring-2 ring-[#1FA21B]/30"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700",
                         )}
                       >
                         <span>{pct}%</span>
-                        <span className="text-[10px] font-normal text-[#5A646B]">
+                        <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
                           {pct === 30 ? "Min. Equity" : `${pct}% Equity`}
                         </span>
                       </button>
@@ -1417,7 +1436,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
 
                 {/* Sub-step B: Tenure */}
                 <div className="space-y-3">
-                  <label className="text-sm font-semibold text-[#252C32]">
+                  <label className="text-sm font-semibold text-slate-900 dark:text-white">
                     Repayment Tenure
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
@@ -1429,12 +1448,12 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         className={cn(
                           "flex flex-col items-center justify-center rounded-xl border py-3 px-2 text-center transition font-semibold text-sm",
                           tenureMonths === t
-                            ? "border-[#1FA21B] bg-[#EBFAEB] text-[#048A05] ring-2 ring-[#1FA21B]/30"
-                            : "border-[#E4E9EC] bg-white text-[#5A646B] hover:border-[#B0BABF] hover:bg-gray-50",
+                            ? "border-[#1FA21B] bg-[#EBFAEB] dark:bg-emerald-950/40 text-[#048A05] dark:text-emerald-400 ring-2 ring-[#1FA21B]/30"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700",
                         )}
                       >
                         <span>{t} Months</span>
-                        <span className="text-[10px] font-normal text-[#5A646B]">
+                        <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
                           {t === 12 ? "Standard term" : "Flexible term"}
                         </span>
                       </button>
@@ -1444,59 +1463,59 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
 
                 {/* Repayment Summary Card */}
                 {calculatorResults && (
-                  <div className="rounded-xl border border-[#048A05]/20 bg-[#EBFAEB]/30 p-4 space-y-4">
+                  <div className="rounded-xl border border-[#048A05]/20 dark:border-emerald-800/40 bg-[#EBFAEB]/30 dark:bg-emerald-950/20 p-4 space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-[#048A05]">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-[#048A05] dark:text-emerald-400">
                         Estimated Repayment Plan
                       </span>
-                      <span className="rounded-full bg-[#1FA21B]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#048A05]">
+                      <span className="rounded-full bg-[#1FA21B]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#048A05] dark:text-emerald-400">
                         4.0% Flat / Month
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                       <div>
-                        <span className="text-[#5A646B] block">Down Payment ({downpaymentPct}%):</span>
-                        <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                        <span className="text-slate-500 dark:text-slate-400 block">Down Payment ({downpaymentPct}%):</span>
+                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
                           {formatNaira(calculatorResults.downpaymentVal)}
                         </p>
                       </div>
                       <div>
-                        <span className="text-[#5A646B] block">Amount Financed:</span>
-                        <p className="font-bold text-sm text-[#252C32] mt-0.5">
+                        <span className="text-slate-500 dark:text-slate-400 block">Amount Financed:</span>
+                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
                           {formatNaira(calculatorResults.financedAmount)}
                         </p>
                       </div>
-                      <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 sm:border-l sm:pl-4 border-[#048A05]/15 pt-2 sm:pt-0">
-                        <span className="text-[#5A646B] block">Monthly Installment:</span>
-                        <p className="font-black text-lg text-[#048A05] mt-0.5">
+                      <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 sm:border-l sm:pl-4 border-[#048A05]/15 dark:border-emerald-800/30 pt-2 sm:pt-0">
+                        <span className="text-slate-500 dark:text-slate-400 block">Monthly Installment:</span>
+                        <p className="font-black text-lg text-[#048A05] dark:text-emerald-400 mt-0.5">
                           {formatNaira(calculatorResults.monthlyInstallment)}
-                          <span className="text-xs font-normal text-[#5A646B]">/mo</span>
+                          <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/mo</span>
                         </p>
                       </div>
                     </div>
 
-                    <p className="text-[11px] leading-relaxed text-[#5A646B] border-t border-[#048A05]/15 pt-3">
+                    <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 border-t border-[#048A05]/15 dark:border-emerald-800/30 pt-3">
                       Estimates based on standard 4% monthly flat rate. Final financing terms, tenure, and approved rates are confirmed upon partner review.
                     </p>
                   </div>
                 )}
 
                 {/* Step 3: Qualification Profile */}
-                <div className="border-t border-[#E9EEF0] pt-5 space-y-4">
+                <div className="border-t border-slate-200 dark:border-slate-800 pt-5 space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1FA21B] text-xs font-bold text-white">
                       3
                     </span>
-                    <h3 className="text-base font-bold text-[#252C32]">Quick Qualification Profile</h3>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Quick Qualification Profile</h3>
                   </div>
-                  <p className="text-xs text-[#5A646B] pl-8 -mt-2">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 pl-8 -mt-2">
                     Help our lending partners match the best underwriting tier for your profile.
                   </p>
 
                   <div className="pl-8 space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[#5A646B] mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
                         Applicant Category *
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1511,8 +1530,8 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                             className={cn(
                               "flex items-center gap-2.5 rounded-xl border p-3 cursor-pointer text-xs font-semibold transition",
                               profileType === cat.id
-                                ? "border-[#1FA21B] bg-[#EBFAEB] text-[#048A05]"
-                                : "border-[#E4E9EC] bg-white text-[#252C32] hover:bg-gray-50",
+                                ? "border-[#1FA21B] bg-[#EBFAEB] dark:bg-emerald-950/40 text-[#048A05] dark:text-emerald-400"
+                                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700",
                             )}
                           >
                             <input
@@ -1532,7 +1551,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                       <div>
                         <label className={cn(
                           "block text-xs font-semibold mb-1.5",
-                          validationErrors.employerOrBusinessName ? "text-red-600" : "text-[#5A646B]",
+                          validationErrors.employerOrBusinessName ? "text-red-600" : "text-slate-700 dark:text-slate-300",
                         )}>
                           {profileType === "business"
                             ? "Registered Business / Enterprise Name *"
@@ -1561,14 +1580,14 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                             }
                           }}
                           className={cn(
-                            "h-11 rounded-xl w-full text-sm transition-all duration-200",
+                            "h-11 rounded-xl w-full text-sm transition-all duration-200 bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 text-[#0F172A] dark:text-white",
                             validationErrors.employerOrBusinessName && "border-red-500 bg-red-50/50 focus-visible:ring-red-500",
                           )}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-[#5A646B] mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                           {profileType === "business" ? "Monthly Turnover / Revenue *" : "Monthly Net Income *"}
                         </label>
                         <ComboboxField
@@ -1591,19 +1610,19 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                             { value: "₦2,500,000 – ₦5,000,000 / month", label: "₦2,500,000 – ₦5,000,000 / month" },
                             { value: "Above ₦5,000,000 / month", label: "Above ₦5,000,000 / month" },
                           ]}
-                          className="w-full h-11 px-3 rounded-xl border text-sm bg-white border-[#E4E9EC] outline-none"
+                          className="w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
                         />
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5 text-xs text-[#252C32] flex items-start gap-2.5">
+                    <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/30 p-3.5 text-xs text-slate-800 dark:text-slate-200 flex items-start gap-2.5">
                       <span className="text-base leading-none">📋</span>
                       <div className="space-y-1">
-                        <p className="font-semibold text-[#048A05]">
+                        <p className="font-semibold text-[#048A05] dark:text-emerald-400">
                           How Your Financing Request is Processed
                         </p>
-                        <p className="leading-relaxed text-[#5A646B]">
-                          When you submit this request, Fortsolar reviews your energy requirements and qualification profile to match you with an accredited financing partner. Your order status will update to <strong className="text-[#252C32]">Financing in Progress</strong>, and you will receive an intake form to complete and send to the financing partner (with Fortsolar in copy) to finalize your agreement.
+                        <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                          When you submit this request, Fortsolar reviews your energy requirements and qualification profile to match you with an accredited financing partner. Your order status will update to <strong className="text-slate-900 dark:text-white">Financing in Progress</strong>, and you will receive an intake form to complete and send to the financing partner (with Fortsolar in copy) to finalize your agreement.
                         </p>
                       </div>
                     </div>
@@ -1612,13 +1631,13 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               </section>
             )}
 
-            <section id="terms-section" className="rounded-2xl border border-[#E9EEF0] p-5">
-              <h2 className="text-xl font-semibold text-[#252C32]">Order Notes</h2>
+            <section id="terms-section" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 shadow-xs transition-colors">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Order Notes</h2>
               <textarea
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Add delivery notes or payment context for this order."
-                className="mt-4 min-h-28 w-full rounded-2xl border border-[#E4E9EC] px-4 py-3 text-sm outline-none"
+                className="mt-4 min-h-28 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-[#048A05]"
               />
 
               {primaryPackage ? (
@@ -1627,15 +1646,15 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                   checked={requestFinancing}
                   onChange={(event) => setRequestFinancing(event.target.checked)}
                   label="Request financing for this package order"
-                  labelClassName="text-sm text-[#252C32]"
+                  labelClassName="text-sm text-slate-700 dark:text-slate-300"
                 />
               ) : null}
 
-              <div className="mt-6 border-t border-[#E4E9EC] pt-4 space-y-3">
+              <div className="mt-6 border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
                 <div
                   className={cn(
                     "p-3 rounded-xl transition-all duration-200",
-                    validationErrors.legalConsent && "bg-red-50 border border-red-200 shadow-sm",
+                    validationErrors.legalConsent && "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 shadow-sm",
                   )}
                 >
                   <GradientCheckbox
@@ -1664,53 +1683,53 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
           </div>
 
           <aside className="space-y-6">
-            <div className="rounded-2xl border border-[#E9EEF0] p-4">
-              <p className="font-semibold text-[#252C32]">Order Summary</p>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 shadow-xs transition-colors">
+              <p className="font-bold text-slate-900 dark:text-white">Order Summary</p>
               <div className="mt-4 space-y-4">
                 {cartDetails.map((item) => (
                   <div key={`${item.itemType}-${item.id}`} className="flex items-center gap-3">
                     <div
-                      className="h-12 w-12 rounded-xl bg-cover bg-center bg-no-repeat bg-[#D9D9D9]"
+                      className="h-12 w-12 rounded-xl bg-cover bg-center bg-no-repeat bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-100 dark:border-slate-700"
                       style={{ backgroundImage: `url(${item.image})` }}
                     />
-                    <div className="flex-1 text-sm">
-                      <p className="text-[#252C32]">{item.title}</p>
-                      <p className="font-semibold text-[#252C32]">
+                    <div className="flex-1 text-sm min-w-0">
+                      <p className="font-medium text-slate-900 dark:text-slate-100 truncate">{item.title}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         {formatNaira(item.price)} x {item.quantity}
                       </p>
                     </div>
-                    <span className="text-sm font-semibold text-[#252C32]">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white shrink-0">
                       {formatNaira(item.price * item.quantity)}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-5 space-y-3 border-t border-[#E9EEF0] pt-4 text-sm">
+              <div className="mt-5 space-y-3 border-t border-slate-200 dark:border-slate-800 pt-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#5A646B]">Sub Total</span>
-                  <span className="font-semibold text-[#252C32]">
+                  <span className="text-slate-500 dark:text-slate-400">Sub Total</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
                     {formatNaira(subtotal)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#5A646B]">Shipping</span>
-                  <span className="font-semibold text-[#252C32]">
+                  <span className="text-slate-500 dark:text-slate-400">Shipping</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
                     {formatNaira(shippingAmount)}
                   </span>
                 </div>
                 {requestInstallation && (
                   <div className="flex items-center justify-between">
-                    <span className="text-[#5A646B]">Professional Installation</span>
-                    <span className="font-semibold text-[#252C32]">
+                    <span className="text-slate-500 dark:text-slate-400">Professional Installation</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
                       {installationFee === 0 ? "Free" : formatNaira(installationFee)}
                     </span>
                   </div>
                 )}
                 {discountAmount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-[#5A646B]">Package Discount</span>
-                    <span className="font-semibold text-red-600">
+                    <span className="text-slate-500 dark:text-slate-400">Package Discount</span>
+                    <span className="font-semibold text-rose-600 dark:text-rose-400">
                       -{formatNaira(discountAmount)}
                     </span>
                   </div>
@@ -1718,7 +1737,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                 {appliedCoupon && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[#048A05] font-medium">Coupon ({appliedCoupon.code})</span>
+                      <span className="text-[#048A05] dark:text-emerald-400 font-medium">Coupon ({appliedCoupon.code})</span>
                       <button
                         type="button"
                         onClick={handleRemoveCoupon}
@@ -1728,21 +1747,21 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         ✕
                       </button>
                     </div>
-                    <span className="font-semibold text-[#048A05]">
+                    <span className="font-semibold text-[#048A05] dark:text-emerald-400">
                       -{formatNaira(couponDiscount)}
                     </span>
                   </div>
                 )}
-                <div className="flex items-center justify-between border-t border-[#E9EEF0] pt-3">
-                  <span className="font-semibold text-[#252C32]">Total</span>
-                  <span className="font-semibold text-[#252C32]">
+                <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-3">
+                  <span className="font-bold text-slate-900 dark:text-white">Total</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-base">
                     {formatNaira(total)}
                   </span>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-[#E9EEF0] bg-gray-50/70 p-3">
-                <label className="block text-xs font-semibold text-[#252C32] mb-1.5">
+              <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 p-3">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   Have a Discount Code?
                 </label>
                 <div className="flex gap-2">
@@ -1760,13 +1779,13 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         void handleApplyCoupon();
                       }
                     }}
-                    className="h-9 flex-1 rounded-lg border border-[#E4E9EC] bg-white px-2.5 text-xs uppercase font-semibold outline-none focus:border-[#1FA21B]"
+                    className="h-9 flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 text-xs uppercase font-semibold text-slate-900 dark:text-white outline-none focus:border-[#048A05]"
                   />
                   <button
                     type="button"
                     onClick={() => void handleApplyCoupon()}
                     disabled={isValidatingCoupon || !couponInput.trim()}
-                    className="h-9 rounded-lg bg-[#1FA21B] px-3 text-xs font-semibold text-white disabled:opacity-50 hover:bg-[#188015] transition"
+                    className="h-9 rounded-lg bg-[#048A05] hover:bg-[#036B04] px-3 text-xs font-semibold text-white disabled:opacity-50 transition"
                   >
                     {isValidatingCoupon ? "..." : "Apply"}
                   </button>
@@ -1775,7 +1794,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                   <p className="mt-1 text-xs text-red-500 font-medium">⚠️ {couponError}</p>
                 )}
                 {appliedCoupon && (
-                  <div className="mt-2 flex items-center justify-between rounded-lg bg-[#EBFAEB] px-2 py-1 text-xs text-[#048A05]">
+                  <div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 text-xs text-[#048A05] dark:text-emerald-400">
                     <span className="font-semibold">✓ {appliedCoupon.code} (-{formatNaira(couponDiscount)})</span>
                     <button
                       type="button"
@@ -1792,7 +1811,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                 type="button"
                 onClick={handleCheckout}
                 disabled={isSubmitting || isVerifyingPayment || cartDetails.length === 0 || missingCartItems > 0}
-                className="mt-5 w-full rounded-xl bg-[#1FA21B] py-3 text-center font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-5 w-full rounded-xl bg-[#048A05] hover:bg-[#036B04] py-3 text-center font-bold text-white shadow-xs disabled:cursor-not-allowed disabled:opacity-50 transition"
               >
                 {isSubmitting
                   ? (requestFinancing ? "Submitting financing request..." : "Starting payment...")
@@ -1802,7 +1821,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               </button>
 
               {checkoutStatus && checkoutStatus.tone === "error" && (
-                <div className="mt-3 rounded-xl bg-[#FDECEC] p-3 text-xs text-[#C73939] border border-[#F5C2C2] space-y-1">
+                <div className="mt-3 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/40 space-y-1">
                   <div className="font-semibold flex items-center gap-1.5">
                     <span className="text-sm">⚠️</span> Checkout failed
                   </div>
@@ -1811,25 +1830,25 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
               )}
 
               {isPackageCheckout ? (
-                <div className="mt-8 text-sm text-[#5A646B]">
-                  <p className="font-semibold text-[#252C32]">
+                <div className="mt-8 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="font-bold text-slate-900 dark:text-white">
                     Free Nationwide Delivery & Installation
                   </p>
-                  <p className="mt-2 text-xs leading-relaxed text-[#5A646B]">
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                     Every complete solar package includes free nationwide delivery and certified professional installation.
                   </p>
                 </div>
               ) : (
-                <div className="mt-8 text-sm text-[#5A646B]">
+                <div className="mt-8 text-sm text-slate-500 dark:text-slate-400">
                   <p className="mb-2">Good to know</p>
-                  <p className="font-semibold text-[#252C32]">
+                  <p className="font-bold text-slate-900 dark:text-white">
                     Packages remain available during checkout
                   </p>
-                  <p className="mt-2">
+                  <p className="mt-2 text-xs leading-relaxed">
                     Need a full installation-ready setup instead of individual components?{" "}
                     <Link
                       href="/packages"
-                      className="inline-flex items-center gap-1 font-medium text-[#252C32] underline"
+                      className="inline-flex items-center gap-1 font-semibold text-[#048A05] dark:text-emerald-400 underline"
                     >
                       Browse packages
                       <span>↗</span>

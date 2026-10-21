@@ -156,25 +156,25 @@ function readStoredQuoteRequests() {
 
 function DetailValue({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === "") {
-    return <span className="text-sm text-[#9A9A9A]">N/A</span>;
+    return <span className="text-sm text-slate-400">N/A</span>;
   }
 
   if (
     typeof value === "string" &&
     (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value))
   ) {
-    return <span className="text-sm font-medium text-[#202020]">{formatDate(value)}</span>;
+    return <span className="text-sm font-medium text-slate-900 dark:text-white">{formatDate(value)}</span>;
   }
 
   if (Array.isArray(value) || isRecord(value)) {
     return (
-      <pre className="overflow-x-auto rounded-xl bg-[#F7F8FA] p-3 text-xs text-[#404040]">
+      <pre className="overflow-x-auto rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 text-xs text-slate-700 dark:text-slate-300">
         {JSON.stringify(value, null, 2)}
       </pre>
     );
   }
 
-  return <span className="text-sm text-[#202020]">{String(value)}</span>;
+  return <span className="text-sm text-slate-900 dark:text-white">{String(value)}</span>;
 }
 
 function ProfileInfoRow({
@@ -185,9 +185,9 @@ function ProfileInfoRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[#F0F0F0] dark:border-slate-800 py-3 text-sm">
-      <span className="shrink-0 text-[#7C7C7C] dark:text-slate-400">{label}</span>
-      <span className="font-medium text-[#202020] dark:text-slate-200 text-right min-w-0 break-all">{value}</span>
+    <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 py-3 text-sm">
+      <span className="shrink-0 text-slate-500 dark:text-slate-400 font-medium">{label}</span>
+      <span className="font-semibold text-slate-900 dark:text-white text-right min-w-0 break-all">{value}</span>
     </div>
   );
 }
@@ -200,16 +200,16 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-[#E7E7E7] dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#161f36] p-4">
-      <p className="text-xs text-[#5B5B5B] dark:text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-[#202020] dark:text-white">{value}</p>
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 p-4 transition-colors">
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-2xl border border-[#E4E9EC] dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#161f36] px-6 py-10 text-center text-sm text-[#5A646B] dark:text-slate-400">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
       {message}
     </div>
   );
@@ -789,8 +789,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     setPageStatus({
       tone: "info",
       message: response === "approved"
-        ? "Accepting proposal and generating package request..."
-        : "Submitting rejection feedback...",
+        ? "Accepting proposal and preparing standard checkout..."
+        : "Submitting revision feedback...",
     });
 
     try {
@@ -798,8 +798,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       setPageStatus({
         tone: "success",
         message: response === "approved"
-          ? "Proposal accepted! Initializing secure checkout..."
-          : "Proposal rejected successfully. Our engineers will follow up soon.",
+          ? "Proposal accepted! Redirecting to standard package checkout..."
+          : "Proposal revision requested. Our engineering team will review and update your proposal.",
       });
       // Refresh quotes
       const quotesData = await getCustomerQuotes();
@@ -811,12 +811,29 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       } catch (_) {}
       
       if (response === "approved") {
+        const quoteItem = quotes.find((q) => q.id === id);
         const pkgReqId = (result as any)?.data?.convertedPackageRequestId;
-        if (pkgReqId) {
-          await handleAcceptAndPay(pkgReqId);
-        } else {
-          router.push("/settings/package-requests");
-        }
+        const tailoredPkgId = (result as any)?.data?.tailoredPackageId || quoteItem?.tailoredPackageId;
+        const targetPackageId = tailoredPkgId || pkgReqId || id;
+        const packageTitle = quoteItem?.tailoredPackage?.name || `Tailored Solar System (${quoteItem?.recommendedSystemSize ? `${quoteItem.recommendedSystemSize} kW` : "Custom"})`;
+        const packagePrice = quoteItem?.estimatedCost || 0;
+
+        // Store active package order for the standard checkout process
+        try {
+          localStorage.setItem(
+            "fortsolar:active_package_order",
+            JSON.stringify({
+              packageId: targetPackageId,
+              packageTitle,
+              price: packagePrice,
+              image: "/images/custom-solar-package.png",
+              quoteId: id,
+            })
+          );
+        } catch (_) {}
+
+        // Navigate to standard package checkout
+        router.push(`/checkout?packageId=${encodeURIComponent(targetPackageId)}&quoteId=${encodeURIComponent(id)}`);
       }
     } catch (err) {
       setPageStatus({
@@ -947,7 +964,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
 
   if (!session) {
     return (
-      <div className="grid min-h-screen place-items-center bg-white text-sm text-[#5A646B]">
+      <div className="grid min-h-screen place-items-center bg-slate-50 dark:bg-[#0a0f1d] text-sm text-slate-500 dark:text-slate-400">
         Redirecting to sign in...
       </div>
     );
@@ -1192,223 +1209,289 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
               {activeTab === "quotes" ? (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-[#202020]">My Quotes</h2>
-                    <p className="text-sm text-[#7C7C7C]">
-                      Track submitted energy assessments and quote requests.
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Quotes</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Track submitted energy assessments, tailored proposals, and quote status.
                     </p>
                   </div>
 
-                  {localQuoteRequests.length > 0 ? (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-[#202020]">Pending Local Quote Requests</h3>
-                      {paginatedLocalQuoteRequests.map((quote) => (
-                        <div key={quote.createdAt} className="rounded-2xl border border-[#E7E7E7] bg-[#FAFAFA] p-5">
-                          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-[#202020]">
-                                Saved {formatDate(quote.createdAt)}
-                              </p>
-                              <p className="text-xs text-[#7C7C7C]">
-                                Preferred contact: {quote.preferredContactMethod}
-                              </p>
-                            </div>
-                            <span className="inline-flex rounded-full bg-[#FFF7E6] px-3 py-1 text-xs font-medium text-[#B26B00]">
-                              Pending Sync
-                            </span>
-                          </div>
-                          <div className="mt-4 space-y-2 text-sm text-[#404040]">
-                            <p>Location: {quote.location || "N/A"}</p>
-                            <p>Installation address: {quote.installationAddress || "N/A"}</p>
-                            <p>Installation requested: {quote.requestInstallation ? "Yes" : "No"}</p>
-                            <p>Items: {quote.products.map((item) => `${item.title} x${item.quantity ?? 1}`).join(", ")}</p>
-                          </div>
-                        </div>
-                      ))}
-                      <PaginationControls
-                        className="pt-2"
-                        page={resolvedLocalQuoteRequestsPage}
-                        totalPages={localQuoteRequestsTotalPages}
-                        totalItems={localQuoteRequests.length}
-                        onPageChange={setLocalQuoteRequestsPage}
-                      />
-                    </div>
-                  ) : null}
-
-                  {isLoadingQuotes ? (
-                    <EmptyState message="Loading your quotes..." />
-                  ) : quotes.length === 0 ? (
-                    <EmptyState message="No backend quote records were found for this account yet." />
-                  ) : (
-                    <div className="space-y-4">
-                      {paginatedQuotes.map((quote) => (
-                        <div key={quote.id} className="rounded-2xl border border-[#E7E7E7] bg-[#FAFAFA] p-5">
-                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                            <div>
-                              <p className="text-lg font-semibold text-[#202020]">{quote.id}</p>
-                              <p className="text-xs text-[#7C7C7C]">{formatDate(quote.createdAt)}</p>
-                            </div>
-                            <span className="inline-flex rounded-full bg-[#E8F4FF] px-3 py-1 text-xs font-medium text-[#2A7DD1]">
-                              {humanizeStatus(quote.status)}
-                            </span>
-                          </div>
-                          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                            <div className="space-y-2 text-sm text-[#404040]">
-                              <p>Total Load: {quote.energySummary.totalLoad || "N/A"}</p>
-                              <p>Total Watt Hours / Day: {quote.energySummary.totalWattHoursPerDay || "N/A"}</p>
-                              <p>Daily Usage: {quote.energySummary.dailyUsage || "N/A"}</p>
-                              <p>Monthly Usage: {quote.energySummary.monthlyUsage || "N/A"}</p>
-                            </div>
-                            <div className="space-y-2">
-                              <p className="text-sm font-semibold text-[#202020]">Appliances</p>
-                              <div className="flex flex-wrap gap-2">
-                                {quote.appliances.length > 0 ? (
-                                  quote.appliances.map((item) => (
-                                    <span
-                                      key={`${quote.id}-${item}`}
-                                      className="rounded-full bg-white px-3 py-1 text-xs text-[#5B5B5B]"
-                                    >
-                                      {item}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-sm text-[#7C7C7C]">No appliances supplied.</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {quote.status === "quoted" && (
-                            (() => {
-                              const validityDays = Number(quote.formExtras?.validity_days) || 7;
-                              const createdDate = new Date(quote.updatedAt);
-                              const expirationDate = new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
-                              const now = new Date();
-                              const isExpired = now.getTime() > expirationDate.getTime();
-                              const remainingMs = expirationDate.getTime() - now.getTime();
-                              const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
-
-                              return (
-                                <div className="mt-4 p-4 border border-[#EAECF0] rounded-xl bg-white space-y-3">
-                                  <h4 className="text-sm font-semibold text-[#101828]">Proposal Details</h4>
-                                  <div className="grid grid-cols-2 gap-4 text-xs">
-                                    <div>
-                                      <span className="text-[#7C7C7C]">Custom System Sizing:</span>
-                                      <p className="font-semibold text-sm text-[#202020]">{quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "N/A"}</p>
-                                    </div>
-                                    <div>
-                                      <span className="text-[#7C7C7C]">Price Quote:</span>
-                                      <p className="font-semibold text-sm text-[#202020]">{quote.estimatedCost ? formatCurrency(quote.estimatedCost) : "N/A"}</p>
-                                    </div>
-                                    <div>
-                                      <span className="text-[#7C7C7C]">Est. Payback Period:</span>
-                                      <p className="font-semibold text-sm text-[#202020]">{quote.paybackPeriodYears ? `${quote.paybackPeriodYears} Years` : "N/A"}</p>
-                                    </div>
-                                    <div>
-                                      <span className="text-[#7C7C7C]">Quote Validity:</span>
-                                      <p className={`font-semibold text-sm ${isExpired ? "text-[#E11D48]" : "text-[#048A05]"}`}>
-                                        {isExpired ? "Expired" : `${remainingDays} days remaining`}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  {quote.adminNotes && (
-                                    <div className="mt-2 text-xs text-[#5A646B] bg-gray-50 p-2 rounded-lg">
-                                      <strong>Designer's Note: </strong> {quote.adminNotes}
-                                    </div>
-                                  )}
-                                  {quote.quoteAssetUrl && (
-                                    <a
-                                      href={quote.quoteAssetUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#048A05] hover:underline pt-1"
-                                    >
-                                      Download Official Proposal PDF / Document
-                                    </a>
-                                  )}
-
-                                  <div className="mt-4 pt-4 border-t border-[#EAECF0] flex flex-col gap-2 sm:flex-row sm:justify-end">
-                                    {isExpired ? (
-                                      <p className="text-xs text-[#B26B00] italic">This proposal is expired. Please contact support to request a reissue.</p>
-                                    ) : (
-                                      <>
-                                        {showRejectionFormQuoteId === quote.id ? (
-                                          <div className="w-full space-y-2 text-left">
-                                            <textarea
-                                              className="w-full text-xs p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#048A05]"
-                                              placeholder="Enter reason for rejection or request revisions..."
-                                              value={rejectionNotes[quote.id] || ""}
-                                              onChange={(e) => setRejectionNotes(prev => ({ ...prev, [quote.id]: e.target.value }))}
-                                            />
-                                            <div className="flex gap-2 justify-end">
-                                              <Button
-                                                onClick={() => setShowRejectionFormQuoteId(null)}
-                                                variant="outline"
-                                                className="px-3 py-1.5 text-xs rounded-lg bg-white text-gray-700"
-                                              >
-                                                Cancel
-                                              </Button>
-                                              <Button
-                                                onClick={() => handleQuoteFeedback(quote.id, "rejected")}
-                                                className="px-3 py-1.5 text-xs rounded-lg bg-[#E11D48] text-white hover:bg-[#BE123C]"
-                                                disabled={isFeedbackSubmittingQuoteId === quote.id}
-                                              >
-                                                Submit Rejection
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <>
-                                            <Button
-                                              onClick={() => setShowRejectionFormQuoteId(quote.id)}
-                                              className="px-4 py-2 text-xs font-semibold border border-gray-200 text-[#475467] hover:bg-gray-50 bg-white rounded-lg w-full sm:w-fit"
-                                              disabled={isFeedbackSubmittingQuoteId === quote.id}
-                                            >
-                                              Reject & Request Revision
-                                            </Button>
-                                            <Button
-                                              onClick={() => handleQuoteFeedback(quote.id, "approved")}
-                                              className="px-4 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg w-full sm:w-fit"
-                                              disabled={isFeedbackSubmittingQuoteId === quote.id}
-                                            >
-                                              {isFeedbackSubmittingQuoteId === quote.id ? "Processing..." : "Accept Proposal & Pay"}
-                                            </Button>
-                                          </>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })()
-                          )}
-
-                          {quote.status === "approved" && (
-                            <div className="mt-4 p-4 border border-[#DCFCE7] rounded-xl bg-[#F0FDF4] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    {localQuoteRequests.length > 0 ? (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Pending Local Quote Requests</h3>
+                        {paginatedLocalQuoteRequests.map((quote) => (
+                          <div key={quote.createdAt} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-5 shadow-xs">
+                            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                               <div>
-                                <p className="text-xs font-semibold text-[#166534]">Proposal Accepted</p>
-                                <p className="text-xs text-[#15803D]">
-                                  This custom quote proposal was accepted and converted into a package request.
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                  Saved {formatDate(quote.createdAt)}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                  Preferred contact: {quote.preferredContactMethod}
                                 </p>
                               </div>
-                              {quote.convertedPackageRequestId && (
-                                <Button
-                                  onClick={() => handleAcceptAndPay(quote.convertedPackageRequestId!)}
-                                  className="px-4 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-lg shrink-0"
-                                  disabled={isPayingRequestId === quote.convertedPackageRequestId}
-                                >
-                                  {isPayingRequestId === quote.convertedPackageRequestId ? "Processing..." : "Complete Checkout"}
-                                </Button>
-                              )}
+                              <span className="inline-flex rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/40 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                Pending Sync
+                              </span>
                             </div>
-                          )}
+                            <div className="mt-4 space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
+                              <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Location:</span> {quote.location || "N/A"}</p>
+                              <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Address:</span> {quote.installationAddress || "N/A"}</p>
+                              <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Installation requested:</span> {quote.requestInstallation ? "Yes" : "No"}</p>
+                              <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Items:</span> {quote.products.map((item) => `${item.title} x${item.quantity ?? 1}`).join(", ")}</p>
+                            </div>
+                          </div>
+                        ))}
+                        <PaginationControls
+                          className="pt-2"
+                          page={resolvedLocalQuoteRequestsPage}
+                          totalPages={localQuoteRequestsTotalPages}
+                          totalItems={localQuoteRequests.length}
+                          onPageChange={setLocalQuoteRequestsPage}
+                        />
+                      </div>
+                    ) : null}
 
-                          {quote.status === "rejected" && (
-                            <div className="mt-4 p-3 border border-red-100 rounded-xl bg-red-50 text-xs text-red-700">
-                              Proposal declined. Our engineering team has been notified to provide revised specifications.
+                    {isLoadingQuotes ? (
+                      <EmptyState message="Loading your quotes..." />
+                    ) : quotes.length === 0 ? (
+                      <EmptyState message="No backend quote records were found for this account yet." />
+                    ) : (
+                      <div className="space-y-4">
+                        {paginatedQuotes.map((quote) => (
+                          <div key={quote.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-5 shadow-xs transition-colors">
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                              <div>
+                                <p className="text-lg font-bold text-slate-900 dark:text-white">{quote.id}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(quote.createdAt)}</p>
+                              </div>
+                              <span className="inline-flex rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/40 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
+                                {humanizeStatus(quote.status)}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      ))}
+
+                            {/* Offline Contact Banner */}
+                            {quote.contactedOffline && (
+                              <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 text-xs text-emerald-900 dark:text-emerald-300">
+                                <span className="text-base leading-none">✓</span>
+                                <div>
+                                  <strong className="block font-semibold">Contacted &amp; Discussed Offline</strong>
+                                  <span className="text-emerald-700 dark:text-emerald-400">
+                                    {quote.offlineContactNotes || "Our engineering team contacted you offline to review your site audit, explain the whole process, and tailor this custom system package for your needs."}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                              <div className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Total Load:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.totalLoad || "N/A"}</span></p>
+                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Total Watt Hours / Day:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.totalWattHoursPerDay || "N/A"}</span></p>
+                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Daily Usage:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.dailyUsage || "N/A"}</span></p>
+                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Monthly Usage:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.monthlyUsage || "N/A"}</span></p>
+                              </div>
+                              <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Appliances</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {quote.appliances.length > 0 ? (
+                                    quote.appliances.map((item) => (
+                                      <span
+                                        key={`${quote.id}-${item}`}
+                                        className="rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium"
+                                      >
+                                        {item}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-sm text-slate-500 dark:text-slate-400">No appliances supplied.</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {quote.status === "quoted" && (
+                              (() => {
+                                const validityDays = Number(quote.formExtras?.validity_days) || 7;
+                                const createdDate = new Date(quote.updatedAt);
+                                const expirationDate = new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
+                                const now = new Date();
+                                const isExpired = now.getTime() > expirationDate.getTime();
+                                const remainingMs = expirationDate.getTime() - now.getTime();
+                                const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+                                const tp = quote.tailoredPackage || (quote.formExtras?.tailored_package as Record<string, any>) || null;
+
+                                return (
+                                  <div className="mt-4 p-5 border border-slate-200 dark:border-slate-700/80 rounded-2xl bg-white dark:bg-slate-900/90 shadow-xs space-y-4 transition-colors">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                                      <div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#048A05] dark:text-emerald-400 block">
+                                          Tailored System Package Proposal
+                                        </span>
+                                        <h4 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                                          {tp?.name || (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW Tailored Solar Package` : "Tailored System Package")}
+                                        </h4>
+                                      </div>
+                                      <div className="text-left sm:text-right">
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 block">System Investment</span>
+                                        <span className="text-xl font-bold text-slate-900 dark:text-white">
+                                          {quote.estimatedCost ? formatCurrency(quote.estimatedCost) : "Custom Estimate"}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Tailored Component Specifications */}
+                                    {tp ? (
+                                      <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                        <div>
+                                          <span className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Solar Panels</span>
+                                          <p className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{tp.panels || "Tier-1 High-Efficiency Mono Panels"}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Inverter System</span>
+                                          <p className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{tp.inverter || "Pure Sine Wave Hybrid Inverter"}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Battery Storage</span>
+                                          <p className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{tp.battery || "Deep-Cycle Lithium LiFePO4 Storage"}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Warranty Coverage</span>
+                                          <p className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{tp.warranty || "5 Years Comprehensive Warranty"}</p>
+                                        </div>
+                                      </div>
+                                    ) : null}
+
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                      <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
+                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">System Size:</span>
+                                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">{quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "N/A"}</p>
+                                      </div>
+                                      <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
+                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Est. Annual Savings:</span>
+                                        <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400 mt-0.5">{quote.estimatedSavings ? formatCurrency(quote.estimatedSavings) : "N/A"}</p>
+                                      </div>
+                                      <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
+                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Payback Period:</span>
+                                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">{quote.paybackPeriodYears ? `${quote.paybackPeriodYears} Years` : "N/A"}</p>
+                                      </div>
+                                      <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
+                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Quote Validity:</span>
+                                        <p className={`font-bold text-sm mt-0.5 ${isExpired ? "text-rose-600 dark:text-rose-400" : "text-[#048A05] dark:text-emerald-400"}`}>
+                                          {isExpired ? "Expired" : `${remainingDays} days left`}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {quote.adminNotes && (
+                                      <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-3 rounded-xl">
+                                        <strong className="text-slate-900 dark:text-white">Engineer's Note: </strong> {quote.adminNotes}
+                                      </div>
+                                    )}
+
+                                    {quote.quoteAssetUrl && (
+                                      <div>
+                                        <a
+                                          href={quote.quoteAssetUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#048A05] dark:text-emerald-400 hover:underline"
+                                        >
+                                          📄 Download Official Proposal PDF / Spec Sheet
+                                        </a>
+                                      </div>
+                                    )}
+
+                                    {/* Action Buttons */}
+                                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                                      {isExpired ? (
+                                        <p className="text-xs text-amber-600 dark:text-amber-400 italic">This proposal is expired. Please contact support to request a reissue.</p>
+                                      ) : showRejectionFormQuoteId === quote.id ? (
+                                        <div className="w-full space-y-2 text-left">
+                                          <textarea
+                                            className="w-full text-xs p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#048A05]"
+                                            placeholder="Enter reasons for revision or change requests..."
+                                            value={rejectionNotes[quote.id] || ""}
+                                            onChange={(e) => setRejectionNotes(prev => ({ ...prev, [quote.id]: e.target.value }))}
+                                          />
+                                          <div className="flex gap-2 justify-end">
+                                            <Button
+                                              onClick={() => setShowRejectionFormQuoteId(null)}
+                                              variant="outline"
+                                              className="px-3.5 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button
+                                              onClick={() => handleQuoteFeedback(quote.id, "rejected")}
+                                              className="px-3.5 py-1.5 text-xs rounded-xl bg-rose-600 text-white hover:bg-rose-700"
+                                              disabled={isFeedbackSubmittingQuoteId === quote.id}
+                                            >
+                                              Submit Revision Request
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <Button
+                                            onClick={() => setShowRejectionFormQuoteId(quote.id)}
+                                            className="px-4 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-800/80 rounded-xl w-full sm:w-fit cursor-pointer"
+                                            disabled={isFeedbackSubmittingQuoteId === quote.id}
+                                          >
+                                            Reject &amp; Request Revision
+                                          </Button>
+                                          <Button
+                                            onClick={() => handleQuoteFeedback(quote.id, "approved")}
+                                            className="px-5 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-xl w-full sm:w-fit cursor-pointer shadow-xs"
+                                            disabled={isFeedbackSubmittingQuoteId === quote.id}
+                                          >
+                                            {isFeedbackSubmittingQuoteId === quote.id ? "Proceeding to Checkout..." : "Accept & Proceed to Checkout →"}
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()
+                            )}
+
+                            {(quote.status === "approved" || quote.status === "reviewed") && (
+                              <div className="mt-4 p-4 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div>
+                                  <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Proposal Accepted</p>
+                                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                                    Your tailored system package is ready for checkout and installation scheduling.
+                                  </p>
+                                </div>
+                                <Button
+                                  onClick={() => {
+                                    const tailoredPkgId = quote.tailoredPackageId || quote.convertedPackageRequestId || quote.id;
+                                    try {
+                                      localStorage.setItem(
+                                        "fortsolar:active_package_order",
+                                        JSON.stringify({
+                                          packageId: tailoredPkgId,
+                                          packageTitle: quote.tailoredPackage?.name || "Tailored Solar System",
+                                          price: quote.estimatedCost || 0,
+                                          image: "/images/custom-solar-package.png",
+                                          quoteId: quote.id,
+                                        })
+                                      );
+                                    } catch (_) {}
+                                    router.push(`/checkout?packageId=${encodeURIComponent(tailoredPkgId)}&quoteId=${encodeURIComponent(quote.id)}`);
+                                  }}
+                                  className="px-4 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-xl shrink-0 cursor-pointer shadow-xs"
+                                >
+                                  Proceed to Checkout →
+                                </Button>
+                              </div>
+                            )}
+
+                            {quote.status === "rejected" && (
+                              <div className="mt-4 p-3 border border-rose-200 dark:border-rose-800/50 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-xs text-rose-700 dark:text-rose-300">
+                                Proposal revision requested. Our engineering team has been notified to provide revised specifications.
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       <PaginationControls
                         className="pt-2"
                         page={resolvedQuotesPage}
@@ -1424,8 +1507,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
               {activeTab === "orders" ? (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-[#202020]">My Orders</h2>
-                    <p className="text-sm text-[#7C7C7C]">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Orders</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Review the latest order status, fulfillment progress, and totals.
                     </p>
                   </div>
@@ -1447,29 +1530,41 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   ) : ordersPayload?.data.length ? (
                     <div className="space-y-4">
                       {ordersPayload.data.map((order) => (
-                        <div key={order.id} className="rounded-2xl border border-[#E7E7E7] bg-white p-5">
+                        <div key={order.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-5 shadow-xs transition-colors">
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
-                              <p className="text-lg font-semibold text-[#202020]">
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">
                                 {order.orderNumber || (order.id ? `#${order.id.replace(/-/g, "").slice(0, 8).toUpperCase()}` : "Order")}
                               </p>
-                              <p className="text-xs text-[#7C7C7C]">{formatDate(order.createdAt)}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(order.createdAt)}</p>
                             </div>
                             <div className="text-right">
-                              <span className="inline-flex rounded-full bg-[#EAF7E8] px-3 py-1 text-xs font-medium text-[#048a05]">
+                              <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 text-xs font-semibold text-[#048a05] dark:text-emerald-400">
                                 {humanizeStatus(order.displayStatus || order.status)}
                               </span>
-                              <p className="mt-2 text-lg font-semibold text-[#202020]">
+                              <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
                                 {formatCurrency(order.totalAmount, order.currency || "NGN")}
                               </p>
                             </div>
                           </div>
 
-                          <div className="mt-4 grid gap-3 text-sm text-[#404040] lg:grid-cols-4">
-                            <p>Type: {humanizeStatus(order.type)}</p>
-                            <p>Fulfillment: {humanizeStatus(order.fulfillmentStatus)}</p>
-                            <p>Quantity: {order.qty}</p>
-                            <p>Primary Item: {order.primaryItemName || "N/A"}</p>
+                          <div className="mt-4 grid gap-3 text-sm lg:grid-cols-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 p-3.5">
+                            <div>
+                              <span className="text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider block font-semibold">Type</span>
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5 block">{humanizeStatus(order.type)}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider block font-semibold">Fulfillment</span>
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5 block">{humanizeStatus(order.fulfillmentStatus)}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider block font-semibold">Quantity</span>
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5 block">{order.qty}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider block font-semibold">Primary Item</span>
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5 block truncate">{order.primaryItemName || "N/A"}</span>
+                            </div>
                           </div>
 
                           <div className="flex flex-wrap gap-3 items-center mt-4">
@@ -1482,13 +1577,13 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
 
                             {order.type === "FINANCING" || (order as any).isFinancing ? (
                               order.status === "completed" ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 rounded-lg">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
                                   Payment Completed (Financed)
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 rounded-lg">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                                   Financing Application (Under Review)
                                 </span>
                               )
@@ -1522,8 +1617,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
               {activeTab === "installations" ? (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-[#202020]">My Installations</h2>
-                    <p className="text-sm text-[#7C7C7C]">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Installations</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Track the progress, schedule, and completion of your solar installations.
                     </p>
                   </div>
@@ -1544,30 +1639,30 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   ) : installationsPayload?.data.length ? (
                     <div className="space-y-4">
                       {installationsPayload.data.map((installation) => (
-                        <div key={installation.id} className="rounded-2xl border border-[#E7E7E7] bg-white p-5">
+                        <div key={installation.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-5 shadow-xs transition-colors">
                           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div>
-                              <p className="text-lg font-semibold text-[#202020]">
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">
                                 {installation.packageLabel || "Solar System Installation"}
                               </p>
-                              <p className="text-xs text-[#7C7C7C]">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                 Booked {formatDate(installation.createdAt)}
                               </p>
                               <div className="mt-2 flex flex-wrap gap-2">
-                                <span className="inline-flex rounded-full bg-[#EAF7E8] px-3 py-1 text-xs font-medium text-[#048a05]">
+                                <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 text-xs font-semibold text-[#048a05] dark:text-emerald-400">
                                   {humanizeStatus(installation.displayStatus || installation.status)}
                                 </span>
-                                <span className="inline-flex rounded-full bg-[#EEF5FF] px-3 py-1 text-xs font-medium text-[#1D4ED8]">
+                                <span className="inline-flex rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/40 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
                                   Payment: {humanizeStatus(installation.paymentStatus)}
                                 </span>
                               </div>
                             </div>
 
                             <div className="text-right">
-                              <p className="text-sm font-medium text-[#202020]">
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {installation.installerName ? `Technician: ${installation.installerName}` : "Technician: Assigned by Fortsolar"}
                               </p>
-                              <p className="text-xs text-[#7C7C7C] mt-0.5">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                 {installation.scheduledDate
                                   ? `Scheduled: ${formatDate(installation.scheduledDate)}`
                                   : "Schedule: In coordination"}
@@ -1576,11 +1671,11 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                           </div>
 
                           <div className="mt-4">
-                            <div className="flex items-center justify-between text-xs text-[#7C7C7C]">
+                            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                               <span>Installation Progress</span>
-                              <span className="font-semibold text-[#202020]">{installation.progressPercent}%</span>
+                              <span className="font-bold text-slate-900 dark:text-white">{installation.progressPercent}%</span>
                             </div>
-                            <div className="mt-2 h-2 w-full rounded-full bg-[#E9EEF1]">
+                            <div className="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800">
                               <div
                                 className="h-2 rounded-full bg-[#048a05] transition-all duration-300"
                                 style={{ width: `${Math.max(0, Math.min(100, installation.progressPercent))}%` }}
@@ -1592,7 +1687,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             <button
                               type="button"
                               onClick={() => void toggleInstallationDetail(installation.id)}
-                              className="text-sm font-semibold text-[#048a05] hover:underline cursor-pointer"
+                              className="text-sm font-semibold text-[#048a05] dark:text-emerald-400 hover:underline cursor-pointer"
                             >
                               {expandedInstallationId === installation.id
                                 ? "Hide Installation Detail"
@@ -1602,7 +1697,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                             <button
                               type="button"
                               onClick={() => void handleReportInstallationIssue(installation.id)}
-                              className="rounded-xl border border-[#BEBEBE] px-3.5 py-1.5 text-xs font-semibold text-[#202020] hover:bg-gray-50 transition cursor-pointer"
+                              className="rounded-xl border border-slate-300 dark:border-slate-700 px-3.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
                             >
                               Report Issue
                             </button>
@@ -1616,7 +1711,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                 href={FORTSOLAR_GOOGLE_REVIEW_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100/80 cursor-pointer shadow-2xs"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-1.5 text-xs font-semibold text-amber-900 dark:text-amber-300 transition hover:bg-amber-100/80 cursor-pointer shadow-2xs"
                               >
                                 <span>★ Leave a Review on Google</span>
                                 <span>↗</span>
@@ -1632,75 +1727,75 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               const locationStr = [details.address, details.city, details.state].filter(Boolean).join(", ");
 
                               return (
-                                <div className="mt-5 rounded-2xl border border-[#E7E7E7] bg-[#FAFAFA] p-5 space-y-5">
+                                <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 p-5 space-y-5">
                                   <div>
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#048a05]">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#048a05] dark:text-emerald-400">
                                       Installation Details &amp; Scope
                                     </h4>
-                                    <p className="text-xs text-[#7C7C7C] mt-0.5">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                       Site, technical specifications, and execution schedule.
                                     </p>
                                   </div>
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
-                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">System Package</span>
-                                      <p className="font-semibold text-[#202020]">
+                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-3.5 space-y-1">
+                                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">System Package</span>
+                                      <p className="font-bold text-slate-900 dark:text-white">
                                         {details.packageLabel || "Residential Solar System"}
                                       </p>
                                       {details.systemSizeKw ? (
-                                        <p className="text-xs text-[#048a05] font-medium">{details.systemSizeKw} kW Capacity</p>
+                                        <p className="text-xs text-[#048a05] dark:text-emerald-400 font-medium">{details.systemSizeKw} kW Capacity</p>
                                       ) : null}
                                     </div>
 
-                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
-                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Assigned Technician</span>
-                                      <p className="font-semibold text-[#202020]">
+                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-3.5 space-y-1">
+                                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Assigned Technician</span>
+                                      <p className="font-bold text-slate-900 dark:text-white">
                                         {details.installerName || "Assigned Fortsolar Technician"}
                                       </p>
-                                      <p className="text-xs text-[#7C7C7C]">Certified Solar Engineer</p>
+                                      <p className="text-xs text-slate-500 dark:text-slate-400">Certified Solar Engineer</p>
                                     </div>
 
-                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
-                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Installation Site</span>
-                                      <p className="font-semibold text-[#202020] break-words">
+                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-3.5 space-y-1">
+                                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Installation Site</span>
+                                      <p className="font-bold text-slate-900 dark:text-white break-words">
                                         {locationStr || "Address on File"}
                                       </p>
                                     </div>
 
-                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
-                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Scheduled Date</span>
-                                      <p className="font-semibold text-[#202020]">
+                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-3.5 space-y-1">
+                                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Scheduled Date</span>
+                                      <p className="font-bold text-slate-900 dark:text-white">
                                         {details.scheduledDate ? formatDate(details.scheduledDate) : "To be scheduled"}
                                       </p>
                                     </div>
 
-                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
-                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Status / Completed</span>
-                                      <p className="font-semibold text-[#202020]">
+                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-3.5 space-y-1">
+                                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status / Completed</span>
+                                      <p className="font-bold text-slate-900 dark:text-white">
                                         {details.completedDate ? formatDate(details.completedDate) : humanizeStatus(details.displayStatus || details.status)}
                                       </p>
                                     </div>
 
-                                    <div className="rounded-xl border border-gray-200/70 bg-white p-3.5 space-y-1">
-                                      <span className="text-xs font-semibold text-[#7C7C7C] uppercase tracking-wide">Booked On</span>
-                                      <p className="font-semibold text-[#202020]">
+                                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-3.5 space-y-1">
+                                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Booked On</span>
+                                      <p className="font-bold text-slate-900 dark:text-white">
                                         {formatDate(details.createdAt)}
                                       </p>
                                     </div>
                                   </div>
 
                                   {photos.length > 0 && (
-                                    <div className="border-t border-gray-200/80 pt-4 space-y-3">
+                                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
                                       <div className="flex items-center justify-between">
-                                        <p className="text-xs font-bold uppercase tracking-wider text-[#202020]">Proof of Work Photos</p>
-                                        <span className="text-xs text-[#7C7C7C]">{photos.length} photos uploaded</span>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">Proof of Work Photos</p>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">{photos.length} photos uploaded</span>
                                       </div>
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         {photos.map((p: any) => (
-                                          <div key={p.id} className="rounded-xl overflow-hidden border border-gray-200 bg-white p-1 shadow-2xs">
+                                          <div key={p.id} className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 shadow-2xs">
                                             <img src={p.url} alt={p.type || "Installation proof photo"} className="w-full h-28 object-cover rounded-lg" />
-                                            <div className="p-1.5 text-[11px] text-[#7C7C7C] text-center capitalize font-medium truncate">
+                                            <div className="p-1.5 text-[11px] text-slate-500 dark:text-slate-400 text-center capitalize font-medium truncate">
                                               {p.type ? `${p.type} Photo` : "Installation Photo"}
                                             </div>
                                           </div>
@@ -1732,8 +1827,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
               {activeTab === "package_requests" ? (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-[#202020]">Package Requests</h2>
-                    <p className="text-sm text-[#7C7C7C]">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Package Requests</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Review bundle and package requests connected to your account.
                     </p>
                   </div>
@@ -1743,51 +1838,51 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                   ) : packageRequestsPayload?.data.length ? (
                     <div className="space-y-4">
                       {packageRequestsPayload.data.map((request) => (
-                        <div key={request.id} className="rounded-2xl border border-[#E7E7E7] bg-white p-5">
+                        <div key={request.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-5 shadow-xs transition-colors">
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
-                              <p className="text-lg font-semibold text-[#202020]">
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">
                                 {request.packageName}
                               </p>
-                              <p className="text-xs text-[#7C7C7C]">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                 {request.requestId} • {formatDate(request.date)}
                               </p>
                             </div>
-                            <span className="inline-flex rounded-full bg-[#EEF5FF] px-3 py-1 text-xs font-medium text-[#1D4ED8]">
+                            <span className="inline-flex rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/40 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
                               {humanizeStatus(request.displayStatus || request.status)}
                             </span>
                           </div>
                           {request.financing_requested && (
-                            <div className="mt-3 rounded-xl bg-gray-50 p-3 text-xs border border-[#E7E7E7] space-y-2">
+                            <div className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs border border-slate-200 dark:border-slate-700 space-y-2">
                               <div className="flex items-center justify-between">
-                                <span className="font-semibold text-[#5A646B]">Financing Status:</span>
+                                <span className="font-semibold text-slate-600 dark:text-slate-300">Financing Status:</span>
                                 <span className={`font-bold uppercase ${
                                   request.financing_status === "approved"
-                                    ? "text-[#048A05]"
+                                    ? "text-[#048A05] dark:text-emerald-400"
                                     : request.financing_status === "rejected"
-                                      ? "text-[#E11D48]"
-                                      : "text-amber-500"
+                                      ? "text-rose-600 dark:text-rose-400"
+                                      : "text-amber-600 dark:text-amber-400"
                                 }`}>
                                   {humanizeStatus(request.financing_status || "Pending assessment")}
                                 </span>
                               </div>
                               {request.financing_status === "approved" && request.financing_terms && (
-                                <div className="border-t border-gray-200 pt-2 grid grid-cols-3 gap-2">
+                                <div className="border-t border-slate-200 dark:border-slate-700 pt-2 grid grid-cols-3 gap-2">
                                   <div>
-                                    <span className="text-[#7C7C7C]">Downpayment:</span>
-                                    <p className="font-semibold text-sm text-[#202020]">
+                                    <span className="text-slate-500 dark:text-slate-400 text-[11px]">Downpayment:</span>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
                                       {formatCurrency(request.financing_terms.downpayment_amount)}
                                     </p>
                                   </div>
                                   <div>
-                                    <span className="text-[#7C7C7C]">Monthly Installment:</span>
-                                    <p className="font-semibold text-sm text-[#202020]">
+                                    <span className="text-slate-500 dark:text-slate-400 text-[11px]">Monthly Installment:</span>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
                                       {formatCurrency(request.financing_terms.installment)} / mo
                                     </p>
                                   </div>
                                   <div>
-                                    <span className="text-[#7C7C7C]">Tenure:</span>
-                                    <p className="font-semibold text-sm text-[#202020]">
+                                    <span className="text-slate-500 dark:text-slate-400 text-[11px]">Tenure:</span>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
                                       {request.financing_terms.tenure} Months
                                     </p>
                                   </div>
@@ -1801,7 +1896,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               <Button
                                 onClick={() => handleAcceptAndPay(request.id)}
                                 disabled={isPayingRequestId !== null || isVerifyingPayment}
-                                className="rounded-xl bg-[#1D9A1D] px-6 py-2 text-sm font-semibold text-white hover:bg-[#048a05]"
+                                className="rounded-xl bg-[#048a05] hover:bg-[#036B04] px-6 py-2 text-sm font-semibold text-white shadow-xs"
                               >
                                 {isPayingRequestId === request.id ? "Processing..." : "Accept & Pay"}
                               </Button>
