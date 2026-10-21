@@ -225,7 +225,10 @@ const ProductDetailPage = () => {
 
               {/* Customer Reviews & Google Business Verification */}
               <div className="pt-2">
-                <GoogleReviewsCard title="Product & Installation Reviews" subtitle="Read feedback on Fortsolar hardware & installations on Google." />
+                <GoogleReviewsCard
+                  title="Fortsolar Verified Company Reviews"
+                  subtitle="Read verified customer feedback on Fortsolar service, equipment delivery & installations on Google."
+                />
               </div>
             </div>
           </div>

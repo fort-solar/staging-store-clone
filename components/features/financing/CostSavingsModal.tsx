@@ -122,7 +122,7 @@ export function CostSavingsModal({
         {/* Section 1: Side-by-Side Comparison */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
           {/* Option A: Pay Outright */}
-          <div className="rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/20 p-6 flex flex-col justify-between hover:border-neutral-300 dark:hover:border-neutral-700 transition-all">
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/20 p-6 flex flex-col justify-between hover:border-neutral-300 dark:hover:border-neutral-700 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
@@ -134,7 +134,7 @@ export function CostSavingsModal({
               </div>
               <h3 className="text-xl font-bold text-neutral-900 dark:text-white mt-2">Pay Outright</h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                Single upfront purchase with full system ownership and immediate warranty activation.
+                Single upfront purchase with full system ownership, priority installation, and no recurring debt.
               </p>
 
               <div className="mt-5 pb-5 border-b border-neutral-200 dark:border-neutral-800">
@@ -146,18 +146,22 @@ export function CostSavingsModal({
                 </div>
               </div>
 
-              <ul className="space-y-2 mt-4 text-xs text-neutral-600 dark:text-neutral-300">
+              <ul className="space-y-2.5 mt-4 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
-                  <span className="text-emerald-600 dark:text-emerald-400">✓</span>
-                  <span>Lowest total cost of ownership (₦0 interest)</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                  <span>Lowest total cost of ownership (₦0 interest & no loan fees)</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-emerald-600 dark:text-emerald-400">✓</span>
-                  <span>Fastest path to positive ROI & fuel elimination</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                  <span>Immediate system ownership & instant warranty activation</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-emerald-600 dark:text-emerald-400">✓</span>
-                  <span>Fast equipment delivery and installation scheduling</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                  <span>Direct equipment delivery & installation scheduling</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                  <span>No credit checks, partner vetting, or approval wait times</span>
                 </li>
               </ul>
             </div>
@@ -165,41 +169,37 @@ export function CostSavingsModal({
             <button
               type="button"
               onClick={handleOutrightClick}
-              className="mt-6 w-full py-3 px-4 rounded-xl font-semibold text-sm bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900 transition-colors shadow-sm"
+              className="mt-6 w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-[#048A05] hover:bg-[#037004] text-white transition-all shadow-md active:scale-[0.99] cursor-pointer"
             >
               Order System Package (Pay Outright)
             </button>
           </div>
 
           {/* Option B: Spread Payments (Financing) */}
-          <div className="rounded-2xl border-2 border-emerald-500/80 bg-emerald-50/30 dark:bg-emerald-950/10 p-6 flex flex-col justify-between relative shadow-sm">
-            <div className="absolute -top-3 right-6 bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-sm">
-              Most Flexible
-            </div>
-
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/20 p-6 flex flex-col justify-between hover:border-neutral-300 dark:hover:border-neutral-700 transition-all">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   Option 2
                 </span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-                  4% / mo flat rate
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+                  Requires Partner Approval
                 </span>
               </div>
               <h3 className="text-xl font-bold text-neutral-900 dark:text-white mt-2">
                 Spread Payments (Financing)
               </h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-                Structured monthly installments with vetted institutional partners.
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                Structured monthly installments via vetted financial partners. Subject to credit eligibility.
               </p>
 
               {/* Installment Highlight */}
-              <div className="mt-5 pb-5 border-b border-emerald-200 dark:border-emerald-800/40">
-                <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+              <div className="mt-5 pb-5 border-b border-neutral-200 dark:border-neutral-800">
+                <div className="text-3xl font-black text-neutral-900 dark:text-white">
                   ₦{financingResult.monthlyPayment.toLocaleString()}
                   <span className="text-sm font-normal text-neutral-500 dark:text-neutral-400"> / month</span>
                 </div>
-                <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                   Down Payment: <strong>₦{financingResult.downPaymentAmount.toLocaleString()}</strong> ({downPaymentPct}%) • Tenure:{" "}
                   <strong>{tenureMonths} Months</strong>
                 </div>
@@ -214,7 +214,7 @@ export function CostSavingsModal({
                   <select
                     value={downPaymentPct}
                     onChange={(e) => setDownPaymentPct(Number(e.target.value))}
-                    className="w-full text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 text-neutral-900 dark:text-white"
+                    className="w-full text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 text-neutral-900 dark:text-white outline-none focus:ring-1 focus:ring-emerald-500"
                   >
                     <option value={30}>30% (Standard Minimum)</option>
                     <option value={40}>40%</option>
@@ -230,7 +230,7 @@ export function CostSavingsModal({
                   <select
                     value={tenureMonths}
                     onChange={(e) => setTenureMonths(Number(e.target.value))}
-                    className="w-full text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 text-neutral-900 dark:text-white"
+                    className="w-full text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 text-neutral-900 dark:text-white outline-none focus:ring-1 focus:ring-emerald-500"
                   >
                     {DEFAULT_AVAILABLE_TENURES.map((t) => (
                       <option key={t} value={t}>
@@ -242,16 +242,16 @@ export function CostSavingsModal({
               </div>
 
               <div className="mt-3 text-[11px] text-neutral-500 dark:text-neutral-400">
-                Total repayment: ₦{financingResult.totalCostWithFinancing.toLocaleString()} (Principal: ₦{financingResult.principalAmount.toLocaleString()} + Interest: ₦{financingResult.totalInterest.toLocaleString()})
+                Total repayment: ₦{financingResult.totalCostWithFinancing.toLocaleString()} (Principal: ₦{financingResult.principalAmount.toLocaleString()} + Interest: ₦{financingResult.totalInterest.toLocaleString()}). Subject to credit assessment.
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleFinancingClick}
-              className="mt-6 w-full py-3 px-4 rounded-xl font-semibold text-sm bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+              className="mt-6 w-full py-3.5 px-4 rounded-xl font-semibold text-sm border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-neutral-800 hover:bg-slate-100 dark:hover:bg-neutral-700 text-slate-900 dark:text-white transition-all shadow-xs cursor-pointer active:scale-[0.99]"
             >
-              Buy with Financing →
+              Apply for Financing →
             </button>
           </div>
         </div>

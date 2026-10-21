@@ -43,6 +43,14 @@ const publicGoogleReviewUrl = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL,
   "https://www.google.com/search?q=Fortsolar+Lagos+Reviews"
 );
+const publicGoogleReviewUrlLagos = readNonEmptyEnv(
+  process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL_LAGOS,
+  "https://www.google.com/search?q=Fortsolar+Lagos+Reviews"
+);
+const publicGoogleReviewUrlUyo = readNonEmptyEnv(
+  process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL_UYO,
+  "https://www.google.com/search?q=Fortsolar+Uyo+Reviews"
+);
 const publicFortsolarApiBaseUrl = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_FORTSOLAR_API_BASE_URL,
   process.env.NEXT_PUBLIC_BASE_URL,
@@ -63,11 +71,15 @@ const serverSessionSecret = readNonEmptyEnv(
 export const publicEnv = {
   googleClientId: publicGoogleClientId ?? "",
   googleReviewUrl: publicGoogleReviewUrl ?? "https://www.google.com/search?q=Fortsolar+Lagos+Reviews",
+  googleReviewUrlLagos: publicGoogleReviewUrlLagos ?? "https://www.google.com/search?q=Fortsolar+Lagos+Reviews",
+  googleReviewUrlUyo: publicGoogleReviewUrlUyo ?? "https://www.google.com/search?q=Fortsolar+Uyo+Reviews",
   fortsolarApiBaseUrl: publicFortsolarApiBaseUrl ?? "",
   emailVerificationBypassEnabled: publicEmailVerificationBypassEnabled,
 } as const;
 
 export const FORTSOLAR_GOOGLE_REVIEW_URL = publicEnv.googleReviewUrl;
+export const FORTSOLAR_GOOGLE_REVIEW_URL_LAGOS = publicEnv.googleReviewUrlLagos;
+export const FORTSOLAR_GOOGLE_REVIEW_URL_UYO = publicEnv.googleReviewUrlUyo;
 export const FORTSOLAR_WHATSAPP_NUMBER =
   readNonEmptyEnv(process.env.NEXT_PUBLIC_FORTSOLAR_WHATSAPP_NUMBER, "2347066524793") ?? "2347066524793";
 
