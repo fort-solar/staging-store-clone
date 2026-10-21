@@ -94,12 +94,12 @@ export default async function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{const p=localStorage.getItem('fortsolar:theme_preference')||localStorage.getItem('fortsolar:appearance')||localStorage.getItem('theme');const d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}`,
+            __html: `try{const p=localStorage.getItem('fortsolar:theme_preference')||localStorage.getItem('fortsolar:appearance')||localStorage.getItem('theme');const d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');document.documentElement.style.backgroundColor='#0a0f1d';document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.backgroundColor='#ffffff';document.documentElement.style.colorScheme='light';}}catch(e){}`,
           }}
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100 transition-colors`}
       >
         <Script
           id="ld-org"
