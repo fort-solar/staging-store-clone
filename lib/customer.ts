@@ -245,23 +245,41 @@ export function validateCustomerCoupon(payload: {
   code: string;
   order_amount: number;
   product_ids?: string[];
+  items?: Array<{ id: string; price: number; quantity: number }>;
+  subtotal?: number;
 }) {
   return appRequest<{
-    success: boolean;
-    data: {
+    success?: boolean;
+    valid?: boolean;
+    discount_amount?: number;
+    message?: string;
+    coupon?: {
+      id?: string;
+      code: string;
+      description: string | null;
+      discount_type: "percentage" | "fixed";
+      discount_value: number;
+      discount_amount?: number;
+    };
+    data?: {
       valid: boolean;
       discount_amount: number;
-      coupon: {
+      coupon?: {
+        id?: string;
         code: string;
         description: string | null;
         discount_type: "percentage" | "fixed";
         discount_value: number;
+        discount_amount?: number;
       };
       message?: string;
     };
   }>("/api/v1/customer/coupons/validate", {
     method: "POST",
-    body: payload,
+    body: {
+      ...payload,
+      subtotal: payload.order_amount,
+    },
   });
 }
 

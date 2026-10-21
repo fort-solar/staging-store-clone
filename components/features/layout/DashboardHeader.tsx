@@ -27,6 +27,11 @@ const DashboardHeader = ({
   const { session, signOut } = useAuth();
   const isCustomerLoggedIn = Boolean(session);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const cartCount = useGeneralStore((state) =>
     state.cartItems.reduce((sum, item) => sum + item.quantity, 0)
@@ -34,6 +39,9 @@ const DashboardHeader = ({
   const favoritesCount = useGeneralStore(
     (state) => state.favorites.products.length + state.favorites.packages.length
   );
+
+  const effectiveCartCount = isMounted ? cartCount : 0;
+  const effectiveFavoritesCount = isMounted ? favoritesCount : 0;
 
   const userInitial = session?.user.fullName?.charAt(0)?.toUpperCase() ?? "A";
   const userFullName = session?.user.fullName ?? "Customer User";
@@ -94,16 +102,16 @@ const DashboardHeader = ({
             href="/favorites"
             className="relative flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
           >
-            {favoritesCount > 0 && (
+            {effectiveFavoritesCount > 0 && (
               <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#E11D48]" />
             )}
             <HeartIcon className="text-[#3B3B3B]/60 dark:text-slate-400" />
             <span className="sr-only">Favorites</span>
           </Link>
           <Link href="/cart" className="relative flex items-center gap-2 text-xs text-[#3B3B3B] dark:text-slate-200 hover:text-[#048A05] dark:hover:text-emerald-400">
-            {cartCount > 0 && (
+            {effectiveCartCount > 0 && (
               <span className="absolute -top-2 left-2 rounded-full bg-[#E11D48] text-white text-[10px] h-4 min-w-4 px-1.5 grid place-items-center">
-                {cartCount}
+                {effectiveCartCount}
               </span>
             )}
             <CartIcon className="text-[#3B3B3B]/60 dark:text-slate-400" />
@@ -148,8 +156,8 @@ const DashboardHeader = ({
           {[
             { href: "/", label: "Store", icon: House, active: pathname === "/" },
             { href: "/settings/orders#section", label: "Orders", icon: OrdersIcon, active: pathname.startsWith("/settings/orders") },
-            { href: "/favorites", label: "Favorites", icon: HeartIcon, active: pathname.startsWith("/favorites"), badge: favoritesCount },
-            { href: "/cart", label: "Cart", icon: CartIcon, active: pathname.startsWith("/cart"), badge: cartCount },
+            { href: "/favorites", label: "Favorites", icon: HeartIcon, active: pathname.startsWith("/favorites"), badge: effectiveFavoritesCount },
+            { href: "/cart", label: "Cart", icon: CartIcon, active: pathname.startsWith("/cart"), badge: effectiveCartCount },
             { href: isCustomerLoggedIn ? "/settings/profile#section" : "/login", label: isCustomerLoggedIn ? "Profile" : "Sign in", icon: UserRound, active: pathname.startsWith("/settings/profile") || pathname === "/login" },
           ].map(({ href, label, icon: Icon, active, badge }) => (
             <Link

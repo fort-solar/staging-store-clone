@@ -25,6 +25,7 @@ type SignupFormValues = {
   fullName: string;
   email: string;
   phone: string;
+  address: string;
   password: string;
   confirmPassword: string;
   acceptTerms: boolean;
@@ -41,6 +42,7 @@ const SignupForm = () => {
   const initialEmail = searchParams.get("email") || "";
   const initialName = searchParams.get("name") || "";
   const initialPhone = searchParams.get("phone") || "";
+  const initialAddress = searchParams.get("address") || "";
 
   const {
     register,
@@ -55,6 +57,7 @@ const SignupForm = () => {
       fullName: initialName,
       email: initialEmail,
       phone: initialPhone,
+      address: initialAddress,
       password: "",
       confirmPassword: "",
       acceptTerms: false,
@@ -62,19 +65,20 @@ const SignupForm = () => {
   });
 
   React.useEffect(() => {
-    if (initialEmail || initialName || initialPhone) {
+    if (initialEmail || initialName || initialPhone || initialAddress) {
       reset({
         salutation: "Mr.",
         customSalutation: "",
         fullName: initialName,
         email: initialEmail,
         phone: initialPhone,
+        address: initialAddress,
         password: "",
         confirmPassword: "",
         acceptTerms: false,
       });
     }
-  }, [initialEmail, initialName, initialPhone, reset]);
+  }, [initialEmail, initialName, initialPhone, initialAddress, reset]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const passwordValue = watch("password");
@@ -101,7 +105,7 @@ const SignupForm = () => {
       fullName: values.fullName,
       email: values.email,
       phone: values.phone,
-      address: "",
+      address: values.address,
       password: values.password,
       role: "customer",
     });
@@ -122,7 +126,7 @@ const SignupForm = () => {
       salutation: effectiveSalutation || undefined,
       name: values.fullName,
       phone: values.phone,
-      address: "",
+      address: values.address,
     }).catch(() => null);
 
     await requestEmailVerification().catch(() => null);
@@ -141,7 +145,7 @@ const SignupForm = () => {
   const handleGoogleAuth = async (idToken: string) => {
     setIsSubmitting(true);
     setStatus(null);
-    const { error } = await authenticateWithGoogle({ idToken });
+    const { session, user, error } = await authenticateWithGoogle({ idToken });
 
     if (error) {
       setStatus({ tone: "error", message: error });
@@ -150,9 +154,19 @@ const SignupForm = () => {
     }
 
     await refreshSession().catch(() => null);
-    setStatus({ tone: "success", message: "Account created. Redirecting..." });
-    router.push("/");
-    router.refresh();
+
+    // If user profile is already complete with phone and address:
+    if (user?.phone && user?.address) {
+      setStatus({ tone: "success", message: "Account ready. Redirecting..." });
+      router.push("/");
+      router.refresh();
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Google signup requires phone & delivery address onboarding step:
+    setStatus({ tone: "success", message: "Google verified. Please complete your contact details..." });
+    router.push("/onboarding");
     setIsSubmitting(false);
   };
 
@@ -251,11 +265,20 @@ const SignupForm = () => {
         <AuthInput
           label="Phone"
           type="tel"
-          placeholder="902 2367 890"
+          placeholder="0802 236 7890"
           autoComplete="tel"
           required
           {...register("phone", { required: "Phone is required" })}
           error={errors.phone?.message}
+        />
+
+        <AuthInput
+          label="Delivery Address"
+          placeholder="e.g. 15 Admiralty Way, Lekki Phase 1, Lagos"
+          autoComplete="street-address"
+          required
+          {...register("address", { required: "Delivery address is required for dispatching solar equipment" })}
+          error={errors.address?.message}
         />
 
         <PasswordInput

@@ -79,13 +79,20 @@ const LoginForm = () => {
     if (typeof window !== "undefined") {
       localStorage.setItem("fortsolar_last_auth_method", "google");
     }
-    const { error } = await authenticateWithGoogle({ idToken });
+    const { session, user, error } = await authenticateWithGoogle({ idToken });
 
     if (error) {
       setStatus({ tone: "error", message: error });
       setIsSubmitting(false);
     } else {
       await refreshSession().catch(() => null);
+
+      if (!user?.phone || !user?.address) {
+        setStatus({ tone: "success", message: "Google verified. Please complete your contact details..." });
+        router.push(`/onboarding?redirect=${encodeURIComponent(redirectTo)}`);
+        return;
+      }
+
       setStatus({ tone: "success", message: "Login successful. Redirecting..." });
       window.location.assign(redirectTo);
     }

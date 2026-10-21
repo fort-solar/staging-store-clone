@@ -11,6 +11,7 @@ import { clearPersistedGeneralStoreCatalogState } from "@/store/GeneralStore";
 import type {
   AuthMeApiResponse,
   AuthProfileUpdateApiResponse,
+  AuthUser,
   ClientAuthState,
   LoginApiResponse,
   PortalRole,
@@ -329,15 +330,17 @@ export const loginMockUser = async (
 
 export async function authenticateWithGoogle(
   payload: GoogleAuthPayload,
-): Promise<{ session?: MockSession; error?: string }> {
+): Promise<{ session?: MockSession; user?: AuthUser; isNewUser?: boolean; error?: string }> {
   try {
-    const response = await appRequest<LoginApiResponse>("/api/auth/google", {
+    const response = await appRequest<LoginApiResponse & { isNewUser?: boolean }>("/api/auth/google", {
       method: "POST",
       body: payload,
     });
 
     return {
       session: syncAuthResponse(response, "customer"),
+      user: response.user,
+      isNewUser: response.isNewUser,
     };
   } catch (error) {
     return {

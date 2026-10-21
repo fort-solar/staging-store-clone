@@ -558,19 +558,23 @@ const CheckoutPage = () => {
         order_amount: subtotal,
         product_ids: cartDetails.map((it) => String(it.id)),
       });
-      if (res.success && res.data.valid && res.data.coupon) {
+      const couponObj = res.data?.coupon || res.coupon;
+      const isValid = Boolean((res.success && res.data?.valid) || (res.valid && couponObj) || (res.data?.valid && couponObj));
+      const discountAmount = res.data?.discount_amount ?? couponObj?.discount_amount ?? res.discount_amount ?? 0;
+
+      if (isValid && couponObj) {
         const couponData = {
-          code: res.data.coupon.code,
-          discount_amount: res.data.discount_amount,
-          discount_type: res.data.coupon.discount_type,
-          discount_value: res.data.coupon.discount_value,
-          description: res.data.coupon.description,
+          code: couponObj.code,
+          discount_amount: discountAmount,
+          discount_type: couponObj.discount_type,
+          discount_value: couponObj.discount_value,
+          description: couponObj.description ?? null,
         };
         setAppliedCoupon(couponData);
         localStorage.setItem("fortsolar:applied_coupon", JSON.stringify(couponData));
         setCouponInput("");
       } else {
-        setCouponError(res.data?.message || "Invalid or expired discount coupon.");
+        setCouponError(res.data?.message || res.message || "Invalid or expired discount coupon.");
       }
     } catch (err: any) {
       setCouponError(err.message || "Failed to validate coupon code.");

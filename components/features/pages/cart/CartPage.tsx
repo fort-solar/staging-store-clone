@@ -41,6 +41,11 @@ const CartPage = () => {
     packageTitle: string;
     price?: number;
   } | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   React.useEffect(() => {
     let localDraft: any = null;
@@ -266,19 +271,24 @@ const CartPage = () => {
         order_amount: subtotal,
         product_ids: cartDetails.map((it) => String(it.id)),
       });
-      if (res.success && res.data.valid && res.data.coupon) {
+
+      const couponObj = res.data?.coupon || res.coupon;
+      const isValid = Boolean((res.success && res.data?.valid) || (res.valid && couponObj) || (res.data?.valid && couponObj));
+      const discountAmount = res.data?.discount_amount ?? couponObj?.discount_amount ?? res.discount_amount ?? 0;
+
+      if (isValid && couponObj) {
         const couponData = {
-          code: res.data.coupon.code,
-          discount_amount: res.data.discount_amount,
-          discount_type: res.data.coupon.discount_type,
-          discount_value: res.data.coupon.discount_value,
-          description: res.data.coupon.description,
+          code: couponObj.code,
+          discount_amount: discountAmount,
+          discount_type: couponObj.discount_type,
+          discount_value: couponObj.discount_value,
+          description: couponObj.description ?? null,
         };
         setAppliedCoupon(couponData);
         localStorage.setItem("fortsolar:applied_coupon", JSON.stringify(couponData));
         setCouponInput("");
       } else {
-        setCouponError(res.data?.message || "Invalid or expired discount coupon.");
+        setCouponError(res.data?.message || res.message || "Invalid or expired discount coupon.");
       }
     } catch (err: any) {
       setCouponError(err.message || "Failed to validate coupon code.");
@@ -318,7 +328,7 @@ const CartPage = () => {
       .map((item) => ({
       id: item.id,
       title: item.title,
-      image: typeof item.image === "string" ? item.image : item.image.src,
+      image: typeof item.image === "string" ? item.image : (item.image as any)?.src || "/double_solar_panels.png",
       price: item.price,
       quantity: item.quantity,
     }));
@@ -376,17 +386,22 @@ const CartPage = () => {
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
           <div>
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-semibold text-[#252C32]">
-                Your Equipment Cart
+              <h1 className="text-2xl font-semibold text-[#252C32] dark:text-white">
+                Your Product Cart
               </h1>
-              <span className="text-sm text-[#5A646B]">
-                {totalItems} Items in cart
+              <span className="text-sm text-[#5A646B] dark:text-slate-400">
+                {isMounted ? totalItems : 0} Items in cart
               </span>
             </div>
-            {cartDetails.length === 0 ? (
+            {!isMounted ? (
+              <div className="py-16 flex flex-col items-center justify-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#048A05] border-t-transparent" />
+                <p className="text-xs text-[#5A646B]">Loading your cart...</p>
+              </div>
+            ) : cartDetails.length === 0 ? (
               <div className="py-12 text-center">
                 <div className="mx-auto max-w-sm rounded-2xl border border-dashed border-[#E4E9EC] p-8">
-                  <p className="text-base font-semibold text-[#252C32]">Your equipment cart is empty</p>
+                  <p className="text-base font-semibold text-[#252C32]">Your product cart is empty</p>
                   <p className="mt-1 text-xs text-[#5A646B]">
                     Looking for solar panels, inverters, or batteries? Browse our catalog to add products.
                   </p>
@@ -405,7 +420,12 @@ const CartPage = () => {
                   key={`${item.itemType}-${item.id}`}
                   className="grid grid-cols-[72px_1fr] gap-4 py-5 border-b px-3 border-[#E9EEF0]"
                 >
-                  <div className="h-16 w-16 rounded-xl bg-[#D9D9D9] bg-[url('/double_solar_panels.png')] bg-contain bg-center bg-no-repeat" />
+                  <div
+                    className="h-16 w-16 rounded-xl bg-slate-100 dark:bg-slate-800 bg-contain bg-center bg-no-repeat border border-slate-200 dark:border-slate-700 shrink-0"
+                    style={{
+                      backgroundImage: `url('${(typeof item.image === "string" ? item.image : (item.image as any)?.src) || "/double_solar_panels.png"}')`,
+                    }}
+                  />
 
                   <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
                     <div className="flex lg:flex-col items-center lg:items-start justify-between lg:justify-start gap-5 lg:gap-1">
