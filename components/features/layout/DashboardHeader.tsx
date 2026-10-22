@@ -34,10 +34,14 @@ const DashboardHeader = ({
   }, []);
 
   const cartCount = useGeneralStore((state) =>
-    state.cartItems.reduce((sum, item) => sum + item.quantity, 0)
+    Array.isArray(state?.cartItems)
+      ? state.cartItems.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0)
+      : 0
   );
   const favoritesCount = useGeneralStore(
-    (state) => state.favorites.products.length + state.favorites.packages.length
+    (state) =>
+      (Array.isArray(state?.favorites?.products) ? state.favorites.products.length : 0) +
+      (Array.isArray(state?.favorites?.packages) ? state.favorites.packages.length : 0)
   );
 
   const effectiveCartCount = isMounted ? cartCount : 0;

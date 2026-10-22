@@ -125,7 +125,14 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   const [quoteProduct, setQuoteProduct] = useState<QuoteProduct | null>(null);
   const debouncedProductQuery = useDebouncedValue(productQuery);
   const debouncedPackageQuery = useDebouncedValue(packageQuery);
-  const favorites = useGeneralStore((state) => state.favorites);
+  const rawFavorites = useGeneralStore((state) => state.favorites);
+  const favorites = useMemo(
+    () => ({
+      products: Array.isArray(rawFavorites?.products) ? rawFavorites.products : [],
+      packages: Array.isArray(rawFavorites?.packages) ? rawFavorites.packages : [],
+    }),
+    [rawFavorites],
+  );
   const { toggleProductFavorite, togglePackageFavorite } =
     useCustomerFavoriteToggle();
 

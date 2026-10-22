@@ -43,8 +43,9 @@ const ProductListCard = ({
   const addToCart = useGeneralStore((state) => state.addToCart);
   const cartQuantity = useGeneralStore(
     (state) =>
-      state.cartItems.find((item) => item.itemType === "product" && String(item.id) === String(id))
-        ?.quantity ?? 0,
+      Array.isArray(state?.cartItems)
+        ? state.cartItems.find((item) => item?.itemType === "product" && String(item?.id) === String(id))?.quantity ?? 0
+        : 0,
   );
   const cardDescription = truncateCardDescription(mini_description);
   const isAddToCartDisabled =

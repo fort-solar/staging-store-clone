@@ -197,6 +197,56 @@ export const useGeneralStore = create<GeneralStoreState>()(
         })),
         {
             name: "general-store",
+            partialize: (state) => ({
+                cartItems: state.cartItems,
+                favorites: state.favorites,
+                syncState: state.syncState,
+            }),
+            merge: (persistedState: any, currentState) => {
+                const rawCart = persistedState?.cartItems;
+                const safeCartItems = Array.isArray(rawCart)
+                    ? rawCart
+                        .filter(
+                            (item: any) =>
+                                item &&
+                                typeof item === "object" &&
+                                (item.itemType === "product" || item.itemType === "package") &&
+                                item.id !== undefined &&
+                                item.id !== null
+                        )
+                        .map((item: any) => ({
+                            id: String(item.id),
+                            itemType: item.itemType,
+                            quantity: Math.max(1, Number(item.quantity) || 1),
+                        }))
+                    : [];
+
+                const rawFavs = persistedState?.favorites;
+                const safeFavorites = {
+                    products: Array.isArray(rawFavs?.products)
+                        ? rawFavs.products.filter(Boolean).map(String)
+                        : [],
+                    packages: Array.isArray(rawFavs?.packages)
+                        ? rawFavs.packages.filter(Boolean).map(String)
+                        : [],
+                };
+
+                const rawSync = persistedState?.syncState;
+                const safeSyncState = {
+                    cartPending: Boolean(rawSync?.cartPending),
+                    favoritesPending: Boolean(rawSync?.favoritesPending),
+                    lastCartSyncAt: typeof rawSync?.lastCartSyncAt === "string" ? rawSync.lastCartSyncAt : null,
+                    lastFavoritesSyncAt: typeof rawSync?.lastFavoritesSyncAt === "string" ? rawSync.lastFavoritesSyncAt : null,
+                };
+
+                return {
+                    ...currentState,
+                    isHydrated: false,
+                    cartItems: safeCartItems,
+                    favorites: safeFavorites,
+                    syncState: safeSyncState,
+                };
+            },
             onRehydrateStorage: () => (state) => {
                 if (state) state.setHydrated();
             },

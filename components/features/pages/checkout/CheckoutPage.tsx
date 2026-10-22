@@ -129,22 +129,23 @@ const CheckoutPage = () => {
 
   const cartItems = useGeneralStore((state) => state.cartItems);
   const replaceCart = useGeneralStore((state) => state.replaceCart);
+  const safeCartItems = useMemo(() => (Array.isArray(cartItems) ? cartItems : []), [cartItems]);
   const productIds = useMemo(
-    () => cartItems.filter((item) => item.itemType === "product").map((item) => item.id),
-    [cartItems],
+    () => safeCartItems.filter((item) => item?.itemType === "product").map((item) => item.id),
+    [safeCartItems],
   );
   const packageIds = useMemo(
-    () => cartItems.filter((item) => item.itemType === "package").map((item) => item.id),
-    [cartItems],
+    () => safeCartItems.filter((item) => item?.itemType === "package").map((item) => item.id),
+    [safeCartItems],
   );
-  const { items: products } = useStoreProductsByIds(productIds);
-  const { items: packages } = useStorePackagesByIds(packageIds);
+  const { items: products = [] } = useStoreProductsByIds(productIds);
+  const { items: packages = [] } = useStorePackagesByIds(packageIds);
   const productMap = useMemo(
-    () => new Map(products.map((item) => [String(item.id), item])),
+    () => new Map((products || []).map((item) => [String(item.id), item])),
     [products],
   );
   const packageMap = useMemo(
-    () => new Map(packages.map((item) => [String(item.id), item])),
+    () => new Map((packages || []).map((item) => [String(item.id), item])),
     [packages],
   );
 
@@ -437,8 +438,8 @@ const CheckoutPage = () => {
       ];
     }
 
-    return cartItems
-      .filter((item) => item.itemType === "product")
+    return safeCartItems
+      .filter((item) => item?.itemType === "product")
       .map((item) => {
         const product = productMap.get(String(item.id));
         if (!product) {

@@ -42,7 +42,9 @@ const PackageDetailPage = () => {
     isActive: true,
   });
 
-  const favorites = useGeneralStore((state) => state.favorites.packages);
+  const favorites = useGeneralStore((state) =>
+    Array.isArray(state?.favorites?.packages) ? state.favorites.packages : []
+  );
   const { togglePackageFavorite } = useCustomerFavoriteToggle();
   const { requireCustomerLogin } = useCustomerLoginGate();
   const [activeDraft, setActiveDraft] = useState<{

@@ -97,10 +97,6 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://apis.google.com" />
         <link rel="dns-prefetch" href="https://apis.google.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <Script
-          src="https://accounts.google.com/gsi/client"
-          strategy="beforeInteractive"
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `try{const p=localStorage.getItem('fortsolar:store:theme_preference')||localStorage.getItem('fortsolar:store:appearance');const d=p==='dark'||(p==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');document.documentElement.style.backgroundColor='#0a0f1d';document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.backgroundColor='#ffffff';document.documentElement.style.colorScheme='light';}}catch(e){}`,
@@ -110,6 +106,10 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100 transition-colors`}
       >
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+        />
         <Script
           id="ld-org"
           type="application/ld+json"
