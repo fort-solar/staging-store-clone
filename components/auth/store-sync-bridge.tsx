@@ -14,28 +14,35 @@ import type { CustomerCartItemRecord } from "@/types/api.types";
 import type { CartItem, FavoritesState } from "@/types/common.types";
 
 function normalizeCartItems(items: CartItem[] | CustomerCartItemRecord[]) {
-  return items.map((item) => ({
-    id: String(item.id),
-    itemType: item.itemType,
-    quantity: Math.max(1, Number(item.quantity) || 1),
-  })) satisfies CustomerCartItemRecord[];
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  return items
+    .filter((item) => item && typeof item === "object" && item.id !== undefined && item.id !== null)
+    .map((item) => ({
+      id: String(item.id),
+      itemType: item.itemType,
+      quantity: Math.max(1, Number(item.quantity) || 1),
+    })) satisfies CustomerCartItemRecord[];
 }
 
 function mergeCartItems(
   serverItems: CustomerCartItemRecord[],
   localItems: CustomerCartItemRecord[],
 ) {
+  const safeServerItems = Array.isArray(serverItems) ? serverItems : [];
+  const safeLocalItems = Array.isArray(localItems) ? localItems : [];
   const merged = new Map<string, CustomerCartItemRecord>();
 
   const targetType =
-    localItems.length > 0
-      ? localItems[0].itemType
-      : serverItems.length > 0
-        ? serverItems[0].itemType
+    safeLocalItems.length > 0
+      ? safeLocalItems[0].itemType
+      : safeServerItems.length > 0
+        ? safeServerItems[0].itemType
         : null;
 
-  const filteredItems = [...serverItems, ...localItems].filter(
-    (item) => !targetType || item.itemType === targetType
+  const filteredItems = [...safeServerItems, ...safeLocalItems].filter(
+    (item) => item && (!targetType || item.itemType === targetType)
   );
 
   filteredItems.forEach((item) => {
@@ -57,15 +64,20 @@ function mergeCartItems(
 }
 
 function mergeFavorites(serverFavorites: FavoritesState, localFavorites: FavoritesState) {
+  const sProducts = Array.isArray(serverFavorites?.products) ? serverFavorites.products : [];
+  const lProducts = Array.isArray(localFavorites?.products) ? localFavorites.products : [];
+  const sPackages = Array.isArray(serverFavorites?.packages) ? serverFavorites.packages : [];
+  const lPackages = Array.isArray(localFavorites?.packages) ? localFavorites.packages : [];
+
   return {
-    products: Array.from(new Set([...serverFavorites.products, ...localFavorites.products])).map(String),
-    packages: Array.from(new Set([...serverFavorites.packages, ...localFavorites.packages])).map(String),
+    products: Array.from(new Set([...sProducts, ...lProducts])).filter(Boolean).map(String),
+    packages: Array.from(new Set([...sPackages, ...lPackages])).filter(Boolean).map(String),
   } satisfies FavoritesState;
 }
 
 function areCartItemsEqual(left: CustomerCartItemRecord[], right: CustomerCartItemRecord[]) {
   const normalize = (items: CustomerCartItemRecord[]) =>
-    [...items]
+    (Array.isArray(items) ? [...items] : [])
       .map((item) => `${item.itemType}:${item.id}:${item.quantity}`)
       .sort();
 
@@ -80,11 +92,12 @@ function areCartItemsEqual(left: CustomerCartItemRecord[], right: CustomerCartIt
 }
 
 function areFavoritesEqual(left: FavoritesState, right: FavoritesState) {
-  const normalize = (items: Array<string | number>) => [...items].map(String).sort();
-  const leftProducts = normalize(left.products);
-  const rightProducts = normalize(right.products);
-  const leftPackages = normalize(left.packages);
-  const rightPackages = normalize(right.packages);
+  const normalize = (items: Array<string | number> | undefined) =>
+    Array.isArray(items) ? [...items].filter(Boolean).map(String).sort() : [];
+  const leftProducts = normalize(left?.products);
+  const rightProducts = normalize(right?.products);
+  const leftPackages = normalize(left?.packages);
+  const rightPackages = normalize(right?.packages);
 
   return (
     leftProducts.length === rightProducts.length &&

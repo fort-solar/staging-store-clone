@@ -10,32 +10,37 @@ export function CartCatalogBridge() {
   const cartItems = useGeneralStore((state) => state.cartItems);
   const replaceCart = useGeneralStore((state) => state.replaceCart);
 
-  const productIds = useMemo(
-    () => cartItems.filter((item) => item.itemType === "product").map((item) => item.id),
-    [cartItems],
-  );
-  const packageIds = useMemo(
-    () => cartItems.filter((item) => item.itemType === "package").map((item) => item.id),
+  const safeCartItems = useMemo(
+    () => (Array.isArray(cartItems) ? cartItems : []),
     [cartItems],
   );
 
+  const productIds = useMemo(
+    () => safeCartItems.filter((item) => item?.itemType === "product").map((item) => item.id),
+    [safeCartItems],
+  );
+  const packageIds = useMemo(
+    () => safeCartItems.filter((item) => item?.itemType === "package").map((item) => item.id),
+    [safeCartItems],
+  );
+
   const {
-    items: products,
+    items: products = [],
     isLoading: isProductsLoading,
     hasError: hasProductLookupError,
   } = useStoreProductsByIds(productIds);
   const {
-    items: packages,
+    items: packages = [],
     isLoading: isPackagesLoading,
     hasError: hasPackageLookupError,
   } = useStorePackagesByIds(packageIds);
 
   const productMap = useMemo(
-    () => new Map(products.map((item) => [String(item.id), item])),
+    () => new Map((products || []).map((item) => [String(item.id), item])),
     [products],
   );
   const packageMap = useMemo(
-    () => new Map(packages.map((item) => [String(item.id), item])),
+    () => new Map((packages || []).map((item) => [String(item.id), item])),
     [packages],
   );
 

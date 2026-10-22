@@ -26,23 +26,27 @@ export default function FavoritesPage() {
   const [query, setQuery] = useState("");
   const [productPage, setProductPage] = useState(1);
   const [packagePage, setPackagePage] = useState(1);
-  const favoriteProductsIds = useGeneralStore((state) => state.favorites.products);
-  const favoritePackageIds = useGeneralStore((state) => state.favorites.packages);
+  const favoriteProductsIds = useGeneralStore((state) =>
+    Array.isArray(state?.favorites?.products) ? state.favorites.products : []
+  );
+  const favoritePackageIds = useGeneralStore((state) =>
+    Array.isArray(state?.favorites?.packages) ? state.favorites.packages : []
+  );
   const { toggleProductFavorite, togglePackageFavorite } =
     useCustomerFavoriteToggle();
-  const { items: products, isLoading: isLoadingProducts } = useStoreProductsByIds(
+  const { items: products = [], isLoading: isLoadingProducts } = useStoreProductsByIds(
     favoriteProductsIds,
   );
-  const { items: packages, isLoading: isLoadingPackages } = useStorePackagesByIds(
+  const { items: packages = [], isLoading: isLoadingPackages } = useStorePackagesByIds(
     favoritePackageIds,
   );
 
   const favoriteProducts = useMemo(() => {
-    return products.filter((item) => favoriteProductsIds.includes(item.id));
+    return (products || []).filter((item) => (favoriteProductsIds || []).includes(item.id));
   }, [favoriteProductsIds, products]);
 
   const favoritePackages = useMemo(() => {
-    return packages.filter((item) => favoritePackageIds.includes(item.id));
+    return (packages || []).filter((item) => (favoritePackageIds || []).includes(item.id));
   }, [favoritePackageIds, packages]);
 
   const normalizedQuery = query.trim().toLowerCase();

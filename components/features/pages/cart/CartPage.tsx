@@ -92,28 +92,30 @@ const CartPage = () => {
     }
   };
 
+  const safeCartItems = useMemo(() => (Array.isArray(cartItems) ? cartItems : []), [cartItems]);
+
   const productIds = useMemo(
-    () => cartItems.filter((item) => item.itemType === "product").map((item) => item.id),
-    [cartItems],
+    () => safeCartItems.filter((item) => item?.itemType === "product").map((item) => item.id),
+    [safeCartItems],
   );
   const packageIds = useMemo(
-    () => cartItems.filter((item) => item.itemType === "package").map((item) => item.id),
-    [cartItems],
+    () => safeCartItems.filter((item) => item?.itemType === "package").map((item) => item.id),
+    [safeCartItems],
   );
-  const { items: products } = useStoreProductsByIds(productIds);
-  const { items: packages } = useStorePackagesByIds(packageIds);
+  const { items: products = [] } = useStoreProductsByIds(productIds);
+  const { items: packages = [] } = useStorePackagesByIds(packageIds);
   const productMap = useMemo(
-    () => new Map(products.map((item) => [String(item.id), item])),
+    () => new Map((products || []).map((item) => [String(item.id), item])),
     [products],
   );
   const packageMap = useMemo(
-    () => new Map(packages.map((item) => [String(item.id), item])),
+    () => new Map((packages || []).map((item) => [String(item.id), item])),
     [packages],
   );
 
   // Migrate any legacy package items out of cartItems into active_package_order draft
   React.useEffect(() => {
-    const packagesInCart = cartItems.filter((item) => item.itemType === "package");
+    const packagesInCart = safeCartItems.filter((item) => item?.itemType === "package");
     if (packagesInCart.length > 0) {
       const firstPkg = packagesInCart[0];
       const pkgDetail = packageMap.get(String(firstPkg.id));
@@ -129,24 +131,31 @@ const CartPage = () => {
       } catch (e) {
         console.warn(e);
       }
-      const productsOnly = cartItems.filter((item) => item.itemType !== "package");
+      const productsOnly = safeCartItems.filter((item) => item?.itemType !== "package");
       replaceCart(productsOnly);
     }
-  }, [cartItems, packageMap, replaceCart]);
+  }, [safeCartItems, packageMap, replaceCart]);
 
   const cartDetails = useMemo(() => {
-    return cartItems
+    return safeCartItems
       .map((item) => {
         const product =
           item.itemType === "product"
             ? productMap.get(String(item.id))
             : packageMap.get(String(item.id));
         if (!product) return null;
+        const resolvedImage =
+          (typeof (product as any).image === "string" && (product as any).image) ||
+          (typeof (product as any).thumbnail === "string" && (product as any).thumbnail) ||
+          (typeof (product as any).mainImage === "string" && (product as any).mainImage) ||
+          (Array.isArray((product as any).images) && typeof (product as any).images[0] === "string" && (product as any).images[0]) ||
+          (Array.isArray((product as any).galleryImages) && typeof (product as any).galleryImages[0] === "string" && (product as any).galleryImages[0]) ||
+          "";
         return {
           ...item,
           title: product.title,
           price: product.price,
-          image: product.image,
+          image: resolvedImage || product.image,
           stockQuantity:
             item.itemType === "product" ? getProductCartMaxQuantity(productMap.get(String(item.id))) : null,
           eligibleForInstallation: item.itemType === "product" ? (product as any).eligibleForInstallation : false,

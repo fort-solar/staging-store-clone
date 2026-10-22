@@ -65,11 +65,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function readString(record: Record<string, unknown>, keys: string[], fallback = "") {
+function readString(record: Record<string, unknown>, keys: string[], fallback = ""): string {
   for (const key of keys) {
     const value = record[key];
     if (typeof value === "string" && value.trim()) {
       return value.trim();
+    }
+    if (isRecord(value)) {
+      const nested = readString(value, ["url", "image_url", "file_url", "src", "path", "href"]);
+      if (nested) return nested;
     }
   }
   return fallback;
@@ -153,7 +157,13 @@ function readArray(record: Record<string, unknown>, keys: string[]) {
 
 function readStringArray(record: Record<string, unknown>, keys: string[]) {
   return readArray(record, keys)
-    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .map((value) => {
+      if (typeof value === "string") return value.trim();
+      if (isRecord(value)) {
+        return readString(value, ["url", "image_url", "file_url", "src", "path"]);
+      }
+      return "";
+    })
     .filter(Boolean);
 }
 
@@ -225,9 +235,9 @@ function toImageUrl(value: string | { src?: string } | null | undefined) {
 
 function getExplicitProductImages(raw: Record<string, unknown>): string[] {
   const mediaRecord = isRecord(raw.media) ? raw.media : null;
-  const mediaImageUrls = mediaRecord ? readStringArray(mediaRecord, ["image_urls"]) : [];
-  const explicitImages = readStringArray(raw, ["product_image_urls", "image_urls", "images"]);
-  const fallbackImage = readString(raw, ["product_image_url", "image_url", "image"]);
+  const mediaImageUrls = mediaRecord ? readStringArray(mediaRecord, ["image_urls", "images"]) : [];
+  const explicitImages = readStringArray(raw, ["product_image_urls", "image_urls", "images", "gallery_images", "galleryImages"]);
+  const fallbackImage = readString(raw, ["product_image_url", "image_url", "image", "thumbnail", "thumbnail_url", "main_image", "main_image_url", "mainImage"]);
 
   return [...explicitImages, ...mediaImageUrls, fallbackImage]
     .filter((value): value is string => typeof value === "string" && Boolean(value.trim()))

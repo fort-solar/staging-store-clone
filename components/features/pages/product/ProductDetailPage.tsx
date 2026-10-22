@@ -54,7 +54,9 @@ const ProductDetailPage = () => {
 
   const addToCart = useGeneralStore((state) => state.addToCart);
   const updateCartQuantity = useGeneralStore((state) => state.updateCartQuantity);
-  const favorites = useGeneralStore((state) => state.favorites.products);
+  const favorites = useGeneralStore((state) =>
+    Array.isArray(state?.favorites?.products) ? state.favorites.products : []
+  );
   const { toggleProductFavorite } = useCustomerFavoriteToggle();
   const { requireCustomerLogin } = useCustomerLoginGate();
 
