@@ -118,13 +118,11 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
     };
   }, []);
 
-  const [productQuery, setProductQuery] = useState("");
-  const [packageQuery, setPackageQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [productPage, setProductPage] = useState(1);
   const [packagePage, setPackagePage] = useState(1);
   const [quoteProduct, setQuoteProduct] = useState<QuoteProduct | null>(null);
-  const debouncedProductQuery = useDebouncedValue(productQuery);
-  const debouncedPackageQuery = useDebouncedValue(packageQuery);
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const rawFavorites = useGeneralStore((state) => state.favorites);
   const favorites = useMemo(
     () => ({
@@ -144,7 +142,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   } = useStoreProducts({
     page: productPage,
     limit: CATALOG_PAGE_SIZE,
-    search: debouncedProductQuery,
+    search: debouncedSearchQuery,
     categoryId: productFilters.categoryId || undefined,
     isActive: productFilters.activeOnly ? true : undefined,
   });
@@ -156,7 +154,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
   } = useStorePackages({
     page: packagePage,
     limit: CATALOG_PAGE_SIZE,
-    search: debouncedPackageQuery,
+    search: debouncedSearchQuery,
     isActive: packageFilters.activeOnly ? true : undefined,
   });
   const { categories: productCategoryOptions } = useStoreProductCategoryOptions();
@@ -182,18 +180,12 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
 
   const activeProductSection =
     productCategoryLabelById.get(productFilters.categoryId) || "All Products";
-  const activeQuery = activeTab === "products" ? productQuery : packageQuery;
   const resultsCount =
     activeTab === "products" ? productPagination.total : packagePagination.total;
 
-  const handleActiveQueryChange = (value: string) => {
-    if (activeTab === "products") {
-      setProductQuery(value);
-      setProductPage(1);
-      return;
-    }
-
-    setPackageQuery(value);
+  const handleQueryChange = (value: string) => {
+    setSearchQuery(value);
+    setProductPage(1);
     setPackagePage(1);
   };
 
@@ -220,7 +212,7 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
 
   return (
     <div className="min-h-screen bg-white py-22">
-      <DashboardHeader query={activeQuery} onQueryChange={handleActiveQueryChange} />
+      <DashboardHeader query={searchQuery} onQueryChange={handleQueryChange} />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-2">
         <div className="mt-26 flex w-full flex-col lg:mt-0 lg:flex-row lg:items-center lg:justify-between">
@@ -249,23 +241,41 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
               <div className="mt-5 inline-flex w-full rounded-lg bg-[#F3F4F6] lg:mt-0 lg:w-fit">
                 <button
                   onClick={() => setActiveTab("packages")}
-                  className={`w-[50%] rounded-l-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
+                  className={`flex items-center justify-center gap-1.5 w-[50%] rounded-l-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 transition-colors ${
                     activeTab === "packages"
-                      ? "bg-[#048A05] text-white"
-                      : "text-[#3B3B3B]"
+                      ? "bg-[#048A05] text-white font-medium"
+                      : "text-[#3B3B3B] hover:text-[#111]"
                   }`}
                 >
-                  Packages
+                  <span>Packages</span>
+                  {debouncedSearchQuery.trim() ? (
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${
+                        activeTab === "packages" ? "bg-white/25 text-white" : "bg-[#E5E7EB] text-[#4B5563]"
+                      }`}
+                    >
+                      {packagePagination.total}
+                    </span>
+                  ) : null}
                 </button>
                 <button
                   onClick={() => setActiveTab("products")}
-                  className={`w-[50%] rounded-r-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 ${
+                  className={`flex items-center justify-center gap-1.5 w-[50%] rounded-r-lg px-4 py-3 text-sm lg:w-fit lg:py-1.5 transition-colors ${
                     activeTab === "products"
-                      ? "bg-[#048A05] text-white"
-                      : "text-[#3B3B3B]"
+                      ? "bg-[#048A05] text-white font-medium"
+                      : "text-[#3B3B3B] hover:text-[#111]"
                   }`}
                 >
-                  Products
+                  <span>Products</span>
+                  {debouncedSearchQuery.trim() ? (
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${
+                        activeTab === "products" ? "bg-white/25 text-white" : "bg-[#E5E7EB] text-[#4B5563]"
+                      }`}
+                    >
+                      {productPagination.total}
+                    </span>
+                  ) : null}
                 </button>
               </div>
             </div>
@@ -275,10 +285,10 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
         {/* Catalog Header & Controls Bar */}
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#E9EEF0] pb-4">
           <div>
-            {activeQuery.trim().length > 0 ? (
+            {searchQuery.trim().length > 0 ? (
               <h1 className="text-xl font-bold text-[#252C32]">
-                Found {resultsCount} results for{" "}
-                <span className="text-[#048A05]">&ldquo;{activeQuery}&rdquo;</span>
+                Found {resultsCount} {resultsCount === 1 ? "result" : "results"} for{" "}
+                <span className="text-[#048A05]">&ldquo;{searchQuery.trim()}&rdquo;</span>
               </h1>
             ) : (
               <h1 className="text-xl font-bold text-[#252C32]">
@@ -517,7 +527,31 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                       ? "We are fetching products directly from the catalog."
                       : activeSource === "unavailable"
                         ? "The product catalog could not be reached. Check the API configuration and try again."
-                        : "No products matched the current database filters. Adjust your search or clear a filter to continue."
+                        : debouncedSearchQuery.trim() && packages.length > 0
+                          ? `We couldn't find any products matching "${debouncedSearchQuery.trim()}", but we found ${packagePagination.total} matching solar package${packagePagination.total === 1 ? "" : "s"}.`
+                          : "No products matched the current search or filters. Adjust your search or clear a filter to continue."
+                  }
+                  action={
+                    debouncedSearchQuery.trim() && packages.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("packages")}
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#048A05] px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-[#037004] transition-colors"
+                      >
+                        View matching packages ({packagePagination.total})
+                      </button>
+                    ) : debouncedSearchQuery.trim() ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setProductFilters({ categoryId: "", activeOnly: false });
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl border border-[#D9E0E4] bg-white px-4 py-2 text-xs font-semibold text-[#252C32] hover:border-[#048A05] transition-colors"
+                      >
+                        Clear search
+                      </button>
+                    ) : null
                   }
                   className="min-h-[22rem]"
                 />
@@ -552,7 +586,31 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
                     ? "We are fetching packages directly from the catalog."
                     : activeSource === "unavailable"
                       ? "The package catalog could not be reached. Check the API configuration and try again."
-                      : "No packages matched the current database filters. Adjust your search or clear a filter to continue."
+                      : debouncedSearchQuery.trim() && products.length > 0
+                        ? `We couldn't find any packages matching "${debouncedSearchQuery.trim()}", but we found ${productPagination.total} matching product${productPagination.total === 1 ? "" : "s"}.`
+                        : "No packages matched the current search or filters. Adjust your search or clear a filter to continue."
+                }
+                action={
+                  debouncedSearchQuery.trim() && products.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("products")}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#048A05] px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-[#037004] transition-colors"
+                    >
+                      View matching products ({productPagination.total})
+                    </button>
+                  ) : debouncedSearchQuery.trim() ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setPackageFilters({ activeOnly: false });
+                      }}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[#D9E0E4] bg-white px-4 py-2 text-xs font-semibold text-[#252C32] hover:border-[#048A05] transition-colors"
+                    >
+                      Clear search
+                    </button>
+                  ) : null
                 }
                 className="min-h-[22rem]"
               />

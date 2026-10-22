@@ -3,12 +3,16 @@ import { cn } from "@/lib/utils";
 type EmptyStatePanelProps = {
   title: string;
   description: string;
+  action?: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 };
 
 export default function EmptyStatePanel({
   title,
   description,
+  action,
+  children,
   className,
 }: EmptyStatePanelProps) {
   return (
@@ -20,6 +24,8 @@ export default function EmptyStatePanel({
     >
       <h2 className="text-xl font-semibold text-[#111827]">{title}</h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-[#667085]">{description}</p>
+      {action ? <div className="mt-5">{action}</div> : null}
+      {children}
     </div>
   );
 }

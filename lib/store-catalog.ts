@@ -552,17 +552,38 @@ export async function listStoreProducts(
 ): Promise<StoreCatalogListResult<StoreCatalogProduct>> {
   const page = resolvePageNumber(query.page);
   const limit = resolvePageSize(query.limit);
+  const rawSearch = query.search?.trim();
   const payload = await appGet<UnifiedProductListApiResponse>(
     withQuery("/api/v1/products/", {
       page,
       limit,
-      search: query.search?.trim(),
+      search: rawSearch,
+      q: rawSearch,
       category_id: query.categoryId,
       is_active:
         typeof query.isActive === "boolean" ? String(query.isActive) : undefined,
     }),
   );
-  const items = payload.data.map(normalizeUnifiedProduct);
+  let items = payload.data.map(normalizeUnifiedProduct);
+
+  if (rawSearch) {
+    const words = rawSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length > 0) {
+      items = items.filter((item) => {
+        const textToSearch = [
+          item.title,
+          item.description,
+          item.category,
+          item.categoryLabel,
+          item.powerRating,
+          item.slug || "",
+          ...(item.features || []),
+          ...(item.quickSpecs || []).map((s) => `${s.label} ${s.value}`),
+        ].join(" ").toLowerCase();
+        return words.every((word) => textToSearch.includes(word));
+      });
+    }
+  }
 
   return {
     items,
@@ -576,17 +597,38 @@ export async function listStorePackages(
 ): Promise<StoreCatalogListResult<StoreCatalogPackage>> {
   const page = resolvePageNumber(query.page);
   const limit = resolvePageSize(query.limit);
+  const rawSearch = query.search?.trim();
   const payload = await appGet<ProductPackageListApiResponse>(
     withQuery("/api/v1/products/packages", {
       page,
       limit,
-      search: query.search?.trim(),
+      search: rawSearch,
+      q: rawSearch,
       status: query.status?.trim(),
       is_active:
         typeof query.isActive === "boolean" ? String(query.isActive) : undefined,
     }),
   );
-  const items = payload.data.map(normalizePackage);
+  let items = payload.data.map(normalizePackage);
+
+  if (rawSearch) {
+    const words = rawSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length > 0) {
+      items = items.filter((item) => {
+        const textToSearch = [
+          item.title,
+          item.overview || "",
+          item.mini_description || "",
+          item.slug || "",
+          ...(item.features || []),
+          ...(item.powers || []),
+          ...(item.systemDetails || []),
+          ...(item.includedProducts || []).map((p) => `${p.productName} ${p.categoryLabel}`),
+        ].join(" ").toLowerCase();
+        return words.every((word) => textToSearch.includes(word));
+      });
+    }
+  }
 
   return {
     items,
