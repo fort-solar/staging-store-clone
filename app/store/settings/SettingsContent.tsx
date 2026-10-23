@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/auth-provider";
 import { createLoginRedirectHref } from "@/lib/auth/redirect";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaginationControls from "@/components/ui/pagination-controls";
@@ -224,7 +225,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { session, isRefreshing, isSigningOut } = useAuth();
+  const { session, signOut, isRefreshing, isSigningOut } = useAuth();
   const currentUser = useMemo(() => sessionSnapshotToMockUser(session), [session]);
   const [activeTab, setActiveTab] = useState<TabKey>(page);
   const [query, setQuery] = useState("");
@@ -1198,11 +1199,23 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-2">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void signOut();
+                        router.replace("/");
+                      }}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/20 px-5 py-3 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition w-full sm:w-auto cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sign Out</span>
+                    </button>
+
                     <Button
                       onClick={handleProfileSave}
                       disabled={isSavingProfile}
-                      className="rounded-xl bg-[#048a05] hover:bg-[#037004] px-8 py-6 text-base font-semibold text-white shadow-sm lg:w-fit w-full"
+                      className="rounded-xl bg-[#048a05] hover:bg-[#037004] px-8 py-3 text-sm font-semibold text-white shadow-sm w-full sm:w-auto"
                     >
                       {isSavingProfile ? "Saving..." : "Save Details"}
                     </Button>

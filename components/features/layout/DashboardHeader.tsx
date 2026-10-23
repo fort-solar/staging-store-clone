@@ -64,6 +64,40 @@ const DashboardHeader = ({
           <Link href="/" className="flex items-center">
             <LogoTransparent className="h-7 w-auto" />
           </Link>
+
+          {/* Mobile & Tablet Top Bar Actions */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <ThemeToggle />
+            {isCustomerLoggedIn ? (
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] p-1 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                aria-label="Open customer account menu"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#EBFAEB] dark:bg-emerald-950/60 text-xs font-bold text-[#048a05] dark:text-emerald-400">
+                  {userInitial}
+                </div>
+                <span className="hidden sm:inline text-xs font-semibold text-slate-800 dark:text-slate-100 max-w-[90px] truncate">
+                  {userFirstName}
+                </span>
+                {isProfileMenuOpen ? (
+                  <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+                )}
+              </button>
+            ) : (
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  className="h-8 rounded-lg border-[#E4E9EC] dark:border-slate-700 px-3 text-xs text-[#3B3B3B] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  Sign In
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="lg:hidden block relative w-full">
@@ -154,7 +188,7 @@ const DashboardHeader = ({
 
       <nav
         aria-label="Store navigation"
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E2E8EC] bg-white/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E2E8EC] dark:border-slate-800 bg-white/95 dark:bg-[#0a0f1d]/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden transition-colors"
       >
         <div className="mx-auto grid max-w-lg grid-cols-5">
           {[
@@ -169,7 +203,7 @@ const DashboardHeader = ({
               href={href}
               aria-current={active ? "page" : undefined}
               className={`relative flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors ${
-                active ? "bg-[#EBFAEB] text-[#048A05]" : "text-[#66727A] hover:bg-[#F4F7F8] hover:text-[#30343A]"
+                active ? "bg-[#EBFAEB] dark:bg-emerald-950/40 text-[#048A05] dark:text-emerald-400" : "text-[#66727A] dark:text-slate-400 hover:bg-[#F4F7F8] dark:hover:bg-slate-800 hover:text-[#30343A] dark:hover:text-white"
               }`}
             >
               <span className="relative flex h-5 w-5 items-center justify-center">
@@ -188,29 +222,35 @@ const DashboardHeader = ({
 
       {isCustomerLoggedIn && isProfileMenuOpen && (
         <>
-          <button
-            type="button"
-            className="fixed inset-0 z-20 bg-transparent"
+          <div
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-xs transition-opacity"
             onClick={() => setIsProfileMenuOpen(false)}
             aria-label="Close profile menu"
           />
-          <div className="absolute right-4 top-18 z-30 w-80 max-w-[90vw] rounded-[24px] border border-[#C9D5DF] dark:border-slate-800 bg-white dark:bg-[#111827] p-4 shadow-lg">
+          <div className="fixed right-3 sm:right-6 top-16 sm:top-18 z-50 w-80 max-w-[calc(100vw-1.5rem)] rounded-[24px] border border-[#C9D5DF] dark:border-slate-800 bg-white dark:bg-[#111827] p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-[#17A11E] bg-[#EAF8EA] dark:bg-emerald-950/60 text-2xl text-[#3B3B3B] dark:text-emerald-400">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-[#17A11E] bg-[#EAF8EA] dark:bg-emerald-950/60 text-2xl font-bold text-[#048a05] dark:text-emerald-400">
                   {userInitial}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#1F2937] dark:text-slate-100">{userFullName}</p>
-                  <p className="text-xs text-[#4B5563] dark:text-slate-400">{userEmail}</p>
+                  <p className="text-xs text-[#4B5563] dark:text-slate-400 truncate max-w-[170px]">{userEmail}</p>
                 </div>
               </div>
-              <ChevronUp className="h-5 w-5 text-[#4B5563] dark:text-slate-400 cursor-pointer" onClick={() => setIsProfileMenuOpen(false)}/>
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <ChevronUp className="h-5 w-5" />
+              </button>
             </div>
 
             <div className="mt-4 border-t border-[#D8E0E8] dark:border-slate-800 pt-3">
               <Link
                 href="/settings/orders#section"
+                onClick={() => setIsProfileMenuOpen(false)}
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
                 <OrdersIcon className="h-5 w-5" />
@@ -218,6 +258,7 @@ const DashboardHeader = ({
               </Link>
               <Link
                 href="/settings/orders"
+                onClick={() => setIsProfileMenuOpen(false)}
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
                 <OrdersIcon className="h-5 w-5" />
@@ -225,6 +266,7 @@ const DashboardHeader = ({
               </Link>
               <Link
                 href="/settings/quotes#section"
+                onClick={() => setIsProfileMenuOpen(false)}
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
                 <List className="h-5 w-5" />
@@ -232,6 +274,7 @@ const DashboardHeader = ({
               </Link>
               <Link
                 href="/settings/quotes"
+                onClick={() => setIsProfileMenuOpen(false)}
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
                 <List className="h-5 w-5" />
@@ -239,6 +282,7 @@ const DashboardHeader = ({
               </Link>
               <Link
                 href="/settings/installations#section"
+                onClick={() => setIsProfileMenuOpen(false)}
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
                 <InspectionPanel className="h-5 w-5" />
@@ -246,6 +290,7 @@ const DashboardHeader = ({
               </Link>
               <Link
                 href="/settings/installations"
+                onClick={() => setIsProfileMenuOpen(false)}
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
                 <InspectionPanel className="h-5 w-5" />
@@ -253,22 +298,26 @@ const DashboardHeader = ({
               </Link>
               <Link
                 href="/settings/profile"
+                onClick={() => setIsProfileMenuOpen(false)}
                 className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
                 <Settings className="h-5 w-5" />
                 Settings
               </Link>
-              <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800">
+              <a
+                href="mailto:support@fortsolar.ng"
+                className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
+              >
                 <HelpCircle className="h-5 w-5" />
                 Help &amp; Support
-              </button>
+              </a>
             </div>
 
             <div className="mt-4 border-t border-[#D8E0E8] dark:border-slate-800 pt-3">
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#F35B5B] hover:bg-[#FFF5F5] dark:hover:bg-red-950/30"
+                className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left font-medium text-[#F35B5B] hover:bg-[#FFF5F5] dark:hover:bg-red-950/30 cursor-pointer"
               >
                 <LogOut className="h-5 w-5" />
                 Sign Out
