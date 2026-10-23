@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
+import { StoreFooter } from "@/components/features/layout/StoreFooter";
 import { ArrowUpDown, Check, ChevronDown, ListFilter, SlidersHorizontal } from "lucide-react";
 import PackagesGrid from "@/components/features/pages/packages/PackagesGrid";
 import ProductsGrid from "@/components/features/pages/product/ProductsGrid";
@@ -639,6 +640,8 @@ const DashboardProductsPackages = ({ initialTab }: { initialTab: TabKey }) => {
           onClose={() => setQuoteProduct(null)}
         />
       ) : null}
+
+      <StoreFooter />
     </div>
   );
 };

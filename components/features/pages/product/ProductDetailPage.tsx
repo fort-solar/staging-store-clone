@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Share2 } from "lucide-react";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
+import { StoreFooter } from "@/components/features/layout/StoreFooter";
 import { CartIcon } from "@/components/features/icons/CartIcon";
 import HeartIcon from "@/components/features/icons/HeartIcon";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
@@ -20,8 +21,6 @@ import {
 } from "@/lib/store-catalog";
 import { clampCartQuantity, getProductCartMaxQuantity } from "@/lib/cart";
 import { useGeneralStore } from "@/store/GeneralStore";
-import { GoogleReviewsBadge } from "@/components/features/reviews/GoogleReviewsBadge";
-import { GoogleReviewsCard } from "@/components/features/reviews/GoogleReviewsCard";
 import { FORTSOLAR_WHATSAPP_NUMBER } from "@/lib/env";
 import type { CatalogId } from "@/types/common.types";
 
@@ -224,14 +223,6 @@ const ProductDetailPage = () => {
                   )}
                 </div>
               </div>
-
-              {/* Customer Reviews & Google Business Verification */}
-              <div className="pt-2">
-                <GoogleReviewsCard
-                  title="Fortsolar Verified Company Reviews"
-                  subtitle="Read verified customer feedback on Fortsolar service, equipment delivery & installations on Google."
-                />
-              </div>
             </div>
           </div>
 
@@ -262,10 +253,6 @@ const ProductDetailPage = () => {
               <span className={`text-sm font-semibold ${product.availability === "Out Of Stock" ? "text-[#EF5350]" : product.availability === "Limited Stock" ? "text-[#FFAD33]" : "text-[#1FA21B]"}`}>
                 {product.availability}
               </span>
-            </div>
-
-            <div className="mt-2.5 mb-1">
-              <GoogleReviewsBadge />
             </div>
 
             <h1 className="mt-1 text-2xl font-semibold text-[#252C32]">{product.title}</h1>
@@ -498,6 +485,8 @@ const ProductDetailPage = () => {
       {quoteProduct ? (
         <GetQuoteModal open={Boolean(quoteProduct)} product={quoteProduct} onClose={() => setQuoteProduct(null)} />
       ) : null}
+
+      <StoreFooter />
     </div>
   );
 };

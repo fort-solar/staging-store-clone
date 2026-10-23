@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaShare, FaTiktok, FaYoutube } from "react-icons/fa";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
+import { StoreFooter } from "@/components/features/layout/StoreFooter";
 import { FinancingIcon } from "@/components/features/icons/FinancingIcon";
 import { CostSavingsModal } from "@/components/features/financing/CostSavingsModal";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
@@ -22,8 +23,6 @@ import {
 } from "@/lib/store-catalog";
 import { useAuth } from "@/components/auth/auth-provider";
 import { getDraftOrder, saveDraftOrder } from "@/lib/customer";
-import { GoogleReviewsBadge } from "@/components/features/reviews/GoogleReviewsBadge";
-import { GoogleReviewsCard } from "@/components/features/reviews/GoogleReviewsCard";
 import { FORTSOLAR_WHATSAPP_NUMBER } from "@/lib/env";
 
 const PackageDetailPage = () => {
@@ -299,20 +298,11 @@ const PackageDetailPage = () => {
                   </div>
                 )}
               </div>
-
-              {/* Customer Reviews & Google Business Verification */}
-              <div className="pt-2">
-                <GoogleReviewsCard />
-              </div>
             </div>
           </div>
 
           {/* Right Column: Pricing, Financing, Action Buttons */}
           <div>
-            <div className="mb-2">
-              <GoogleReviewsBadge />
-            </div>
-
             <h1 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{data.title}</h1>
 
             {/* Price Display */}
@@ -528,6 +518,8 @@ const PackageDetailPage = () => {
           handleOrderPackage(true, terms);
         }}
       />
+
+      <StoreFooter />
     </div>
   );
 };
