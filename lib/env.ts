@@ -41,15 +41,15 @@ export function requireEnv(name: string, value: string | undefined) {
 const publicGoogleClientId = readNonEmptyEnv(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 const publicGoogleReviewUrl = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL,
-  "https://www.google.com/maps/search/?api=1&query=Fortsolar"
+  "https://www.google.com/search?q=Fortsolar"
 );
 const publicGoogleReviewUrlLagos = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL_LAGOS,
-  "https://www.google.com/maps/search/?api=1&query=Fortsolar+Lagos"
+  "https://www.google.com/search?q=Fortsolar+Lagos"
 );
 const publicGoogleReviewUrlUyo = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL_UYO,
-  "https://www.google.com/maps/search/?api=1&query=Fortsolar+Uyo"
+  "https://www.google.com/search?q=Fortsolar+Uyo"
 );
 const publicFortsolarApiBaseUrl = readNonEmptyEnv(
   process.env.NEXT_PUBLIC_FORTSOLAR_API_BASE_URL,
@@ -70,9 +70,9 @@ const serverSessionSecret = readNonEmptyEnv(
 
 export const publicEnv = {
   googleClientId: publicGoogleClientId ?? "",
-  googleReviewUrl: publicGoogleReviewUrl ?? "https://www.google.com/maps/search/?api=1&query=Fortsolar",
-  googleReviewUrlLagos: publicGoogleReviewUrlLagos ?? "https://www.google.com/maps/search/?api=1&query=Fortsolar+Lagos",
-  googleReviewUrlUyo: publicGoogleReviewUrlUyo ?? "https://www.google.com/maps/search/?api=1&query=Fortsolar+Uyo",
+  googleReviewUrl: publicGoogleReviewUrl ?? "https://www.google.com/search?q=Fortsolar",
+  googleReviewUrlLagos: publicGoogleReviewUrlLagos ?? "https://www.google.com/search?q=Fortsolar+Lagos",
+  googleReviewUrlUyo: publicGoogleReviewUrlUyo ?? "https://www.google.com/search?q=Fortsolar+Uyo",
   fortsolarApiBaseUrl: publicFortsolarApiBaseUrl ?? "",
   emailVerificationBypassEnabled: publicEmailVerificationBypassEnabled,
 } as const;
