@@ -118,7 +118,7 @@ export function StoreFooter() {
             <ul className="space-y-2 text-xs text-[#5A646B] dark:text-slate-400">
               <li>
                 <Link href="/packages" className="transition-colors hover:text-[#048A05]">
-                  Solar Packages & Bundles
+                  Solar Packages
                 </Link>
               </li>
               <li>
