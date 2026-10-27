@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { TrashIcon } from "@/components/features/icons/TrashIcon";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
+import { Lock } from "lucide-react";
 import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import {
   useStorePackagesByIds,
@@ -24,6 +25,55 @@ import { useAuth } from "@/components/auth/auth-provider";
 
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+
+// Quote-eligible products are solar components (inverters, batteries, panels, charge controllers, solar kits, packages)
+// Pure consumer appliances (e.g. rechargeable standing fans, bulbs, torches) do NOT prompt installation quotes.
+export const isSolarQuoteEligible = (item: {
+  itemType?: string;
+  title?: string;
+  category?: string;
+  eligibleForInstallation?: boolean;
+  eligibleForQuote?: boolean;
+  eligible_for_quote?: boolean;
+}) => {
+  if (item.itemType === "package") return true;
+  if (item.eligibleForInstallation || item.eligibleForQuote || item.eligible_for_quote) return true;
+  const title = (item.title || "").toLowerCase();
+  const category = (item.category || "").toLowerCase();
+  const solarKeywords = [
+    "inverter",
+    "battery",
+    "solar panel",
+    "panel",
+    "lithium",
+    "mppt",
+    "charge controller",
+    "solar kit",
+    "mounting",
+    "hybrid inverter",
+    "pv module",
+    "energy storage",
+  ];
+  const consumerApplianceKeywords = [
+    "fan",
+    "standing fan",
+    "rechargeable fan",
+    "bulb",
+    "lamp",
+    "light",
+    "torch",
+    "radio",
+    "tv",
+    "television",
+  ];
+  const isConsumerAppliance = consumerApplianceKeywords.some((w) => title.includes(w) || category.includes(w));
+  const hasSolarKeyword = solarKeywords.some((w) => title.includes(w) || category.includes(w));
+
+  if (isConsumerAppliance && !title.includes("inverter") && !title.includes("battery") && !title.includes("panel")) {
+    return false;
+  }
+  return hasSolarKeyword;
+};
 
 const CartPage = () => {
   const router = useRouter();
@@ -159,6 +209,8 @@ const CartPage = () => {
           stockQuantity:
             item.itemType === "product" ? getProductCartMaxQuantity(productMap.get(String(item.id))) : null,
           eligibleForInstallation: item.itemType === "product" ? (product as any).eligibleForInstallation : false,
+          eligibleForQuote: (product as any).eligibleForQuote || (product as any).eligible_for_quote || (product as any).category?.eligible_for_quote || false,
+          category: (product as any).category?.name || (product as any).categoryName || (product as any).category || "",
           freeDelivery: (product as any).freeDelivery ?? false,
           eligibleForWaybill: (product as any).eligibleForWaybill ?? true,
           weightTier: (product as any).weightTier ?? "under_5kg",
@@ -203,7 +255,7 @@ const CartPage = () => {
   }, []);
 
   const hasEligibleProduct = useMemo(() => {
-    return cartDetails.some((item) => item.itemType === "product" && item.eligibleForInstallation);
+    return cartDetails.some((item) => item.itemType === "product" && isSolarQuoteEligible(item));
   }, [cartDetails]);
 
   const hasPackage = useMemo(() => {
@@ -333,7 +385,7 @@ const CartPage = () => {
 
   const quoteProducts = useMemo(() => {
     return cartDetails
-      .filter((item) => item.itemType === "product")
+      .filter((item) => isSolarQuoteEligible(item))
       .map((item) => ({
       id: item.id,
       title: item.title,
@@ -344,11 +396,11 @@ const CartPage = () => {
   }, [cartDetails]);
 
   return (
-    <div className="min-h-screen bg-white py-24">
+    <div className="min-h-screen bg-white dark:bg-[#0a0f1d] text-slate-900 dark:text-slate-100 py-24 transition-colors">
       <DashboardHeader query={query} onQueryChange={setQuery} />
 
       <div className="mx-auto w-full max-w-6xl px-4 pt-28 lg:py-2">
-        <div className="text-sm text-[#5A646B]">Home / Cart</div>
+        <div className="text-sm text-[#5A646B] dark:text-slate-400">Home / Cart</div>
         {packageDraft && (
           <div className="mt-4 mb-3 rounded-2xl border border-[#048A05]/25 bg-[#F6FAF6] p-4 sm:p-5 shadow-sm transition-all">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -514,40 +566,40 @@ const CartPage = () => {
           </div>
 
           <aside className="space-y-4">
-            <div className="rounded-2xl border border-[#E9EEF0] p-4">
-              <div className="rounded-xl shadow-sm bg-[#B8C0CC14] p-4">
-                <div className="flex items-center justify-between border-b py-3">
-                  <span className="text-sm text-[#5A646B]">Sub Total</span>
-                  <span className="font-semibold text-[#252C32]">
+            <div className="rounded-2xl border border-[#E9EEF0] dark:border-slate-800 bg-white dark:bg-[#0f172a] p-4 shadow-xs">
+              <div className="rounded-xl shadow-sm bg-[#B8C0CC14] dark:bg-slate-800/40 p-4">
+                <div className="flex items-center justify-between border-b border-[#E9EEF0] dark:border-slate-700/60 py-3">
+                  <span className="text-sm text-[#5A646B] dark:text-slate-400">Sub Total</span>
+                  <span className="font-semibold text-[#252C32] dark:text-white">
                     {formatNaira(subtotal)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between border-b py-3">
-                  <span className="text-sm text-[#5A646B]">Shipping</span>
+                <div className="flex items-center justify-between border-b border-[#E9EEF0] dark:border-slate-700/60 py-3">
+                  <span className="text-sm text-[#5A646B] dark:text-slate-400">Shipping</span>
                   {cartDetails.length === 0 ? (
-                    <span className="font-semibold text-[#252C32]">₦0.00</span>
+                    <span className="font-semibold text-[#252C32] dark:text-white">₦0.00</span>
                   ) : shipping === 0 ? (
-                    <span className="rounded-md bg-[#EBFAEB] px-2 py-0.5 text-xs text-[#048A05] font-semibold">
+                    <span className="rounded-md bg-[#EBFAEB] dark:bg-emerald-950/60 px-2 py-0.5 text-xs text-[#048A05] dark:text-emerald-400 font-semibold">
                       Free
                     </span>
                   ) : (
-                    <span className="font-semibold text-[#252C32]">
+                    <span className="font-semibold text-[#252C32] dark:text-white">
                       {formatNaira(shipping)}
                     </span>
                   )}
                 </div>
                 {discountAmount > 0 && (
-                  <div className="flex items-center justify-between border-b py-3 border-[#E9EEF0]">
-                    <span className="text-sm text-[#5A646B]">Package Discount</span>
-                    <span className="font-semibold text-red-600">
+                  <div className="flex items-center justify-between border-b border-[#E9EEF0] dark:border-slate-700/60 py-3">
+                    <span className="text-sm text-[#5A646B] dark:text-slate-400">Package Discount</span>
+                    <span className="font-semibold text-red-600 dark:text-red-400">
                       -{formatNaira(discountAmount)}
                     </span>
                   </div>
                 )}
                 {appliedCoupon && (
-                  <div className="flex items-center justify-between border-b py-3 border-[#E9EEF0]">
+                  <div className="flex items-center justify-between border-b border-[#E9EEF0] dark:border-slate-700/60 py-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-[#048A05]">Coupon ({appliedCoupon.code})</span>
+                      <span className="text-sm font-medium text-[#048A05] dark:text-emerald-400">Coupon ({appliedCoupon.code})</span>
                       <button
                         type="button"
                         onClick={handleRemoveCoupon}
@@ -557,37 +609,37 @@ const CartPage = () => {
                         ✕
                       </button>
                     </div>
-                    <span className="font-semibold text-[#048A05]">
+                    <span className="font-semibold text-[#048A05] dark:text-emerald-400">
                       -{formatNaira(couponDiscount)}
                     </span>
                   </div>
                 )}
                 {hasPackage && (
-                  <div className="flex items-center justify-between border-b py-3 border-[#E9EEF0]">
-                    <span className="text-sm text-[#5A646B]">Professional Installation</span>
-                    <span className="rounded-md bg-[#EBFAEB] px-2 py-0.5 text-xs text-[#048A05] font-semibold">
+                  <div className="flex items-center justify-between border-b border-[#E9EEF0] dark:border-slate-700/60 py-3">
+                    <span className="text-sm text-[#5A646B] dark:text-slate-400">Professional Installation</span>
+                    <span className="rounded-md bg-[#EBFAEB] dark:bg-emerald-950/60 px-2 py-0.5 text-xs text-[#048A05] dark:text-emerald-400 font-semibold">
                       Free (Included)
                     </span>
                   </div>
                 )}
                 {!hasPackage && hasEligibleProduct && requestInstallation && (
-                  <div className="flex items-center justify-between border-b py-3 border-[#E9EEF0]">
-                    <span className="text-sm text-[#5A646B]">Installation Fee</span>
-                    <span className="font-semibold text-[#252C32]">
+                  <div className="flex items-center justify-between border-b border-[#E9EEF0] dark:border-slate-700/60 py-3">
+                    <span className="text-sm text-[#5A646B] dark:text-slate-400">Installation Fee</span>
+                    <span className="font-semibold text-[#252C32] dark:text-white">
                       {formatNaira(150000)}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between py-3">
-                  <span className="font-semibold text-[#252C32]">Total</span>
-                  <span className="font-semibold text-lg text-[#252C32]">
+                  <span className="font-semibold text-[#252C32] dark:text-white">Total</span>
+                  <span className="font-semibold text-lg text-[#252C32] dark:text-white">
                     {formatNaira(total)}
                   </span>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-[#E9EEF0] bg-white p-3.5 shadow-sm">
-                <label className="block text-xs font-semibold text-[#252C32] mb-1.5">
+              <div className="mt-4 rounded-xl border border-[#E9EEF0] dark:border-slate-800 bg-white dark:bg-[#11192e] p-3.5 shadow-sm">
+                <label className="block text-xs font-semibold text-[#252C32] dark:text-slate-200 mb-1.5">
                   Have a Discount Coupon?
                 </label>
                 <div className="flex gap-2">
@@ -605,7 +657,7 @@ const CartPage = () => {
                         void handleApplyCoupon();
                       }
                     }}
-                    className="h-9 flex-1 rounded-lg border border-[#E4E9EC] px-3 text-xs uppercase font-semibold outline-none focus:border-[#1FA21B]"
+                    className="h-9 flex-1 rounded-lg border border-[#E4E9EC] dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 text-xs uppercase font-semibold outline-none focus:border-[#048A05]"
                   />
                   <button
                     type="button"
@@ -651,22 +703,6 @@ const CartPage = () => {
               )}
 
               <div className="mt-5 space-y-3">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsQuoteModalOpen(true)}
-                    disabled={quoteProducts.length === 0}
-                    className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center text-white font-semibold"
-                  >
-                    Get Quote
-                  </button>
-                  <Link
-                    href="/products"
-                    className="block w-full rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
-                  >
-                    Continue Shopping
-                  </Link>
-                </div>
                 <button
                   type="button"
                   onClick={() =>
@@ -675,25 +711,50 @@ const CartPage = () => {
                       onAuthenticated: () => router.push("/checkout"),
                     })
                   }
-                  className="block w-full rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32]"
+                  className="w-full rounded-xl bg-gradient-to-r from-[#048A05] to-[#168ABD] hover:from-[#037304] hover:to-[#12729D] py-3.5 px-4 text-center font-bold text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
                 >
-                  Checkout
+                  <Lock className="h-4 w-4" />
+                  <span>Proceed to Checkout</span>
                 </button>
+
+                {quoteProducts.length > 0 && (
+                  <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 text-xs transition-colors">
+                    <p className="font-bold text-slate-900 dark:text-white">Need Professional Installation?</p>
+                    <p className="text-[#5A646B] dark:text-slate-300 text-[11px] mt-0.5 leading-relaxed">
+                      You have solar components in your cart. Certified Fortsolar engineers provide professional installation &amp; warranty across all 36 states.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsQuoteModalOpen(true)}
+                      className="mt-2.5 w-full rounded-lg border border-[#048A05] text-[#048A05] dark:text-emerald-300 hover:bg-[#048A05] hover:text-white dark:hover:bg-[#048A05] py-2 text-center font-semibold transition-colors cursor-pointer"
+                    >
+                      Request an Installation Quote
+                    </button>
+                  </div>
+                )}
+
+                <Link
+                  href="/products"
+                  className="block w-full rounded-xl border border-slate-300 dark:border-slate-700 py-2.5 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Continue Shopping
+                </Link>
               </div>
 
-              <div className="mt-20 text-sm text-[#5A646B]">
-                <p className="mb-2">Good to know</p>
-                <p className="font-semibold text-[#252C32]">
-                  This Product Has a Package Package
+              <div className="mt-12 text-sm text-[#5A646B] dark:text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-6">
+                <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">Good to know</p>
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  Complete Solar System Packages
                 </p>
-                <p className="mt-2">
-                  Get this product as part of a complete solar setup that includes panels, batteries, and expert installation all optimized for performance and savings. Installation is completely free.  <Link
+                <p className="mt-1.5 leading-relaxed text-xs">
+                  Looking for a complete solar solution? Check our packages that bundle panels, hybrid inverters, batteries, and free nationwide installation.{" "}
+                  <Link
                     href="/packages"
-                    className="inline-flex items-center gap-1 text-[#252C32] font-medium underline"
+                    className="inline-flex items-center gap-1 text-[#048A05] dark:text-emerald-400 font-semibold hover:underline"
                   >
-                    View the Package Package
+                    View Solar Packages
                     <span>↗</span>
-                  </Link> to see what’s included.
+                  </Link>
                 </p>
               </div>
             </div>

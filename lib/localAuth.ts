@@ -35,6 +35,8 @@ export type MockUser = {
   status: string;
   emailVerified: boolean;
   theme_preference?: "light" | "dark" | "system" | null;
+  authProvider?: "local" | "google" | null;
+  hasPassword?: boolean | null;
 };
 
 export type MockSession = {
@@ -201,6 +203,8 @@ export function sessionSnapshotToMockUser(snapshot: SessionSnapshot | null) {
     status: snapshot.user.status,
     emailVerified: snapshot.user.emailVerified,
     theme_preference: snapshot.user.theme_preference ?? null,
+    authProvider: (snapshot.user as any).authProvider ?? null,
+    hasPassword: (snapshot.user as any).hasPassword ?? null,
   } satisfies MockUser;
 }
 

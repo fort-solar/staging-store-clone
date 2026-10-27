@@ -52,6 +52,8 @@ export type AuthUser = {
   emailVerified: boolean;
   theme_preference?: "light" | "dark" | "system" | null;
   createdAt: string;
+  authProvider?: "local" | "google";
+  hasPassword?: boolean;
 };
 
 export type LoginApiResponse = ApiSuccessResponse & {
@@ -91,7 +93,7 @@ export type AuthProfileUpdateApiResponse = ApiSuccessResponse & {
 export type SessionSnapshot = {
   portal: PortalRole;
   session: AuthSession;
-  user: Pick<AuthUser, "id" | "email" | "salutation" | "name" | "fullName" | "role" | "adminRole" | "avatar_url" | "status" | "phone" | "address" | "emailVerified" | "theme_preference">;
+  user: Pick<AuthUser, "id" | "email" | "salutation" | "name" | "fullName" | "role" | "adminRole" | "avatar_url" | "status" | "phone" | "address" | "emailVerified" | "theme_preference" | "authProvider" | "hasPassword">;
   expiresAt: string | null;
 };
 
@@ -290,7 +292,7 @@ export type NotificationSocketConfigApiResponse = ApiSuccessResponse & {
 
 export type ClientAuthState = {
   session: Pick<AuthSession, "userId" | "email" | "fullName" | "role" | "signedInAt">;
-  user: Pick<AuthUser, "id" | "email" | "salutation" | "fullName" | "name" | "phone" | "address" | "role" | "status" | "emailVerified" | "theme_preference">;
+  user: Pick<AuthUser, "id" | "email" | "salutation" | "fullName" | "name" | "phone" | "address" | "role" | "status" | "emailVerified" | "theme_preference" | "authProvider" | "hasPassword">;
   portal: PortalRole;
   expiresAt: string | null;
 };

@@ -7,7 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DashboardHeader from "@/components/features/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/auth-provider";
 import { createLoginRedirectHref } from "@/lib/auth/redirect";
-import { LogOut } from "lucide-react";
+import { Eye, EyeOff, Lock, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PaginationControls from "@/components/ui/pagination-controls";
@@ -15,6 +15,7 @@ import { SmartTabs, type TabKey } from "@/lib/smartTabs";
 import { getNotifications } from "@/lib/notifications";
 import {
   approveCustomerInstallation,
+  changeCustomerPassword,
   getCustomerInstallations,
   getCustomerInstallationDetail,
   getCustomerOrderDetail,
@@ -283,6 +284,66 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     document.documentElement.classList.toggle("dark", isDark);
     window.dispatchEvent(new Event("fortsolar:store:theme-change"));
     void updateCurrentUserProfile({ theme_preference: next }).catch(() => {});
+  };
+
+  const isGoogleAccount = currentUser?.authProvider === "google" || (session?.user as any)?.authProvider === "google";
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
+
+  const passwordCriteria = {
+    length: newPassword.length >= 8,
+    upper: /[A-Z]/.test(newPassword),
+    lower: /[a-z]/.test(newPassword),
+    number: /[0-9]/.test(newPassword),
+    special: /[^A-Za-z0-9]/.test(newPassword),
+  };
+  const passwordStrengthScore = Object.values(passwordCriteria).filter(Boolean).length;
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordStatus(null);
+
+    if (!currentPassword) {
+      setPasswordStatus({ tone: "error", message: "Please enter your current password." });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordStatus({ tone: "error", message: "New password must be at least 8 characters long." });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus({ tone: "error", message: "New password and confirm password do not match." });
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setPasswordStatus({ tone: "error", message: "New password cannot be the same as your current password." });
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      const res = await changeCustomerPassword({ currentPassword, newPassword });
+      setPasswordStatus({
+        tone: "success",
+        message: res.message || "Password changed successfully! Other active sessions have been signed out.",
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPasswordStatus({
+        tone: "error",
+        message: err instanceof Error ? err.message : "Failed to change password. Please verify your current password.",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -1197,6 +1258,169 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                         <span>System</span>
                       </button>
                     </div>
+                  </div>
+
+                  {/* Security & Password Section */}
+                  <div className="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-5 w-5 text-[#048a05] dark:text-emerald-400" />
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        Security &amp; Password
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Manage your password and safeguard your Fortsolar account.
+                    </p>
+
+                    {isGoogleAccount ? (
+                      <div className="rounded-2xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/70 dark:bg-sky-950/20 p-5">
+                        <div className="flex items-start gap-3.5">
+                          <div className="rounded-xl bg-sky-100 dark:bg-sky-900/40 p-2.5 text-sky-600 dark:text-sky-400 shrink-0">
+                            <ShieldCheck className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-semibold text-sky-900 dark:text-sky-200">
+                              Managed by Google Authentication
+                            </h4>
+                            <p className="mt-1 text-xs text-sky-700 dark:text-sky-300 leading-relaxed">
+                              You signed in with your Google Account. Your login security, two-factor authentication, and credentials are provided and secured by Google.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleChangePassword} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 p-5 space-y-4 max-w-xl">
+                        {passwordStatus ? (
+                          <div
+                            className={`rounded-xl px-4 py-3 text-xs font-medium ${
+                              passwordStatus.tone === "success"
+                                ? "bg-emerald-50 dark:bg-emerald-950/40 text-[#048a05] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40"
+                                : "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/40"
+                            }`}
+                          >
+                            {passwordStatus.message}
+                          </div>
+                        ) : null}
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Current Password *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showCurrentPassword ? "text" : "password"}
+                              value={currentPassword}
+                              onChange={(e) => setCurrentPassword(e.target.value)}
+                              placeholder="Enter your current password"
+                              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white shadow-sm focus:border-[#048a05] focus:outline-none focus:ring-1 focus:ring-[#048a05] pr-10"
+                              autoComplete="current-password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                            >
+                              {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            New Password *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showNewPassword ? "text" : "password"}
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Min 8 chars with upper, lower, number, symbol"
+                              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white shadow-sm focus:border-[#048a05] focus:outline-none focus:ring-1 focus:ring-[#048a05] pr-10"
+                              autoComplete="new-password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              aria-label={showNewPassword ? "Hide password" : "Show password"}
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+
+                          {newPassword.length > 0 && (
+                            <div className="mt-2.5 space-y-1.5">
+                              <div className="flex h-1.5 w-full gap-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                                <span
+                                  className={`h-full transition-all duration-300 rounded-full ${
+                                    passwordStrengthScore <= 2
+                                      ? "w-1/3 bg-rose-500"
+                                      : passwordStrengthScore <= 4
+                                      ? "w-2/3 bg-amber-500"
+                                      : "w-full bg-[#048a05]"
+                                  }`}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-1 text-[11px] pt-1">
+                                <span className={passwordCriteria.length ? "text-[#048a05] dark:text-emerald-400 font-semibold" : "text-slate-400"}>
+                                  {passwordCriteria.length ? "✓" : "○"} 8+ characters
+                                </span>
+                                <span className={passwordCriteria.upper ? "text-[#048a05] dark:text-emerald-400 font-semibold" : "text-slate-400"}>
+                                  {passwordCriteria.upper ? "✓" : "○"} Uppercase letter
+                                </span>
+                                <span className={passwordCriteria.lower ? "text-[#048a05] dark:text-emerald-400 font-semibold" : "text-slate-400"}>
+                                  {passwordCriteria.lower ? "✓" : "○"} Lowercase letter
+                                </span>
+                                <span className={passwordCriteria.number ? "text-[#048a05] dark:text-emerald-400 font-semibold" : "text-slate-400"}>
+                                  {passwordCriteria.number ? "✓" : "○"} Number (0-9)
+                                </span>
+                                <span className={passwordCriteria.special ? "text-[#048a05] dark:text-emerald-400 font-semibold col-span-2" : "text-slate-400 col-span-2"}>
+                                  {passwordCriteria.special ? "✓" : "○"} Special character (!@#$%^&*)
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Confirm New Password *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              placeholder="Re-enter your new password"
+                              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm text-slate-900 dark:text-white shadow-sm focus:border-[#048a05] focus:outline-none focus:ring-1 focus:ring-[#048a05] pr-10"
+                              autoComplete="new-password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                          {confirmPassword && newPassword !== confirmPassword && (
+                            <p className="text-xs text-rose-500 mt-1">Passwords do not match.</p>
+                          )}
+                        </div>
+
+                        <div className="pt-2 flex justify-end">
+                          <Button
+                            type="submit"
+                            disabled={isChangingPassword || !currentPassword || !newPassword || newPassword !== confirmPassword}
+                            className="rounded-xl bg-[#048a05] hover:bg-[#037004] text-white text-xs font-semibold px-6 py-2.5 cursor-pointer disabled:opacity-50"
+                          >
+                            {isChangingPassword ? "Updating..." : "Update Password"}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">

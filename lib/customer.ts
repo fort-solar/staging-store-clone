@@ -321,3 +321,11 @@ export function calculateCustomerDeliveryFee(payload: {
   });
 }
 
+export function changeCustomerPassword(body: { currentPassword: string; newPassword: string }) {
+  return appRequest<ApiSuccessResponse>("/api/v1/auth/change-password", {
+    method: "POST",
+    body,
+  });
+}
+
+

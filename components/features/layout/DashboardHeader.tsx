@@ -10,7 +10,7 @@ import { SearchIcon } from "../icons/SearchIcon";
 import Link from "next/link";
 import { useGeneralStore } from "@/store/GeneralStore";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, HelpCircle, LogOut, Settings, List, InspectionPanel, House, UserRound  } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, HardHat, HelpCircle, House, LogOut, Settings, UserRound } from "lucide-react";
 import { OrdersIcon } from "../icons/OrdersIcon";
 import { useAuth } from "@/components/auth/auth-provider";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -269,7 +269,7 @@ const DashboardHeader = ({
                 onClick={() => setIsProfileMenuOpen(false)}
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
-                <List className="h-5 w-5" />
+                <FileText className="h-5 w-5" />
                 Quotes
               </Link>
               <Link
@@ -277,7 +277,7 @@ const DashboardHeader = ({
                 onClick={() => setIsProfileMenuOpen(false)}
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
-                <List className="h-5 w-5" />
+                <FileText className="h-5 w-5" />
                 Quotes
               </Link>
               <Link
@@ -285,7 +285,7 @@ const DashboardHeader = ({
                 onClick={() => setIsProfileMenuOpen(false)}
                 className="flex lg:hidden w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
-                <InspectionPanel className="h-5 w-5" />
+                <HardHat className="h-5 w-5" />
                 Installations
               </Link>
               <Link
@@ -293,7 +293,7 @@ const DashboardHeader = ({
                 onClick={() => setIsProfileMenuOpen(false)}
                 className="hidden lg:flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[#30343A] dark:text-slate-300 hover:bg-[#F8FAFC] dark:hover:bg-slate-800"
               >
-                <InspectionPanel className="h-5 w-5" />
+                <HardHat className="h-5 w-5" />
                 Installations
               </Link>
               <Link

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { LogoTransparent } from "@/components/features/icons/LogoTransparent";
 import { GoogleIcon } from "@/components/features/icons/GoogleIcon";
 import {
   FORTSOLAR_GOOGLE_REVIEW_URL,
@@ -64,13 +64,7 @@ export function StoreFooter() {
           {/* Company & Nationwide Reputation */}
           <div className="space-y-4">
             <Link href="/" className="inline-block">
-              <Image
-                src="/FortsolarLogo.png"
-                alt="Fortsolar Logo"
-                width={130}
-                height={36}
-                className="h-8 w-auto object-contain"
-              />
+              <LogoTransparent className="h-8 w-auto" />
             </Link>
             <p className="max-w-md text-xs leading-relaxed text-[#5A646B] dark:text-slate-400">
               Fortsolar provides Tier-1 solar panels, hybrid inverters, and lithium energy storage systems for homes, businesses, and industrial facilities across Nigeria.

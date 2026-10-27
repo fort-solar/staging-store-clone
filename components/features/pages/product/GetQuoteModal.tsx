@@ -145,37 +145,37 @@ const GetQuoteModal = ({
       <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
         <DialogContent
           showCloseButton
-          className="p-8 sm:max-w-130 rounded-3xl overflow-hidden"
+          className="p-8 sm:max-w-130 rounded-3xl overflow-hidden bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
         >
           <div className="flex flex-col items-center text-center py-6 space-y-4">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand-soft text-brand ring-4 ring-brand-soft/50 mb-2">
-              <CheckCircle2 className="h-10 w-10 animate-bounce text-brand" />
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[#048A05] dark:text-emerald-400 ring-4 ring-emerald-500/20 mb-2">
+              <CheckCircle2 className="h-10 w-10 animate-bounce text-[#048A05] dark:text-emerald-400" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Quote Request Submitted!</h3>
-            <p className="text-sm text-slate-500 max-w-sm">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Quote Request Submitted!</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
               We have received your request for a personalized solar quote. Here is what happens next:
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 space-y-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 text-left">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 p-6 space-y-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-left">
               Next Steps Checklist
             </h4>
-            <ul className="space-y-3 text-sm text-slate-600 text-left">
+            <ul className="space-y-3 text-sm text-slate-700 dark:text-slate-300 text-left">
               <li className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-brand shrink-0 mt-0.5" />
-                <span className="line-through text-slate-400">Quote request received and logged</span>
+                <CheckCircle2 className="h-5 w-5 text-[#048A05] dark:text-emerald-400 shrink-0 mt-0.5" />
+                <span className="line-through text-slate-400 dark:text-slate-500">Quote request received and logged</span>
               </li>
               <li className="flex items-start gap-3">
-                <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 mt-0.5 bg-white text-[10px] text-slate-400 font-semibold flex-col justify-center">2</div>
-                <span>Solar design expert reviews building & load profile</span>
+                <div className="h-5 w-5 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0 mt-0.5 bg-white dark:bg-slate-800 text-[10px] text-slate-500 dark:text-slate-300 font-semibold flex-col justify-center">2</div>
+                <span>Solar design expert reviews building &amp; load profile</span>
               </li>
               <li className="flex items-start gap-3">
-                <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 mt-0.5 bg-white text-[10px] text-slate-400 font-semibold flex-col justify-center">3</div>
+                <div className="h-5 w-5 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0 mt-0.5 bg-white dark:bg-slate-800 text-[10px] text-slate-500 dark:text-slate-300 font-semibold flex-col justify-center">3</div>
                 <span>Initial design and sizing calculations</span>
               </li>
               <li className="flex items-start gap-3">
-                <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 mt-0.5 bg-white text-[10px] text-slate-400 font-semibold flex-col justify-center">4</div>
+                <div className="h-5 w-5 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0 mt-0.5 bg-white dark:bg-slate-800 text-[10px] text-slate-500 dark:text-slate-300 font-semibold flex-col justify-center">4</div>
                 <span>Detailed pricing, savings and quote sent to your email</span>
               </li>
             </ul>
@@ -187,13 +187,13 @@ const GetQuoteModal = ({
                 onClose();
                 router.push("/settings/quotes");
               }}
-              className="flex h-12 w-full items-center justify-center rounded-xl bg-brand text-sm font-semibold text-white transition hover:bg-brand-dark"
+              className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#048A05] to-[#168ABD] hover:from-[#037304] hover:to-[#12729D] text-sm font-semibold text-white transition shadow-sm cursor-pointer"
             >
               View My Quotes
             </button>
             <button
               onClick={onClose}
-              className="h-12 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              className="h-12 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
             >
               Close
             </button>
@@ -207,14 +207,14 @@ const GetQuoteModal = ({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent
         showCloseButton
-        className="p-0 sm:max-w-130 max-h-[90vh] rounded-3xl overflow-hidden"
+        className="p-0 sm:max-w-130 max-h-[90vh] rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
       >
         <div className="px-6 pt-6">
           <DialogHeader>
-            <DialogTitle className="text-[18px] font-bold text-[#101828]">
+            <DialogTitle className="text-[18px] font-bold text-slate-900 dark:text-white">
               Ready to Go Solar? Let’s Get Started!
             </DialogTitle>
-            <DialogDescription className="text-sm text-[#667085]">
+            <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
               Please confirm your details and project location so our team can prepare your
               personalized final quote and installation schedule.
             </DialogDescription>
@@ -223,34 +223,34 @@ const GetQuoteModal = ({
 
         <div className="px-6 pb-6 pt-4 space-y-6 overflow-y-auto max-h-[calc(85vh-140px)]">
           {isMultiProductQuote ? (
-            <div className="mt-6 space-y-2 rounded-xl border border-[#E5E7EB] p-3">
+            <div className="mt-6 space-y-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3">
               {quoteProducts.map((item) => (
                 <div
                   key={item.id}
                   className="grid grid-cols-[56px_1fr_auto_auto] items-center gap-3"
                 >
                   <div
-                    className="h-14 w-14 rounded-lg bg-cover bg-center bg-no-repeat bg-[#CFCFCF]"
+                    className="h-14 w-14 rounded-lg bg-cover bg-center bg-no-repeat bg-[#CFCFCF] dark:bg-slate-700"
                     style={{ backgroundImage: `url(${item.image})` }}
                   />
-                  <p className="text-sm font-semibold text-[#3E3F43]">{item.title}</p>
-                  <p className="text-sm text-[#556070]">x{Math.max(1, item.quantity ?? 1)}</p>
-                  <p className="text-sm font-semibold text-[#3E3F43]">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{item.title}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">x{Math.max(1, item.quantity ?? 1)}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
                     ₦{(item.price * Math.max(1, item.quantity ?? 1)).toLocaleString()}
                   </p>
                 </div>
               ))}
-              <div className="flex justify-end border-t border-[#E5E7EB] pt-2">
-                <p className="text-sm font-bold text-[#3E3F43]">₦{totalPrice.toLocaleString()}</p>
+              <div className="flex justify-end border-t border-slate-200 dark:border-slate-800 pt-2">
+                <p className="text-sm font-bold text-slate-900 dark:text-white">₦{totalPrice.toLocaleString()}</p>
               </div>
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-[56px_1fr_auto_auto] items-center gap-3 rounded-xl border border-[#E5E7EB] p-3">
+            <div className="mt-6 grid grid-cols-[56px_1fr_auto_auto] items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3">
               <div
-                className="h-14 w-14 rounded-lg bg-cover bg-center bg-no-repeat bg-[#CFCFCF]"
+                className="h-14 w-14 rounded-lg bg-cover bg-center bg-no-repeat bg-[#CFCFCF] dark:bg-slate-700"
                 style={{ backgroundImage: `url(${primaryProduct.image})` }}
               />
-              <p className="text-sm font-semibold text-[#3E3F43]">{primaryProduct.title}</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{primaryProduct.title}</p>
               <Input
                 type="number"
                 min={1}
@@ -261,51 +261,51 @@ const GetQuoteModal = ({
                     quantity: Math.max(1, Number(event.target.value) || 1),
                   }))
                 }
-                className="h-9 w-14"
+                className="h-9 w-14 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
               />
-              <p className="text-sm font-bold text-[#3E3F43]">₦{totalPrice.toLocaleString()}</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">₦{totalPrice.toLocaleString()}</p>
             </div>
           )}
 
           <div className="mt-6 space-y-8">
             <section>
-              <h3 className="text-[18px] font-bold text-[#3E3F43]">Project Location &amp; Details</h3>
+              <h3 className="text-[18px] font-bold text-slate-900 dark:text-white">Project Location &amp; Details</h3>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Project Type</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Project Type</label>
                   <ComboboxField
                     value={form.projectType}
                     onValueChange={(value) => setForm((prev) => ({ ...prev, projectType: value }))}
                     options={["Residential", "Commercial", "Industrial"].map((value) => ({ value, label: value }))}
-                    className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0"
-                    contentClassName="z-120"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-none focus:ring-0"
+                    contentClassName="z-120 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Installation Timeline</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Installation Timeline</label>
                   <ComboboxField
                     value={form.installationTimeline}
                     onValueChange={(value) => setForm((prev) => ({ ...prev, installationTimeline: value }))}
                     options={["Within 2 Weeks", "Within 1 Month", "Flexible"].map((value) => ({ value, label: value }))}
-                    className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0"
-                    contentClassName="z-120"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-none focus:ring-0"
+                    contentClassName="z-120 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Building Type</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Building Type</label>
                   <ComboboxField
                     value={form.buildingType}
                     onValueChange={(value) => setForm((prev) => ({ ...prev, buildingType: value }))}
                     options={["Bungalow", "Duplex", "Apartment", "Office"].map((value) => ({ value, label: value }))}
-                    className="h-11 w-full rounded-xl bg-[#F2F4F7] border-0 shadow-none focus:ring-0"
-                    contentClassName="z-120"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-none focus:ring-0"
+                    contentClassName="z-120 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Location <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <Input
@@ -314,13 +314,13 @@ const GetQuoteModal = ({
                       setForm((prev) => ({ ...prev, location: event.target.value }))
                     }
                     placeholder="City"
-                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-sm text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
 
               <div className="mt-4 space-y-2">
-                <label className="text-sm text-[#3E3F43]">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Installation Address <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <Input
@@ -328,17 +328,17 @@ const GetQuoteModal = ({
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, installationAddress: event.target.value }))
                   }
-                  placeholder="No 24,"
-                  className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                  placeholder="e.g. 24 Admiralty Way, Lekki Phase 1"
+                  className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-sm text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
             </section>
 
             <section>
-              <h3 className="text-[18px] font-bold text-[#3E3F43]">Contact Information</h3>
+              <h3 className="text-[18px] font-bold text-slate-900 dark:text-white">Contact Information</h3>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Full Name <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <Input
@@ -346,11 +346,11 @@ const GetQuoteModal = ({
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, fullName: event.target.value }))
                     }
-                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-sm text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Email Address <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <Input
@@ -358,11 +358,11 @@ const GetQuoteModal = ({
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, email: event.target.value }))
                     }
-                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-sm text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Phone Number <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <Input
@@ -370,25 +370,25 @@ const GetQuoteModal = ({
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, phone: event.target.value }))
                     }
-                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-sm text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-[#3E3F43]">Whatsapp Number</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">WhatsApp Number</label>
                   <Input
                     value={form.whatsappNumber}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, whatsappNumber: event.target.value }))
                     }
                     placeholder="+234"
-                    className="h-9 w-full rounded-xl bg-[#F2F4F7] px-4 text-sm outline-none ring-0 placeholder:text-[#98A2B3]"
+                    className="h-11 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-sm text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
             </section>
 
             <section>
-              <h3 className="text-[18px] font-bold text-[#3E3F43]">Preferred Contact Method</h3>
+              <h3 className="text-[18px] font-bold text-slate-900 dark:text-white">Preferred Contact Method</h3>
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {CONTACT_METHODS.map((method) => {
                   const isActive = form.preferredContactMethod === method;
@@ -397,13 +397,22 @@ const GetQuoteModal = ({
                       key={method}
                       type="button"
                       onClick={() => setForm((prev) => ({ ...prev, preferredContactMethod: method }))}
-                      className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left ${isActive
-                        ? "border-[#22A128] bg-[#EBFAEB] text-[#048A05]"
-                        : "border-[#DADDE2] bg-[#F3F4F6] text-[#3E3F43]"
-                        }`}
+                      className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors cursor-pointer ${
+                        isActive
+                          ? "border-[#048A05] bg-emerald-50 dark:bg-emerald-950/40 text-[#048A05] dark:text-emerald-400 font-semibold"
+                          : "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
+                      }`}
                     >
-                      <span className="text-base font-medium">{method}</span>
-                      <span className={`h-4 w-4 rounded-full border ${isActive ? "border-[#22A128] bg-[#22A128]" : "border-[#737373]"}`} />
+                      <span className="text-sm font-medium">{method}</span>
+                      <span
+                        className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                          isActive
+                            ? "border-[#048A05] bg-[#048A05]"
+                            : "border-slate-400 dark:border-slate-500"
+                        }`}
+                      >
+                        {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                      </span>
                     </button>
                   );
                 })}
@@ -411,16 +420,18 @@ const GetQuoteModal = ({
             </section>
 
             <section>
-              <h3 className="text-[18px] font-bold text-[#3E3F43]">Additional Information</h3>
+              <h3 className="text-[18px] font-bold text-slate-900 dark:text-white">Additional Information</h3>
               <div className="mt-3 space-y-2">
-                <label className="text-sm text-[#3E3F43]">Special Requirements/ Questions (Optional)</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Special Requirements / Questions (Optional)
+                </label>
                 <textarea
                   value={form.additionalInfo}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, additionalInfo: event.target.value }))
                   }
-                  placeholder="Spec....."
-                  className="min-h-28 w-full rounded-xl border border-[#DADDE2] bg-[#F3F4F6] px-4 py-3 text-base text-[#3E3F43] outline-none"
+                  placeholder="Tell us about your load, roof type, or specific preferences..."
+                  className="min-h-28 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#048A05] transition-colors"
                 />
               </div>
 
@@ -431,21 +442,21 @@ const GetQuoteModal = ({
                     setForm((prev) => ({ ...prev, agreeToTerms: event.target.checked }))
                   }
                   label="I agree to the terms of service to receive a call/email regarding my quote."
-                  labelClassName="text-base text-[#3E3F43]"
+                  labelClassName="text-sm text-slate-700 dark:text-slate-300"
                 />
                 <GradientCheckbox
                   checked={form.requestInstallation}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, requestInstallation: event.target.checked }))
                   }
-                  label="Request Installation"
-                  labelClassName="text-base text-[#3E3F43]"
+                  label="Request Professional Installation"
+                  labelClassName="text-sm text-slate-700 dark:text-slate-300"
                 />
               </div>
             </section>
 
             {errorMsg && (
-              <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+              <p className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-4 py-3 text-sm text-red-600 dark:text-red-400">
                 {errorMsg}
               </p>
             )}
@@ -454,7 +465,7 @@ const GetQuoteModal = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-12 rounded-2xl border border-[#AEB2B8] px-8 text-sm font-medium text-[#20252C]"
+                className="h-12 rounded-2xl border border-slate-300 dark:border-slate-700 px-8 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -512,7 +523,7 @@ const GetQuoteModal = ({
                     setIsSubmitting(false);
                   }
                 }}
-                className="h-12 rounded-2xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] px-8 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
+                className="h-12 rounded-2xl bg-gradient-to-r from-[#048A05] to-[#168ABD] px-8 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 shadow-md hover:opacity-95 transition-all cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
