@@ -151,11 +151,7 @@ export function clearClientAuthState() {
   }
 
   window.localStorage.removeItem(AUTH_STATE_KEY);
-  window.localStorage.removeItem("fortsolar:store:theme_preference");
-  window.localStorage.removeItem("fortsolar:store:appearance");
-  document.documentElement.classList.remove("dark");
-  document.documentElement.style.backgroundColor = "#ffffff";
-  document.documentElement.style.colorScheme = "light";
+  // Preserving store theme preference per repository across login/logout/refresh.
 }
 
 function clearCustomerPersistedState() {

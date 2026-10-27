@@ -48,7 +48,7 @@ const FilterSection = ({
   children: React.ReactNode;
 }) => (
   <div className="space-y-2">
-    <p className="text-sm font-semibold text-[#252C32]">{title}</p>
+    <p className="text-sm font-semibold text-[#252C32] dark:text-white">{title}</p>
     {children}
   </div>
 );
@@ -66,7 +66,7 @@ const CheckboxItem = ({
     checked={checked}
     onChange={onChange}
     label={label}
-    labelClassName="text-sm text-[#3B3B3B]"
+    labelClassName="text-sm text-[#3B3B3B] dark:text-slate-200"
   />
 );
 

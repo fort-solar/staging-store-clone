@@ -33,7 +33,7 @@ const GradientCheckbox = React.forwardRef<HTMLInputElement, GradientCheckboxProp
         />
         <span
           className={cn(
-            "flex h-5 w-5 items-center justify-center rounded-md border border-[#D0D5DD] bg-white shadow-sm transition-all duration-200",
+            "flex h-5 w-5 items-center justify-center rounded-md border border-[#D0D5DD] dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm transition-all duration-200",
             "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#22A128]/35",
             "peer-checked:border-transparent peer-checked:bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] peer-checked:shadow-[0_10px_24px_rgba(34,161,40,0.22)]",
             "peer-checked:[&_svg]:opacity-100",
@@ -44,7 +44,7 @@ const GradientCheckbox = React.forwardRef<HTMLInputElement, GradientCheckboxProp
         </span>
       </span>
       {label ? (
-        <span className={cn("text-sm text-[#475569]", labelClassName)}>{label}</span>
+        <span className={cn("text-sm text-[#475569] dark:text-slate-200", labelClassName)}>{label}</span>
       ) : null}
     </label>
   ),

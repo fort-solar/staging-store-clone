@@ -51,9 +51,9 @@ const ProductListCard = ({
   const isAddToCartDisabled =
     availability === "Out Of Stock" || (stockQuantity > 0 && cartQuantity >= stockQuantity);
   return (
-    <div className="group overfow-hidden flex flex-col sm:flex-row gap-8 rounded-lg border border-[#E6EFE6] bg-white  shadow-sm hover:border-[#048A05] transition-colors">
+    <div className="group overflow-hidden flex flex-col sm:flex-row gap-8 rounded-lg border border-[#E6EFE6] dark:border-slate-800 bg-white dark:bg-[#0e1726] shadow-sm hover:border-[#048A05] transition-colors">
       <div
-        className="relative aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat sm:w-44 sm:shrink-0"
+        className="relative aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat sm:w-44 sm:shrink-0 bg-slate-100 dark:bg-slate-800"
         style={{ backgroundImage: `url(${image})` }}
       >
         <div className="absolute right-2 top-2 z-20 flex gap-2 opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
@@ -62,11 +62,11 @@ const ProductListCard = ({
               event.preventDefault();
               onToggleFavorite?.();
             }}
-            className="h-8 w-8 rounded-md bg-white/90 shadow-sm grid place-items-center hover:bg-white"
+            className="h-8 w-8 rounded-md bg-white/90 dark:bg-slate-800/90 shadow-sm grid place-items-center hover:bg-white dark:hover:bg-slate-800"
           >
             <HeartIcon
               filled={isFavorite}
-              className={isFavorite ? "text-[#E11D48]" : "text-[#3B3B3B]/70"}
+              className={isFavorite ? "text-[#E11D48]" : "text-slate-600 dark:text-slate-300"}
             />
           </button>
           <button
@@ -75,19 +75,19 @@ const ProductListCard = ({
               event.preventDefault();
               addToCart({ id, itemType: "product" });
             }}
-            className="grid h-8 w-8 place-items-center rounded-md bg-white/90 shadow-sm hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="grid h-8 w-8 place-items-center rounded-md bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-white dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#048A05]" />
+            <CartIcon className="text-slate-600 dark:text-slate-300 group-hover:text-[#048A05]" />
           </button>
         </div>
       </div>
       <div className="flex-1 flex flex-col gap-1 p-5 lg:p-2">
         <div className='flex gap-2 lg:gap-0 flex-col lg:flex-row lg:justify-between lg:items-center'>
-          <p className="order-2  lg:order-1 text-lg font-bold text-[#252C32]">{title}</p>
+          <p className="order-2 lg:order-1 text-lg font-bold text-[#252C32] dark:text-white">{title}</p>
           <div className="order-1 lg:order-2 flex items-center gap-2">
             <Link
               href={href}
-              className="text-sm border border-[#BFE8BF] rounded-xl py-1 px-2 text-[#048A05] text-center hover:bg-[#EBFAEB]"
+              className="text-sm border border-[#BFE8BF] dark:border-[#048A05]/40 rounded-xl py-1 px-2 text-[#048A05] dark:text-[#2CB22C] text-center hover:bg-[#EBFAEB] dark:hover:bg-[#048A05]/20 transition-colors"
             >
               View Details
             </Link>
@@ -104,7 +104,7 @@ const ProductListCard = ({
             </button>
           </div>
         </div>
-        <p className="text-sm text-[#5A646B]">{cardDescription}</p>
+        <p className="text-sm text-[#5A646B] dark:text-slate-400">{cardDescription}</p>
       </div>
     </div>
   );

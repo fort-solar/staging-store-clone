@@ -54,10 +54,10 @@ const ProductCard
     const isAddToCartDisabled =
       availability === "Out Of Stock" || (stockQuantity > 0 && cartQuantity >= stockQuantity);
     return (
-      <div className="group h-full bg-[#EBFAEB] p-2 rounded-xl overflow-hidden">
-        <div className='bg-white flex flex-col h-full rounded-xl overflow-hidden'>
+      <div className="group h-full bg-[#EBFAEB] dark:bg-[#048A05]/15 p-2 rounded-xl overflow-hidden border border-transparent dark:border-[#048A05]/20">
+        <div className='bg-white dark:bg-[#0e1726] flex flex-col h-full rounded-xl overflow-hidden border border-transparent dark:border-slate-800 shadow-sm'>
           <div
-            className="relative z-10 w-full overflow-hidden rounded-[16px] bg-cover bg-center bg-no-repeat aspect-[4/3]"
+            className="relative z-10 w-full overflow-hidden rounded-[16px] bg-slate-100 dark:bg-slate-800 bg-cover bg-center bg-no-repeat aspect-[4/3]"
             style={{ backgroundImage: `url(${image})` }}
           >
             <div className="hidden absolute lg:flex justify-between left-0 right-0 top-3 z-20  opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
@@ -70,7 +70,7 @@ const ProductCard
                     event.preventDefault();
                     onToggleFavorite?.();
                   }}
-                  className="h-9 w-9 rounded-l-md border-l bg-white/90 shadow-sm grid place-items-center hover:bg-white"
+                  className="h-9 w-9 rounded-l-md border-l border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 shadow-sm grid place-items-center hover:bg-white dark:hover:bg-slate-800"
                 >
                   <HeartIcon
                     filled={isFavorite}
@@ -83,9 +83,9 @@ const ProductCard
                     event.preventDefault();
                     addToCart({ id, itemType: "product" });
                   }}
-                  className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 rounded-r-md bg-white/90 shadow-sm grid place-items-center hover:bg-white`}
+                  className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 rounded-r-md bg-white/90 dark:bg-slate-800/90 shadow-sm grid place-items-center hover:bg-white dark:hover:bg-slate-800`}
                 >
-                  <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#048A05]" />
+                  <CartIcon className="text-slate-600 dark:text-slate-300 group-hover:text-[#048A05]" />
                 </button>
               </div>
 
@@ -101,7 +101,7 @@ const ProductCard
                     event.preventDefault();
                     onToggleFavorite?.();
                   }}
-                  className="h-9 w-9 rounded-l-md border-l bg-white/90 shadow-sm grid place-items-center hover:bg-white"
+                  className="h-9 w-9 rounded-l-md border-l border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 shadow-sm grid place-items-center hover:bg-white dark:hover:bg-slate-800"
                 >
                   <HeartIcon
                     filled={isFavorite}
@@ -114,33 +114,32 @@ const ProductCard
                     event.preventDefault();
                     addToCart({ id, itemType: "product" });
                   }}
-                 className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 rounded-r-md bg-white/90 shadow-sm grid place-items-center hover:bg-white`}
+                 className={`disabled:opacity-50 disabled:cursor-not-allowed h-9 w-9 rounded-r-md bg-white/90 dark:bg-slate-800/90 shadow-sm grid place-items-center hover:bg-white dark:hover:bg-slate-800`}
                 >
-                  <CartIcon className="text-[#3B3B3B]/70 group-hover:text-[#048A05]" />
+                  <CartIcon className="text-slate-600 dark:text-slate-300 group-hover:text-[#048A05]" />
                 </button>
               </div>
 
             </div>
             <div></div>
-            {/* <div className="absolute inset-0 bg-linear-to-t from-[#000000af] via-[#0000002a] to-[#00000000] z-0" /> */}
           </div>
-          <div className='border-t border-[#9A9EA6] px-4 py-4 w-full flex flex-col flex-1 bg-white text-[#000000] space-y-2'>
-            <p className="text-lg font-semibold font-poppins text-[#000000]">{title}</p>
+          <div className='border-t border-[#9A9EA6]/30 dark:border-slate-800 px-4 py-4 w-full flex flex-col flex-1 bg-white dark:bg-[#0e1726] text-slate-900 dark:text-slate-100 space-y-2'>
+            <p className="text-lg font-semibold font-poppins text-slate-900 dark:text-white">{title}</p>
             <div className="flex items-center gap-2">
-              <p className="text-xs rounded-ful text-[#000000] font-bold">
+              <p className="text-sm font-bold text-slate-900 dark:text-white">
                 ₦{price.toLocaleString()}{" "}
                 {priceOriginal > price ? (
-                  <span className='text-[8px] text-[#FF0000] line-through decoration-[#FF0000] decoration-1'>
+                  <span className='text-[10px] text-rose-500 line-through decoration-rose-500 font-normal'>
                     ₦{priceOriginal.toLocaleString()}
                   </span>
                 ) : null}
               </p>
             </div>
-            <p className='text-xs text-[#50555C]'>{cardDescription}</p>
+            <p className='text-xs text-slate-600 dark:text-slate-400'>{cardDescription}</p>
             <div className="flex gap-3 w-full mt-auto pt-2">
               <Link
                 href={href}
-                className='text-sm border border-[#50555C] rounded-lg py-2 w-full text-[#000000] text-center hover:text-[#2CB22C] cursor-pointer ring-0 hover:border-[#2CB22C]'
+                className='text-sm border border-slate-300 dark:border-slate-700 rounded-lg py-2 w-full text-slate-800 dark:text-slate-200 text-center hover:text-[#2CB22C] dark:hover:text-[#2CB22C] hover:border-[#2CB22C] dark:hover:border-[#2CB22C] transition-colors cursor-pointer'
               >
                 View Details
               </Link>
