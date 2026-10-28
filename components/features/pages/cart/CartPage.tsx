@@ -517,7 +517,7 @@ const CartPage = () => {
                         : "Free Delivery Included"
                       : hasWarehouseOnlyProduct
                       ? "Regional Warehouse / Depot Pickup (One or more items require freight pickup)"
-                      : `Standard Nationwide Delivery (${totalCartWeightKg > 0 ? `${totalCartWeightKg.toFixed(1)} kg total weight` : "Calculated by total cart weight"})`}
+                      : "Standard Nationwide Delivery"}
                   </span>
                 </div>
                 <span className="shrink-0 text-xs">
