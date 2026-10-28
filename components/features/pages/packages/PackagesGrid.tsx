@@ -14,6 +14,7 @@ type PackageItem = {
     image: string;
     price: number;
     availability: string;
+    inStock?: boolean;
     finalPrice?: number;
     discountPercentage?: number;
     packageIncludes?: Array<{ label: string; qty: string }>;
@@ -75,6 +76,7 @@ const PackagesGrid = ({
                                     discountPercentage={p.discountPercentage}
                                     packageIncludes={p.packageIncludes}
                                     powers={p.powers}
+                                    inStock={p.inStock}
                                 />
                             </Link>
                         </div>

@@ -11,6 +11,7 @@ const PackageCard = ({
     discountPercentage,
     packageIncludes = [],
     powers = [],
+    inStock = true,
 }: {
     title: string;
     mini_description: string;
@@ -20,6 +21,7 @@ const PackageCard = ({
     discountPercentage?: number;
     packageIncludes?: Array<{ label: string; qty: string }>;
     powers?: string[];
+    inStock?: boolean;
 }) => {
     const highlights = packageIncludes.length
         ? packageIncludes.map((item) => `${item.label} ${item.qty}`).slice(0, 4)
@@ -37,6 +39,11 @@ const PackageCard = ({
                 {discountPercentage && discountPercentage > 0 ? (
                     <div className="absolute top-2.5 left-2.5 z-10 rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-md">
                         -{discountPercentage}% OFF
+                    </div>
+                ) : null}
+                {inStock === false ? (
+                    <div className="absolute top-2.5 right-2.5 z-10 rounded-full bg-slate-900/85 backdrop-blur-xs px-2.5 py-0.5 text-xs font-semibold text-white shadow-md">
+                        Out of Stock
                     </div>
                 ) : null}
             </div>

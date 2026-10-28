@@ -124,6 +124,7 @@ export type ProductPackageRecord = {
   datasheets?: StoreAssetRecord[];
   product_images?: string[];
   is_active: boolean;
+  in_stock?: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -388,6 +389,7 @@ export type StoreCatalogPackage = {
   price: number;
   finalPrice?: number;
   isActive?: boolean;
+  inStock?: boolean;
   category: string;
   packageType: string;
   powerRating: string;

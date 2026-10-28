@@ -306,15 +306,28 @@ const PackageDetailPage = () => {
             <h1 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{data.title}</h1>
 
             {/* Price Display */}
-            <div className="mt-4 flex items-center gap-3">
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                ₦{packagePrice.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
-              </span>
-              {data.discountPercentage ? (
-                <span className="text-sm text-[#9AA5AC] dark:text-slate-500 line-through">
-                  ₦{data.price.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+            <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                  ₦{packagePrice.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
                 </span>
-              ) : null}
+                {data.discountPercentage ? (
+                  <span className="text-sm text-[#9AA5AC] dark:text-slate-500 line-through">
+                    ₦{data.price.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+                  </span>
+                ) : null}
+              </div>
+              <div>
+                {data.inStock === false ? (
+                  <span className="inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-950/40 px-3 py-1 text-xs font-semibold text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60">
+                    Out of Stock
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/60">
+                    In Stock &amp; Ready for Installation
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Solar Financing & Energy Savings Callout Card */}
@@ -368,13 +381,23 @@ const PackageDetailPage = () => {
 
             {/* Primary Action Buttons */}
             <div className="mt-5 space-y-2.5">
+              {data.inStock === false && (
+                <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-300">
+                  This system package is currently out of stock for direct instant order. You can talk to an engineer to reserve components or arrange a pre-order timeline.
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => handleOrderPackage(false)}
-                  className="flex-1 rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3 text-sm font-semibold text-white cursor-pointer hover:opacity-95 transition shadow-sm text-center"
+                  disabled={data.inStock === false}
+                  className={`flex-1 rounded-xl py-3 text-sm font-semibold transition shadow-sm text-center ${
+                    data.inStock === false
+                      ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                      : "bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] text-white cursor-pointer hover:opacity-95"
+                  }`}
                 >
-                  Order System Package
+                  {data.inStock === false ? "Temporarily Out of Stock" : "Order System Package"}
                 </button>
                 <button
                   onClick={() => togglePackageFavorite(data.id)}
@@ -401,7 +424,7 @@ const PackageDetailPage = () => {
                 </a>
               </div>
 
-              {data.solarFinanceEnabled ? (
+              {data.solarFinanceEnabled && data.inStock !== false ? (
                 <div className="pt-1 text-center">
                   <button
                     type="button"
