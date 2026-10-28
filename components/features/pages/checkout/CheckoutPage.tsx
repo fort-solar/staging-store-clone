@@ -482,26 +482,20 @@ const CheckoutPage = () => {
     return cartDetails.length > 0 && cartDetails.every((item) => item.freeDelivery || item.itemType === "package");
   }, [cartDetails]);
 
-  const maxWeightSurcharge = useMemo(() => {
-    const TIER_SURCHARGES: Record<string, number> = {
-      under_5kg: 0,
-      "5_15kg": 4000,
-      "15_30kg": 9000,
-      over_30kg: 18000,
-    };
-    let max = 0;
-    for (const item of cartDetails) {
-      if (item.itemType === "product") {
-        const surcharge = TIER_SURCHARGES[item.weightTier || "under_5kg"] ?? 0;
-        if (surcharge > max) max = surcharge;
-      }
-    }
-    return max;
+  const totalCartWeightKg = useMemo(() => {
+    return cartDetails.reduce((sum, item) => {
+      const w = item.itemType === "package" ? 150 : ((item as any).weightKg ?? 5);
+      return sum + w * item.quantity;
+    }, 0);
   }, [cartDetails]);
 
-  useEffect(() => {
-    setRequestInstallation(true);
-  }, []);
+  const totalWeightSurcharge = useMemo(() => {
+    if (totalCartWeightKg <= 5) return 0;
+    if (totalCartWeightKg <= 20) return 5000;
+    if (totalCartWeightKg <= 50) return 12000;
+    if (totalCartWeightKg <= 100) return 24000;
+    return 24000 + Math.ceil(totalCartWeightKg - 100) * 350;
+  }, [totalCartWeightKg]);
 
   const missingCartItems = cartItems.length - cartDetails.length;
 
@@ -608,8 +602,8 @@ const CheckoutPage = () => {
     }
 
     const baseRate = deliverySettings?.universal_fee ?? 16000;
-    return baseRate + maxWeightSurcharge;
-  }, [cartDetails.length, subtotal, hasPackage, deliverySettings, isAllFreeDelivery, shippingAddress.state, maxWeightSurcharge]);
+    return baseRate + totalWeightSurcharge;
+  }, [cartDetails.length, subtotal, hasPackage, deliverySettings, isAllFreeDelivery, shippingAddress.state, totalWeightSurcharge]);
 
   const taxAmount = 0;
 
@@ -624,10 +618,7 @@ const CheckoutPage = () => {
     }, 0);
   }, [cartDetails, packageMap]);
 
-  const installationFee = useMemo(() => {
-    if (!requestInstallation || cartDetails.length === 0 || subtotal === 0) return 0;
-    return hasPackage ? 0 : 150000;
-  }, [requestInstallation, hasPackage, cartDetails.length, subtotal]);
+  const installationFee = 0;
 
   const couponDiscount = appliedCoupon?.discount_amount ?? 0;
   const totalDiscount = discountAmount + couponDiscount;

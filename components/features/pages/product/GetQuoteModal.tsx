@@ -218,6 +218,25 @@ const GetQuoteModal = ({
               Please confirm your details and project location so our team can prepare your
               personalized final quote and installation schedule.
             </DialogDescription>
+            <div className="mt-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/80 dark:bg-emerald-950/40 p-3 text-xs">
+              <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                Ready to purchase your hardware today?
+              </p>
+              <p className="text-emerald-800/90 dark:text-emerald-300/80 text-[11px] mt-0.5 leading-relaxed">
+                You do not need to wait for a quote! You can proceed directly to checkout to secure your equipment right away. Fortsolar engineers can coordinate installation upon delivery.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  router.push("/checkout");
+                }}
+                className="mt-2 text-xs font-bold text-[#048A05] dark:text-emerald-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>Proceed directly to Checkout instead</span>
+                <span>→</span>
+              </button>
+            </div>
           </DialogHeader>
         </div>
 

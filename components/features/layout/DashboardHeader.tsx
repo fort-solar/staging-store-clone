@@ -14,6 +14,7 @@ import { ChevronDown, ChevronUp, FileText, HardHat, HelpCircle, House, LogOut, S
 import { OrdersIcon } from "../icons/OrdersIcon";
 import { useAuth } from "@/components/auth/auth-provider";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { CustomerNotificationCenter } from "@/components/features/layout/CustomerNotificationCenter";
 
 const DashboardHeader = ({
   query,
@@ -68,6 +69,7 @@ const DashboardHeader = ({
           {/* Mobile & Tablet Top Bar Actions */}
           <div className="flex items-center gap-2 lg:hidden">
             <ThemeToggle />
+            {isCustomerLoggedIn ? <CustomerNotificationCenter /> : null}
             {isCustomerLoggedIn ? (
               <button
                 type="button"
@@ -128,6 +130,7 @@ const DashboardHeader = ({
 
         <div className="hidden lg:flex items-center gap-4 justify-end text-sm text-[#3B3B3B] dark:text-slate-200">
           <ThemeToggle />
+          {isCustomerLoggedIn ? <CustomerNotificationCenter /> : null}
           {isCustomerLoggedIn ? (
             <Link href="/settings/orders" className="flex items-center gap-2 text-xs text-[#3B3B3B] dark:text-slate-200 hover:text-[#048A05] dark:hover:text-emerald-400">
               <OrdersIcon className="text-[#3B3B3B]/60 dark:text-slate-400" />

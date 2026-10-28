@@ -401,6 +401,28 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
   const eligibleForInstallation = readBoolean(raw, ["eligible_for_installation"]);
   const description = product.overview || product.name;
 
+  const parsedWeight = (() => {
+    for (const s of sectionValues) {
+      const name = (s.label || "").toLowerCase();
+      if (name.includes("weight")) {
+        const match = (s.value || "").match(/([0-9]+(?:\.[0-9]+)?)/);
+        if (match) {
+          const val = parseFloat(match[1]);
+          if (!isNaN(val) && val > 0) return val;
+        }
+      }
+    }
+    const TIER_WEIGHTS: Record<string, number> = {
+      under_5kg: 3,
+      "5_15kg": 10,
+      "15_30kg": 22,
+      over_30kg: 45,
+    };
+    return TIER_WEIGHTS[weightTier] ?? 5;
+  })();
+  const eligibleForQuote =
+    readBoolean(raw, ["eligible_for_quote", "eligibleForQuote"]) ||
+    Boolean((product.category as any)?.eligible_for_quote);
   const slug = product.slug || readString(raw, ["slug"], "");
 
   return {
@@ -431,8 +453,10 @@ export function normalizeUnifiedProduct(product: UnifiedProductRecord): StoreCat
     deliveryWarrantyInfo,
     eligibleForWaybill,
     weightTier,
+    weightKg: parsedWeight,
     externalMarketplaceLinks,
     eligibleForInstallation,
+    eligibleForQuote,
     quickSpecs: sectionValues.length ? sectionValues : [{ label: "Category", value: categoryLabel }],
     sectionValues,
     isActive: product.is_active,

@@ -290,6 +290,10 @@ export type NotificationSocketConfigApiResponse = ApiSuccessResponse & {
   defaultEventNames: string[];
 };
 
+export type AuthAccessTokenApiResponse = ApiSuccessResponse & {
+  accessToken: string;
+};
+
 export type ClientAuthState = {
   session: Pick<AuthSession, "userId" | "email" | "fullName" | "role" | "signedInAt">;
   user: Pick<AuthUser, "id" | "email" | "salutation" | "fullName" | "name" | "phone" | "address" | "role" | "status" | "emailVerified" | "theme_preference" | "authProvider" | "hasPassword">;
@@ -365,6 +369,8 @@ export type StoreCatalogProduct = {
   sectionValues?: Array<{ label: string; value: string }>;
   isActive?: boolean;
   eligibleForInstallation?: boolean;
+  eligibleForQuote?: boolean;
+  weightKg?: number;
   sourceType: "product";
   sourceId: string;
 };

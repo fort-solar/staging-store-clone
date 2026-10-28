@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { DeliveryIcon } from "@/components/features/icons/DeliveryIcon";
 import { TrashIcon } from "@/components/features/icons/TrashIcon";
 import GetQuoteModal from "@/components/features/pages/product/GetQuoteModal";
-import { Lock } from "lucide-react";
 import { useCustomerLoginGate } from "@/hooks/use-customer-login-gate";
 import {
   useStorePackagesByIds,
@@ -26,8 +25,8 @@ import { useAuth } from "@/components/auth/auth-provider";
 const formatNaira = (value: number) =>
   `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 
-// Quote-eligible products are solar components (inverters, batteries, panels, charge controllers, solar kits, packages)
-// Pure consumer appliances (e.g. rechargeable standing fans, bulbs, torches) do NOT prompt installation quotes.
+// Quote-eligible products are packages or items explicitly marked as quote-eligible by category or product spec.
+// Pure consumer appliances or unconfigured items do NOT prompt installation quotes.
 export const isSolarQuoteEligible = (item: {
   itemType?: string;
   title?: string;
@@ -37,42 +36,10 @@ export const isSolarQuoteEligible = (item: {
   eligible_for_quote?: boolean;
 }) => {
   if (item.itemType === "package") return true;
-  if (item.eligibleForInstallation || item.eligibleForQuote || item.eligible_for_quote) return true;
-  const title = (item.title || "").toLowerCase();
-  const category = (item.category || "").toLowerCase();
-  const solarKeywords = [
-    "inverter",
-    "battery",
-    "solar panel",
-    "panel",
-    "lithium",
-    "mppt",
-    "charge controller",
-    "solar kit",
-    "mounting",
-    "hybrid inverter",
-    "pv module",
-    "energy storage",
-  ];
-  const consumerApplianceKeywords = [
-    "fan",
-    "standing fan",
-    "rechargeable fan",
-    "bulb",
-    "lamp",
-    "light",
-    "torch",
-    "radio",
-    "tv",
-    "television",
-  ];
-  const isConsumerAppliance = consumerApplianceKeywords.some((w) => title.includes(w) || category.includes(w));
-  const hasSolarKeyword = solarKeywords.some((w) => title.includes(w) || category.includes(w));
-
-  if (isConsumerAppliance && !title.includes("inverter") && !title.includes("battery") && !title.includes("panel")) {
-    return false;
-  }
-  return hasSolarKeyword;
+  if (item.eligibleForQuote !== undefined) return Boolean(item.eligibleForQuote);
+  if (item.eligible_for_quote !== undefined) return Boolean(item.eligible_for_quote);
+  if (item.eligibleForInstallation !== undefined) return Boolean(item.eligibleForInstallation);
+  return false;
 };
 
 const CartPage = () => {
@@ -214,6 +181,7 @@ const CartPage = () => {
           freeDelivery: (product as any).freeDelivery ?? false,
           eligibleForWaybill: (product as any).eligibleForWaybill ?? true,
           weightTier: (product as any).weightTier ?? "under_5kg",
+          weightKg: (product as any).weightKg ?? 5,
         };
       })
       .filter(Boolean) as Array<{
@@ -225,13 +193,14 @@ const CartPage = () => {
         image: string | { src: string };
         stockQuantity: number | null;
         eligibleForInstallation?: boolean;
+        eligibleForQuote?: boolean;
         freeDelivery?: boolean;
         eligibleForWaybill?: boolean;
         weightTier?: string;
+        weightKg?: number;
       }>;
   }, [cartItems, packageMap, productMap]);
 
-  const [requestInstallation, setRequestInstallation] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
@@ -270,22 +239,20 @@ const CartPage = () => {
     return cartDetails.length > 0 && cartDetails.every((item) => item.freeDelivery || item.itemType === "package");
   }, [cartDetails]);
 
-  const maxWeightSurcharge = useMemo(() => {
-    const TIER_SURCHARGES: Record<string, number> = {
-      under_5kg: 0,
-      "5_15kg": 4000,
-      "15_30kg": 9000,
-      over_30kg: 18000,
-    };
-    let max = 0;
-    for (const item of cartDetails) {
-      if (item.itemType === "product") {
-        const surcharge = TIER_SURCHARGES[item.weightTier || "under_5kg"] ?? 0;
-        if (surcharge > max) max = surcharge;
-      }
-    }
-    return max;
+  const totalCartWeightKg = useMemo(() => {
+    return cartDetails.reduce((sum, item) => {
+      const w = item.itemType === "package" ? 150 : (item.weightKg ?? 5);
+      return sum + w * item.quantity;
+    }, 0);
   }, [cartDetails]);
+
+  const totalWeightSurcharge = useMemo(() => {
+    if (totalCartWeightKg <= 5) return 0;
+    if (totalCartWeightKg <= 20) return 5000;
+    if (totalCartWeightKg <= 50) return 12000;
+    if (totalCartWeightKg <= 100) return 24000;
+    return 24000 + Math.ceil(totalCartWeightKg - 100) * 350;
+  }, [totalCartWeightKg]);
 
   const subtotal = cartDetails.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -298,8 +265,8 @@ const CartPage = () => {
     if (hasPackage) return 0; // Complete solar packages include free nationwide delivery
     if (subtotal >= 1500000) return 0; // Free delivery threshold (₦1,500,000)
     if (isAllFreeDelivery) return 0; // Free delivery promotions
-    return 16000 + maxWeightSurcharge; // Universal base fee (₦16,000) + weight tier surcharge
-  }, [cartDetails.length, subtotal, hasPackage, isAllFreeDelivery, maxWeightSurcharge]);
+    return 16000 + totalWeightSurcharge; // Universal base fee (₦16,000) + combined weight surcharge
+  }, [cartDetails.length, subtotal, hasPackage, isAllFreeDelivery, totalWeightSurcharge]);
 
   const tax = 0;
 
@@ -314,13 +281,8 @@ const CartPage = () => {
     }, 0);
   }, [cartDetails, packageMap]);
 
-  const installationFee = useMemo(() => {
-    if (hasPackage || cartDetails.length === 0 || subtotal === 0) return 0;
-    return requestInstallation ? 150000 : 0;
-  }, [hasPackage, requestInstallation, cartDetails.length, subtotal]);
-
   const couponDiscount = appliedCoupon?.discount_amount ?? 0;
-  const total = Math.max(0, subtotal + shipping + installationFee - discountAmount - couponDiscount);
+  const total = Math.max(0, subtotal + shipping - discountAmount - couponDiscount);
 
   async function handleApplyCoupon() {
     if (!couponInput.trim()) return;
@@ -378,10 +340,10 @@ const CartPage = () => {
       "fortsolar:checkout_draft",
       JSON.stringify({
         ...draft,
-        requestInstallation: hasPackage ? true : requestInstallation,
+        requestInstallation: hasPackage ? true : false,
       })
     );
-  }, [hasPackage, requestInstallation]);
+  }, [hasPackage]);
 
   const quoteProducts = useMemo(() => {
     return cartDetails
@@ -555,10 +517,10 @@ const CartPage = () => {
                         : "Free Delivery Included"
                       : hasWarehouseOnlyProduct
                       ? "Regional Warehouse / Depot Pickup (One or more items require freight pickup)"
-                      : "Standard Nationwide Delivery (Calculated at checkout based on destination)"}
+                      : `Standard Nationwide Delivery (${totalCartWeightKg > 0 ? `${totalCartWeightKg.toFixed(1)} kg total weight` : "Calculated by total cart weight"})`}
                   </span>
                 </div>
-                <span className="shrink-0">
+                <span className="shrink-0 text-xs">
                   {shipping === 0 ? "Free Nationwide Delivery" : "(3-5 Business Days)"}
                 </span>
               </div>
@@ -622,14 +584,6 @@ const CartPage = () => {
                     </span>
                   </div>
                 )}
-                {!hasPackage && hasEligibleProduct && requestInstallation && (
-                  <div className="flex items-center justify-between border-b border-[#E9EEF0] dark:border-slate-700/60 py-3">
-                    <span className="text-sm text-[#5A646B] dark:text-slate-400">Installation Fee</span>
-                    <span className="font-semibold text-[#252C32] dark:text-white">
-                      {formatNaira(150000)}
-                    </span>
-                  </div>
-                )}
                 <div className="flex items-center justify-between py-3">
                   <span className="font-semibold text-[#252C32] dark:text-white">Total</span>
                   <span className="font-semibold text-lg text-[#252C32] dark:text-white">
@@ -685,23 +639,6 @@ const CartPage = () => {
                 )}
               </div>
 
-              {!hasPackage && hasEligibleProduct && (
-                <div className="mt-4 rounded-xl border border-[#E9EEF0] bg-gray-50 p-4">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={requestInstallation}
-                      onChange={(e) => setRequestInstallation(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-[#B0BABF] text-[#1FA21B]"
-                    />
-                    <div className="text-sm">
-                      <p className="font-semibold text-[#252C32]">Request Custom Setup Quote</p>
-                      <p className="text-[#5A646B] text-xs mt-0.5 font-normal">Would you like professional installation for these components? Flat rate: {formatNaira(150000)}.</p>
-                    </div>
-                  </label>
-                </div>
-              )}
-
               <div className="mt-5 space-y-3">
                 <button
                   type="button"
@@ -711,17 +648,16 @@ const CartPage = () => {
                       onAuthenticated: () => router.push("/checkout"),
                     })
                   }
-                  className="w-full rounded-xl bg-gradient-to-r from-[#048A05] to-[#168ABD] hover:from-[#037304] hover:to-[#12729D] py-3.5 px-4 text-center font-bold text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
+                  className="block w-full rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3.5 text-center font-semibold text-white cursor-pointer hover:opacity-95 transition-all text-base shadow-md"
                 >
-                  <Lock className="h-4 w-4" />
-                  <span>Proceed to Checkout</span>
+                  Proceed to Checkout
                 </button>
 
                 {quoteProducts.length > 0 && (
                   <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 text-xs transition-colors">
                     <p className="font-bold text-slate-900 dark:text-white">Need Professional Installation?</p>
                     <p className="text-[#5A646B] dark:text-slate-300 text-[11px] mt-0.5 leading-relaxed">
-                      You have solar components in your cart. Certified Fortsolar engineers provide professional installation &amp; warranty across all 36 states.
+                      You have solar components in your cart. You can proceed to checkout right away, or request an official installation quote if you require a formal proposal first.
                     </p>
                     <button
                       type="button"
