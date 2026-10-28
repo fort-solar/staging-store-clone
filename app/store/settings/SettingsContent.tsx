@@ -1893,8 +1893,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                 <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 text-xs font-semibold text-[#048a05] dark:text-emerald-400">
                                   {humanizeStatus(installation.displayStatus || installation.status)}
                                 </span>
-                                <span className="inline-flex rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/40 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-                                  Payment: {humanizeStatus(installation.paymentStatus)}
+                                <span className="inline-flex rounded-full bg-[#EAFBEA] dark:bg-[#048A05]/20 border border-[#D4F2D4] dark:border-[#048A05]/40 px-3 py-1 text-xs font-semibold text-[#048A05] dark:text-emerald-300">
+                                  Payment: {humanizeStatus(installation.paymentStatus || "Paid")}
                                 </span>
                               </div>
                             </div>
@@ -2033,14 +2033,26 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                         <span className="text-xs text-slate-500 dark:text-slate-400">{photos.length} photos uploaded</span>
                                       </div>
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        {photos.map((p: any) => (
-                                          <div key={p.id} className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 shadow-2xs">
-                                            <img src={p.url} alt={p.type || "Installation proof photo"} className="w-full h-28 object-cover rounded-lg" />
-                                            <div className="p-1.5 text-[11px] text-slate-500 dark:text-slate-400 text-center capitalize font-medium truncate">
-                                              {p.type ? `${p.type} Photo` : "Installation Photo"}
+                                        {photos.map((p: any) => {
+                                          const isVideo =
+                                            p.mediaType === "video" ||
+                                            p.media_type === "video" ||
+                                            /\.(mp4|mov|webm|m4v|avi)$/i.test(p.url || "");
+                                          return (
+                                            <div key={p.id} className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 shadow-2xs">
+                                              {isVideo ? (
+                                                <video src={p.url} controls preload="metadata" className="w-full h-32 bg-black object-contain rounded-lg" />
+                                              ) : (
+                                                <a href={p.url} target="_blank" rel="noreferrer" className="block">
+                                                  <img src={p.url} alt={p.type || "Installation proof photo"} className="w-full h-32 object-cover rounded-lg" />
+                                                </a>
+                                              )}
+                                              <div className="p-1.5 text-[11px] text-slate-600 dark:text-slate-300 text-center capitalize font-medium truncate">
+                                                {p.caption || (p.type ? `${p.type} ${isVideo ? "Video" : "Photo"}` : "Installation Media")}
+                                              </div>
                                             </div>
-                                          </div>
-                                        ))}
+                                          );
+                                        })}
                                       </div>
                                     </div>
                                   )}

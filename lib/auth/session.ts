@@ -14,7 +14,7 @@ const SESSION_SECRET =
   (process.env.NODE_ENV !== "production"
     ? "fortsolar-store-development-session-secret"
     : undefined);
-const ACCESS_MAX_AGE_FALLBACK = 60 * 15;
+const ACCESS_MAX_AGE_FALLBACK = 60 * 60 * 24 * 30;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
 export const AUTH_COOKIE_NAMES = {

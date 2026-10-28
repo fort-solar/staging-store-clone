@@ -381,8 +381,8 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 lg:gap-4 relative z-10">
                 {stages.map((stage: any, index: number) => {
-                  const isDone = stage.completed && index < activeIndex;
-                  const isCurrent = index === activeIndex;
+                  const isDone = Boolean(stage.completed) && (index < activeIndex || isInstallationCompleted || index === stages.length - 1);
+                  const isCurrent = index === activeIndex && !isDone;
                   const isUpcoming = index > activeIndex;
 
                   return (
@@ -444,19 +444,19 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
           <div className="space-y-8 lg:col-span-2">
             {/* Google Reviews Invitation for Completed Installations */}
             {isInstallationCompleted && (
-              <section className="rounded-3xl border border-emerald-200/90 bg-[linear-gradient(135deg,#F0FDF4_0%,#FFFFFF_100%)] p-6 shadow-sm">
+              <section className="rounded-3xl border border-[#D4F2D4] dark:border-[#048A05]/40 bg-[#EAFBEA]/70 dark:bg-[#048A05]/15 p-6 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-amber-500 font-bold text-sm tracking-tight">★★★★★</span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#EAFBEA] dark:bg-[#048A05]/25 border border-[#D4F2D4] dark:border-[#048A05]/40 px-2.5 py-0.5 text-[11px] font-semibold text-[#048A05] dark:text-emerald-300">
                         Installation Verified
                       </span>
                     </div>
-                    <h3 className="text-base font-bold text-gray-900">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
                       How was your Fortsolar installation experience?
                     </h3>
-                    <p className="text-xs text-gray-600 max-w-xl leading-relaxed">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 max-w-xl leading-relaxed">
                       If you loved your new solar setup and our technician’s workmanship, please leave a quick review on our official Google Business page to help other Nigerian homeowners and businesses make the switch.
                     </p>
                   </div>
@@ -464,7 +464,7 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
                     href={FORTSOLAR_GOOGLE_REVIEW_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-xs font-semibold text-white shadow-sm hover:bg-black transition cursor-pointer shrink-0"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#048A05] hover:bg-[#036c04] px-5 py-3 text-xs font-semibold text-white shadow-sm transition cursor-pointer shrink-0"
                   >
                     <GoogleIcon />
                     <span>Leave a Review on Google</span>
@@ -476,47 +476,47 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
 
             {/* Assigned Installer Card (If available) */}
             {installation && (
-              <section className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/50 via-white to-emerald-50/20 p-6 shadow-sm">
-                <div className="flex items-center justify-between border-b border-emerald-100/70 pb-4">
+              <section className="rounded-3xl border border-[#D4F2D4] dark:border-[#048A05]/30 bg-[#EAFBEA]/40 dark:bg-[#048A05]/10 p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-[#D4F2D4]/80 dark:border-[#048A05]/25 pb-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#048A05] text-white shadow-sm">
                       <Wrench className="h-5 w-5" />
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Assigned Professional</span>
-                      <h3 className="text-base font-bold text-gray-900">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#048A05] dark:text-emerald-400">Assigned Professional</span>
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white">
                         {installation.installerName || "Certified Solar Technician"}
                       </h3>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/80 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#EAFBEA] dark:bg-[#048A05]/25 border border-[#D4F2D4] dark:border-[#048A05]/40 px-2.5 py-0.5 text-xs font-semibold text-[#048A05] dark:text-emerald-300">
                     <Sparkles className="h-3 w-3" /> Certified
                   </span>
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 text-xs">
-                  <div className="rounded-2xl border border-emerald-100 bg-white p-3.5 shadow-2xs">
+                  <div className="rounded-2xl border border-[#D4F2D4]/80 dark:border-white/10 bg-white dark:bg-zinc-900 p-3.5 shadow-2xs">
                     <span className="block text-gray-400 font-medium">Installation Status</span>
-                    <span className="mt-1 font-semibold text-gray-800 capitalize">
+                    <span className="mt-1 font-semibold text-gray-800 dark:text-white capitalize">
                       {humanizeStatus(installation.status || "Scheduled")}
                     </span>
                   </div>
 
-                  <div className="rounded-2xl border border-emerald-100 bg-white p-3.5 shadow-2xs">
+                  <div className="rounded-2xl border border-[#D4F2D4]/80 dark:border-white/10 bg-white dark:bg-zinc-900 p-3.5 shadow-2xs">
                     <span className="block text-gray-400 font-medium">Scheduled Date</span>
-                    <span className="mt-1 font-semibold text-gray-800">
+                    <span className="mt-1 font-semibold text-gray-800 dark:text-white">
                       {installation.scheduledDate
                         ? new Date(installation.scheduledDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
                         : "To be confirmed with you"}
                     </span>
                   </div>
 
-                  <div className="rounded-2xl border border-emerald-100 bg-white p-3.5 shadow-2xs">
+                  <div className="rounded-2xl border border-[#D4F2D4]/80 dark:border-white/10 bg-white dark:bg-zinc-900 p-3.5 shadow-2xs">
                     <span className="block text-gray-400 font-medium">Technician Contact</span>
                     {installation.installerPhone ? (
                       <a
                         href={`tel:${installation.installerPhone}`}
-                        className="mt-1 inline-flex items-center gap-1 font-semibold text-[#048A05] hover:underline"
+                        className="mt-1 inline-flex items-center gap-1 font-semibold text-[#048A05] dark:text-emerald-400 hover:underline"
                       >
                         <Phone className="h-3 w-3" /> {installation.installerPhone}
                       </a>
@@ -528,42 +528,64 @@ export default function OrderTrackingClient({ orderId }: OrderTrackingClientProp
               </section>
             )}
 
-            {/* Proof of Work Photo Gallery */}
+            {/* Proof of Work Photo & Video Gallery */}
             {photos.length > 0 && (
-              <section className="rounded-3xl border border-gray-200/90 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <section className="rounded-3xl border border-gray-200/90 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-4">
                   <div className="flex items-center gap-2">
                     <Camera className="h-5 w-5 text-[#048A05]" />
-                    <h3 className="text-base font-bold text-gray-900">
-                      Installation Proof Photos ({photos.length})
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      Installation Proof of Work ({photos.length})
                     </h3>
                   </div>
                   <span className="text-xs text-gray-400 font-medium">Uploaded by technician</span>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  {photos.map((photo: any) => (
-                    <div
-                      key={photo.id}
-                      onClick={() => setPreviewPhoto(photo.url)}
-                      className="group relative aspect-4/3 cursor-pointer overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 transition hover:shadow-md"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.url}
-                        alt={photo.description || "Installation Photo"}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 transition group-hover:opacity-100 flex items-center justify-center">
-                        <Maximize2 className="h-6 w-6 text-white" />
+                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  {photos.map((photo: any) => {
+                    const isVideo =
+                      photo.mediaType === "video" ||
+                      photo.media_type === "video" ||
+                      /\.(mp4|mov|webm|m4v|avi)$/i.test(photo.url || "");
+                    return (
+                      <div
+                        key={photo.id}
+                        onClick={() => {
+                          if (!isVideo) setPreviewPhoto(photo.url);
+                        }}
+                        className={cn(
+                          "group relative aspect-4/3 overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-zinc-800 transition hover:shadow-md",
+                          !isVideo && "cursor-pointer"
+                        )}
+                      >
+                        {isVideo ? (
+                          <video
+                            src={photo.url}
+                            controls
+                            preload="metadata"
+                            className="h-full w-full bg-black object-contain"
+                          />
+                        ) : (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.url}
+                              alt={photo.description || "Installation Photo"}
+                              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 transition group-hover:opacity-100 flex items-center justify-center">
+                              <Maximize2 className="h-6 w-6 text-white" />
+                            </div>
+                          </>
+                        )}
+                        <div className="pointer-events-none absolute top-2 left-2 right-2">
+                          <span className="inline-block rounded-md bg-black/65 px-2 py-0.5 text-[10px] font-semibold text-white capitalize backdrop-blur-xs">
+                            {photo.photoType || photo.stage || "Proof Media"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <span className="inline-block rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white capitalize backdrop-blur-xs">
-                          {photo.photoType || "Proof Photo"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
