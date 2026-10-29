@@ -739,8 +739,8 @@ const CheckoutPage = () => {
     if (requestInstallation || hasPackage) {
       if (!installationType.trim()) errors.installationType = true;
       if (!buildingType.trim()) errors.buildingType = true;
-      if (!roofStyle.trim()) errors.roofStyle = true;
-      if (!roofMaterial.trim()) errors.roofMaterial = true;
+
+
     }
 
     // 5. Validate Legal Consent / Terms
@@ -754,7 +754,7 @@ const CheckoutPage = () => {
       
       if (errors.legalConsent) {
         primaryErrorMessage = "You must agree to the Terms of Service, Refund Policy, and data consent to proceed.";
-      } else if (errors.installationType || errors.buildingType || errors.roofStyle || errors.roofMaterial) {
+      } else if (errors.installationType || errors.buildingType) {
         primaryErrorMessage = "Please select all required installation site details.";
       } else if (hasPackage && requestFinancing) {
         if (errors.employerOrBusinessName) {
@@ -784,7 +784,7 @@ const CheckoutPage = () => {
         elementId = "shipping-section";
       } else if (firstErrorKey.startsWith("billing")) {
         elementId = "billing-section";
-      } else if (firstErrorKey.startsWith("installation") || firstErrorKey === "buildingType" || firstErrorKey === "roofStyle" || firstErrorKey === "roofMaterial") {
+      } else if (firstErrorKey.startsWith("installation") || firstErrorKey === "buildingType") {
         elementId = "installation-section";
       } else if (firstErrorKey === "employerOrBusinessName" || firstErrorKey === "incomeRange" || firstErrorKey === "downpaymentPct") {
         elementId = "financing-section";
@@ -820,8 +820,8 @@ const CheckoutPage = () => {
 Professional Installation Site Details
 Installation Type: ${installationType || "Residential"}
 Building Type: ${buildingType || "Bungalow"}
-Roof Architecture / Style: ${roofStyle || "Hip Roof (Pitched / Sloped)"}
-Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
+Roof Architecture / Style: ${roofStyle || "Not specified (Engineer site assessment)"}
+Roof Material: ${roofMaterial || "Not specified (Engineer site assessment)"}
 `;
         finalNotes = finalNotes ? `${finalNotes}\n${installationInfo}` : installationInfo;
       }
@@ -1339,13 +1339,13 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                   </div>
 
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofStyle ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>
-                      Roof Architecture / Style *
+                    <label className="block text-xs font-semibold mb-2 text-slate-700 dark:text-slate-300">
+                      Roof Architecture / Style <span className="text-slate-400 font-normal">(Optional)</span>
                     </label>
                     <ComboboxField
                       value={roofStyle}
                       onValueChange={setRoofStyle}
-                      placeholder="Select roof design"
+                      placeholder="Select roof design (optional)"
                       options={[
                         { value: "Hip Roof (Pitched / Sloped)", label: "Hip Roof (Pitched / Sloped)" },
                         { value: "Hidden Roof (Parapet / Concealed)", label: "Hidden Roof (Parapet / Concealed)" },
@@ -1353,20 +1353,18 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Gable Roof", label: "Gable Roof" },
                         { value: "Other", label: "Other Design" },
                       ]}
-                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none ${
-                        validationErrors.roofStyle ? "border-red-500 ring-1 ring-red-500" : ""
-                      }`}
+                      className="w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 ${validationErrors.roofMaterial ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>
-                      Roof Material *
+                    <label className="block text-xs font-semibold mb-2 text-slate-700 dark:text-slate-300">
+                      Roof Material <span className="text-slate-400 font-normal">(Optional)</span>
                     </label>
                     <ComboboxField
                       value={roofMaterial}
                       onValueChange={setRoofMaterial}
-                      placeholder="Select roofing material"
+                      placeholder="Select roofing material (optional)"
                       options={[
                         { value: "Longspan Aluminium / Corrugated Metal", label: "Longspan Aluminium / Corrugated Metal" },
                         { value: "Stone-Coated Metal Tiles (Gerard)", label: "Stone-Coated Metal Tiles (Gerard)" },
@@ -1375,9 +1373,7 @@ Roof Material: ${roofMaterial || "Longspan Aluminium / Corrugated Metal"}
                         { value: "Asbestos / Fibre Cement", label: "Asbestos / Fibre Cement" },
                         { value: "Other", label: "Other Material" },
                       ]}
-                      className={`w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none ${
-                        validationErrors.roofMaterial ? "border-red-500 ring-1 ring-red-500" : ""
-                      }`}
+                      className="w-full h-11 px-3 rounded-xl border text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
                     />
                   </div>
                 </div>
