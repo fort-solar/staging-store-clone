@@ -323,6 +323,11 @@ const ProductDetailPage = () => {
               <button
                 disabled={isOutOfStock}
                 onClick={() => {
+                  try {
+                    localStorage.removeItem("fortsolar:active_package_order");
+                  } catch {
+                    // ignore
+                  }
                   addToCart({ id: product.id, itemType: "product" });
                   updateCartQuantity({
                     id: product.id,
@@ -356,6 +361,25 @@ const ProductDetailPage = () => {
                 <HeartIcon filled={favorites.includes(product.id)} className={favorites.includes(product.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
               </button>
             </div>
+
+            {(product.eligibleForQuote || product.eligibleForInstallation) && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuoteProduct({
+                      id: product.id,
+                      title: product.title,
+                      image: product.image,
+                      price: product.price,
+                    })
+                  }
+                  className="flex w-full items-center justify-center rounded-xl border border-[#048A05] bg-emerald-50/70 py-3 text-sm font-semibold text-[#048A05] transition hover:bg-[#048A05] hover:text-white cursor-pointer"
+                >
+                  Request an Installation Quote
+                </button>
+              </div>
+            )}
 
             <div className="mt-3">
               <a

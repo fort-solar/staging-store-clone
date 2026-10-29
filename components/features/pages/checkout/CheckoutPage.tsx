@@ -106,7 +106,15 @@ const CheckoutPage = () => {
     }
   }, []);
 
-  const targetPackageId = queryPackageId || (activePackageOrder?.packageId ? String(activePackageOrder.packageId) : undefined);
+  const cartItems = useGeneralStore((state) => state.cartItems);
+  const replaceCart = useGeneralStore((state) => state.replaceCart);
+  const safeCartItems = useMemo(() => (Array.isArray(cartItems) ? cartItems : []), [cartItems]);
+
+  const targetPackageId =
+    queryPackageId ||
+    (safeCartItems.filter((item) => item?.itemType === "product").length === 0 && activePackageOrder?.packageId
+      ? String(activePackageOrder.packageId)
+      : undefined);
   const { package: selectedPackage } = useStorePackageById(targetPackageId || undefined);
   const isPackageCheckout = Boolean(targetPackageId);
 
@@ -127,9 +135,6 @@ const CheckoutPage = () => {
   } | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
 
-  const cartItems = useGeneralStore((state) => state.cartItems);
-  const replaceCart = useGeneralStore((state) => state.replaceCart);
-  const safeCartItems = useMemo(() => (Array.isArray(cartItems) ? cartItems : []), [cartItems]);
   const productIds = useMemo(
     () => safeCartItems.filter((item) => item?.itemType === "product").map((item) => item.id),
     [safeCartItems],
@@ -155,8 +160,8 @@ const CheckoutPage = () => {
   // Load draft from localStorage on mount, and backend if logged in
   const [draftPayload, setDraftPayload] = useState<any>(null);
 
-  // Define installation states (Nigerian structural & roofing context) - unselected by default
-  const [requestInstallation, setRequestInstallation] = useState(true);
+  // Define installation states (Nigerian structural & roofing context) - only active for packages
+  const [requestInstallation, setRequestInstallation] = useState(false);
   const [installationType, setInstallationType] = useState("");
   const [buildingType, setBuildingType] = useState("");
   const [roofStyle, setRoofStyle] = useState("");
@@ -184,6 +189,9 @@ const CheckoutPage = () => {
           setTenureMonths(tn);
         }
       }
+    } else {
+      setRequestInstallation(false);
+      setRequestFinancing(false);
     }
   }, [isPackageCheckout, queryFinancing, queryDownpayment, queryTenure, activePackageOrder?.requestFinancing]);
 
@@ -312,14 +320,19 @@ const CheckoutPage = () => {
     }
     if (draft.useShippingAsBilling !== undefined) setUseShippingAsBilling(draft.useShippingAsBilling);
     if (draft.notes) setNotes((prev) => prev || draft.notes);
-    if (queryFinancing === "1") {
-      setRequestFinancing(true);
-    } else if (isPackageCheckout) {
+    if (isPackageCheckout) {
+      if (queryFinancing === "1") {
+        setRequestFinancing(true);
+      } else if (draft.requestFinancing !== undefined) {
+        setRequestFinancing(draft.requestFinancing);
+      } else {
+        setRequestFinancing(false);
+      }
+      if (draft.requestInstallation !== undefined) setRequestInstallation(draft.requestInstallation);
+    } else {
       setRequestFinancing(false);
-    } else if (draft.requestFinancing !== undefined) {
-      setRequestFinancing(draft.requestFinancing);
+      setRequestInstallation(false);
     }
-    if (draft.requestInstallation !== undefined) setRequestInstallation(draft.requestInstallation);
     if (draft.installationType) setInstallationType((prev) => prev || draft.installationType);
     if (draft.buildingType) setBuildingType((prev) => prev || draft.buildingType);
     if (draft.roofStyle) setRoofStyle((prev) => prev || draft.roofStyle);
@@ -456,7 +469,11 @@ const CheckoutPage = () => {
           image: product.image,
           sourceType: product.sourceType,
           sourceId: product.sourceId,
-          eligibleForInstallation: (product as any).eligibleForInstallation ?? false,
+          eligibleForInstallation: Boolean(
+            (product as any).eligibleForQuote ||
+              (product as any).eligibleForInstallation ||
+              (product as any).category?.eligible_for_quote,
+          ),
           freeDelivery: (product as any).freeDelivery ?? false,
           weightTier: (product as any).weightTier ?? "under_5kg",
           eligibleForWaybill: (product as any).eligibleForWaybill ?? true,
@@ -552,6 +569,11 @@ const CheckoutPage = () => {
         code: couponInput.trim().toUpperCase(),
         order_amount: subtotal,
         product_ids: cartDetails.map((it) => String(it.id)),
+        items: cartDetails.map((it) => ({
+          id: String(it.id),
+          price: it.price,
+          quantity: it.quantity,
+        })),
       });
       const couponObj = res.data?.coupon || res.coupon;
       const isValid = Boolean((res.success && res.data?.valid) || (res.valid && couponObj) || (res.data?.valid && couponObj));
@@ -577,6 +599,43 @@ const CheckoutPage = () => {
       setIsValidatingCoupon(false);
     }
   }
+
+  // Keep applied coupon discount synced with current cart items and subtotal
+  useEffect(() => {
+    if (!appliedCoupon?.code || subtotal <= 0 || cartDetails.length === 0) return;
+    let cancelled = false;
+    validateCustomerCoupon({
+      code: appliedCoupon.code,
+      order_amount: subtotal,
+      product_ids: cartDetails.map((it) => String(it.id)),
+      items: cartDetails.map((it) => ({
+        id: String(it.id),
+        price: it.price,
+        quantity: it.quantity,
+      })),
+    })
+      .then((res) => {
+        if (cancelled) return;
+        const couponObj = res.data?.coupon || res.coupon;
+        const isValid = Boolean((res.success && res.data?.valid) || (res.valid && couponObj) || (res.data?.valid && couponObj));
+        const recalculatedDiscount = res.data?.discount_amount ?? couponObj?.discount_amount ?? res.discount_amount ?? 0;
+        if (isValid && couponObj && recalculatedDiscount !== appliedCoupon.discount_amount) {
+          const updated = {
+            ...appliedCoupon,
+            discount_amount: recalculatedDiscount,
+          };
+          setAppliedCoupon(updated);
+          localStorage.setItem("fortsolar:applied_coupon", JSON.stringify(updated));
+        } else if (!isValid) {
+          setAppliedCoupon(null);
+          localStorage.removeItem("fortsolar:applied_coupon");
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [appliedCoupon?.code, subtotal]);
 
   function handleRemoveCoupon() {
     setAppliedCoupon(null);
@@ -607,20 +666,20 @@ const CheckoutPage = () => {
 
   const taxAmount = 0;
 
-  const discountAmount = useMemo(() => {
-    return cartDetails.reduce((sum, item) => {
-      if (item.itemType === "package") {
-        const pkg = packageMap.get(item.id);
-        const pct = pkg?.discountPercentage ?? 0;
-        return sum + (item.price * (pct / 100)) * item.quantity;
-      }
-      return sum;
-    }, 0);
-  }, [cartDetails, packageMap]);
+  const discountAmount = 0;
 
   const installationFee = 0;
 
-  const couponDiscount = appliedCoupon?.discount_amount ?? 0;
+  const couponDiscount = useMemo(() => {
+    if (!appliedCoupon || subtotal <= 0) return 0;
+    if (appliedCoupon.discount_amount && appliedCoupon.discount_amount > 0) {
+      return Math.min(subtotal, appliedCoupon.discount_amount);
+    }
+    if (appliedCoupon.discount_type === "percentage") {
+      return Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100));
+    }
+    return Math.min(subtotal, appliedCoupon.discount_value || 0);
+  }, [appliedCoupon, subtotal]);
   const totalDiscount = discountAmount + couponDiscount;
   const total = Math.max(0, subtotal + shippingAmount + installationFee - totalDiscount);
 
@@ -645,7 +704,7 @@ const CheckoutPage = () => {
 
   const quoteProducts = useMemo(() => {
     return cartDetails
-      .filter((item) => item.itemType === "product")
+      .filter((item) => item.itemType === "product" && item.eligibleForInstallation)
       .map((item) => ({
         id: item.id,
         title: item.title,
@@ -735,12 +794,10 @@ const CheckoutPage = () => {
       }
     }
 
-    // 4. Validate Installation Site Details
-    if (requestInstallation || hasPackage) {
+    // 4. Validate Installation Site Details (only for complete solar packages)
+    if (hasPackage) {
       if (!installationType.trim()) errors.installationType = true;
       if (!buildingType.trim()) errors.buildingType = true;
-
-
     }
 
     // 5. Validate Legal Consent / Terms
@@ -815,7 +872,7 @@ const CheckoutPage = () => {
         const quoteInfo = `Tailored System Package - Accepted from Quote #${linkedQuoteId}`;
         finalNotes = finalNotes ? `${quoteInfo}\n${finalNotes}` : quoteInfo;
       }
-      if (requestInstallation || hasPackage) {
+      if (hasPackage) {
         const installationInfo = `
 Professional Installation Site Details
 Installation Type: ${installationType || "Residential"}
@@ -1291,7 +1348,7 @@ Roof Material: ${roofMaterial || "Not specified (Engineer site assessment)"}
               ) : null}
              </section>
 
-            {(requestInstallation || hasPackage) && (
+            {hasPackage && (
               <section id="installation-section" className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 shadow-xs transition-colors">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Installation Site Details</h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -1710,7 +1767,7 @@ Roof Material: ${roofMaterial || "Not specified (Engineer site assessment)"}
                     {formatNaira(shippingAmount)}
                   </span>
                 </div>
-                {requestInstallation && (
+                {hasPackage && (
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500 dark:text-slate-400">Professional Installation</span>
                     <span className="font-semibold text-slate-900 dark:text-white">
@@ -1831,22 +1888,39 @@ Roof Material: ${roofMaterial || "Not specified (Engineer site assessment)"}
                   </p>
                 </div>
               ) : (
-                <div className="mt-8 text-sm text-slate-500 dark:text-slate-400">
-                  <p className="mb-2">Good to know</p>
-                  <p className="font-bold text-slate-900 dark:text-white">
-                    Packages remain available during checkout
-                  </p>
-                  <p className="mt-2 text-xs leading-relaxed">
-                    Need a full installation-ready setup instead of individual components?{" "}
-                    <Link
-                      href="/packages"
-                      className="inline-flex items-center gap-1 font-semibold text-[#048A05] dark:text-emerald-400 underline"
-                    >
-                      Browse packages
-                      <span>↗</span>
-                    </Link>
-                    .
-                  </p>
+                <div className="mt-6 space-y-4">
+                  {quoteProducts.length > 0 && (
+                    <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 text-xs transition-colors">
+                      <p className="font-bold text-slate-900 dark:text-white">Need Professional Installation?</p>
+                      <p className="text-[#5A646B] dark:text-slate-300 text-[11px] mt-0.5 leading-relaxed">
+                        You have installation-eligible solar components in your order. You can proceed with standard product delivery above, or request a tailored installation quote.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsQuoteModalOpen(true)}
+                        className="mt-2.5 w-full rounded-lg border border-[#048A05] text-[#048A05] dark:text-emerald-300 hover:bg-[#048A05] hover:text-white dark:hover:bg-[#048A05] py-2 text-center font-semibold transition-colors cursor-pointer"
+                      >
+                        Request an Installation Quote
+                      </button>
+                    </div>
+                  )}
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="mb-2">Good to know</p>
+                    <p className="font-bold text-slate-900 dark:text-white">
+                      Packages remain available during checkout
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed">
+                      Need a full installation-ready setup instead of individual components?{" "}
+                      <Link
+                        href="/packages"
+                        className="inline-flex items-center gap-1 font-semibold text-[#048A05] dark:text-emerald-400 underline"
+                      >
+                        Browse packages
+                        <span>↗</span>
+                      </Link>
+                      .
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

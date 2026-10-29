@@ -270,18 +270,18 @@ const CartPage = () => {
 
   const tax = 0;
 
-  const discountAmount = useMemo(() => {
-    return cartDetails.reduce((sum, item) => {
-      if (item.itemType === "package") {
-        const pkg = packageMap.get(String(item.id));
-        const pct = pkg?.discountPercentage ?? 0;
-        return sum + (item.price * (pct / 100)) * item.quantity;
-      }
-      return sum;
-    }, 0);
-  }, [cartDetails, packageMap]);
+  const discountAmount = 0;
 
-  const couponDiscount = appliedCoupon?.discount_amount ?? 0;
+  const couponDiscount = useMemo(() => {
+    if (!appliedCoupon || subtotal <= 0) return 0;
+    if (appliedCoupon.discount_amount && appliedCoupon.discount_amount > 0) {
+      return Math.min(subtotal, appliedCoupon.discount_amount);
+    }
+    if (appliedCoupon.discount_type === "percentage") {
+      return Math.min(subtotal, Math.round((subtotal * appliedCoupon.discount_value) / 100));
+    }
+    return Math.min(subtotal, appliedCoupon.discount_value || 0);
+  }, [appliedCoupon, subtotal]);
   const total = Math.max(0, subtotal + shipping - discountAmount - couponDiscount);
 
   async function handleApplyCoupon() {
@@ -293,6 +293,11 @@ const CartPage = () => {
         code: couponInput.trim().toUpperCase(),
         order_amount: subtotal,
         product_ids: cartDetails.map((it) => String(it.id)),
+        items: cartDetails.map((it) => ({
+          id: String(it.id),
+          price: it.price,
+          quantity: it.quantity,
+        })),
       });
 
       const couponObj = res.data?.coupon || res.coupon;
