@@ -125,6 +125,7 @@ const CheckoutPage = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isPaystackReady, setIsPaystackReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingCreatedOrderId, setPendingCreatedOrderId] = useState<string | null>(null);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
   const [requestFinancing, setRequestFinancing] = useState(false);
@@ -932,11 +933,17 @@ Roof Material: ${roofMaterial || "Not specified (Engineer site assessment)"}
           : undefined,
       };
 
-      const orderPayloadResponse = await createCustomerOrder(orderPayload);
-      const orderId = getOrderId(orderPayloadResponse.data);
-
+      let orderId = pendingCreatedOrderId;
       if (!orderId) {
-        throw new Error("The order was created, but the order id is missing from the response.");
+        const orderPayloadResponse = await createCustomerOrder(orderPayload);
+        orderId = getOrderId(orderPayloadResponse.data);
+
+        if (!orderId) {
+          throw new Error("The order was created, but the order id is missing from the response.");
+        }
+        if (!requestFinancing) {
+          setPendingCreatedOrderId(orderId);
+        }
       }
 
       if (requestFinancing) {
@@ -984,6 +991,7 @@ Roof Material: ${roofMaterial || "Not specified (Engineer site assessment)"}
             },
             email: shippingAddress.email,
             onSuccess: (nextReference) => {
+              setPendingCreatedOrderId(null);
               try {
                 localStorage.removeItem("fortsolar:active_package_order");
                 localStorage.removeItem("fortsolar:checkout_draft");
@@ -993,9 +1001,10 @@ Roof Material: ${roofMaterial || "Not specified (Engineer site assessment)"}
               void handlePaymentVerification(nextReference, orderId);
             },
             onClose: () => {
+              setIsSubmitting(false);
               setCheckoutStatus({
                 tone: "info",
-                message: "Payment window closed before completion.",
+                message: "Payment window was closed before completion. Click \"Proceed to Payment\" to retry whenever you are ready.",
               });
             },
           }),

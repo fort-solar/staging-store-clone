@@ -1551,7 +1551,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
 
                             {quote.status === "quoted" && (
                               (() => {
-                                const validityDays = Number(quote.formExtras?.validity_days) || 7;
+                                const validityDays = Number(quote.formExtras?.validity_days) || 14;
                                 const createdDate = new Date(quote.updatedAt);
                                 const expirationDate = new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
                                 const now = new Date();
@@ -1644,7 +1644,20 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     {/* Action Buttons */}
                                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 sm:flex-row sm:justify-end">
                                       {isExpired ? (
-                                        <p className="text-xs text-amber-600 dark:text-amber-400 italic">This proposal is expired. Please contact support to request a reissue.</p>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-xs">
+                                          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-medium">
+                                            <span className="text-base">⚠️</span>
+                                            <span>This proposal validity window has expired. You can request a refreshed quote with updated component pricing.</span>
+                                          </div>
+                                          <a
+                                            href={`https://wa.me/2348087366156?text=${encodeURIComponent(`Hi Fortsolar, my custom quote #${quote.id.slice(0, 8)} has expired. Could you please refresh it for me?`)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="shrink-0 px-3.5 py-2 rounded-lg bg-[#048A05] hover:bg-[#036B04] text-white font-bold text-xs shadow-xs transition text-center"
+                                          >
+                                            Request Quote Refresh ↗
+                                          </a>
+                                        </div>
                                       ) : showRejectionFormQuoteId === quote.id ? (
                                         <div className="w-full space-y-2 text-left">
                                           <textarea
