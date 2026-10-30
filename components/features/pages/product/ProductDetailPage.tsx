@@ -76,6 +76,24 @@ const ProductDetailPage = () => {
     [id, productSuggestions],
   );
 
+  const rawSpecRows = (product?.sectionValues?.length ? product.sectionValues : product?.quickSpecs) ?? [];
+  const specRows = useMemo(() => {
+    const rows = [...rawSpecRows];
+    const hasWeight = rows.some((s) => s.label.toLowerCase().includes("weight"));
+    if (product && !hasWeight && (product.weightKg || product.weightTier)) {
+      const weightLabel = product.weightKg
+        ? `${product.weightKg} kg`
+        : product.weightTier === "under_5kg"
+        ? "< 5 kg"
+        : product.weightTier === "5_15kg"
+        ? "5 - 15 kg"
+        : product.weightTier === "15_30kg"
+        ? "15 - 30 kg"
+        : "> 30 kg";
+      rows.push({ label: "Weight", value: weightLabel });
+    }
+    return rows;
+  }, [rawSpecRows, product]);
   if (isLoading && !product) {
     return (
       <div className="min-h-screen bg-white pt-24">
@@ -107,24 +125,6 @@ const ProductDetailPage = () => {
   }
 
   const datasheetKind = product.datasheet?.kind || null;
-  const rawSpecRows = product.sectionValues?.length ? product.sectionValues : product.quickSpecs;
-  const specRows = useMemo(() => {
-    const rows = [...rawSpecRows];
-    const hasWeight = rows.some((s) => s.label.toLowerCase().includes("weight"));
-    if (!hasWeight && (product.weightKg || product.weightTier)) {
-      const weightLabel = product.weightKg
-        ? `${product.weightKg} kg`
-        : product.weightTier === "under_5kg"
-        ? "< 5 kg"
-        : product.weightTier === "5_15kg"
-        ? "5 - 15 kg"
-        : product.weightTier === "15_30kg"
-        ? "15 - 30 kg"
-        : "> 30 kg";
-      rows.push({ label: "Weight", value: weightLabel });
-    }
-    return rows;
-  }, [rawSpecRows, product.weightKg, product.weightTier]);
   const totalPrice = product.price * normalizedQuantity;
   const totalOriginalPrice = product.priceOriginal * normalizedQuantity;
   const deliveryWarrantyInfo =
