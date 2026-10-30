@@ -107,7 +107,24 @@ const ProductDetailPage = () => {
   }
 
   const datasheetKind = product.datasheet?.kind || null;
-  const specRows = product.sectionValues?.length ? product.sectionValues : product.quickSpecs;
+  const rawSpecRows = product.sectionValues?.length ? product.sectionValues : product.quickSpecs;
+  const specRows = useMemo(() => {
+    const rows = [...rawSpecRows];
+    const hasWeight = rows.some((s) => s.label.toLowerCase().includes("weight"));
+    if (!hasWeight && (product.weightKg || product.weightTier)) {
+      const weightLabel = product.weightKg
+        ? `${product.weightKg} kg`
+        : product.weightTier === "under_5kg"
+        ? "< 5 kg"
+        : product.weightTier === "5_15kg"
+        ? "5 - 15 kg"
+        : product.weightTier === "15_30kg"
+        ? "15 - 30 kg"
+        : "> 30 kg";
+      rows.push({ label: "Weight", value: weightLabel });
+    }
+    return rows;
+  }, [rawSpecRows, product.weightKg, product.weightTier]);
   const totalPrice = product.price * normalizedQuantity;
   const totalOriginalPrice = product.priceOriginal * normalizedQuantity;
   const deliveryWarrantyInfo =
@@ -228,27 +245,12 @@ const ProductDetailPage = () => {
 
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                {product.eligibleForWaybill !== false ? (
+              <div className="flex items-center gap-2">
+                {product.freeDelivery ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#EBFAEB] px-2.5 py-1 text-xs font-semibold text-[#048A05]">
-                    <span>📦</span> Park-to-Park Waybill Eligible
+                    Free Delivery
                   </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                    <span>🏪</span> Warehouse Pickup Only
-                  </span>
-                )}
-                {product.weightTier && (
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                    {product.weightTier === "under_5kg"
-                      ? "Weight: <5kg"
-                      : product.weightTier === "5_15kg"
-                      ? "Weight: 5-15kg"
-                      : product.weightTier === "15_30kg"
-                      ? "Weight: 15-30kg"
-                      : "Weight: >30kg"}
-                  </span>
-                )}
+                ) : null}
               </div>
               <span className={`text-sm font-semibold ${product.availability === "Out Of Stock" ? "text-[#EF5350]" : product.availability === "Limited Stock" ? "text-[#FFAD33]" : "text-[#1FA21B]"}`}>
                 {product.availability}
@@ -300,27 +302,9 @@ const ProductDetailPage = () => {
               ) : null}
             </div>
 
-            <div className="mt-4">
+            <div className="mt-5 space-y-2.5">
               <button
                 type="button"
-                disabled={isOutOfStock}
-                onClick={(event) => {
-                  event.preventDefault();
-                  addToCart({ id: product.id, itemType: "product" });
-                  updateCartQuantity({
-                    id: product.id,
-                    itemType: "product",
-                    quantity: normalizedQuantity,
-                  });
-                }}
-                className="block w-full rounded-xl bg-[#1FA21B] py-3 text-center font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add to Cart
-              </button>
-            </div>
-
-            <div className="mt-2 flex items-center gap-3">
-              <button
                 disabled={isOutOfStock}
                 onClick={() => {
                   try {
@@ -339,27 +323,38 @@ const ProductDetailPage = () => {
                     onAuthenticated: () => router.push("/checkout"),
                   });
                 }}
-                className="flex-1 rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32] disabled:cursor-not-allowed disabled:opacity-50"
+                className="block w-full rounded-xl bg-[linear-gradient(94.62deg,#2CB22C_-8.83%,#048A05_110.95%)] py-3.5 text-center font-bold text-white shadow-xs hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 transition cursor-pointer"
               >
                 Buy Now
               </button>
-              <button
-                disabled={isOutOfStock}
-                onClick={() => {
-                  addToCart({ id: product.id, itemType: "product" });
-                  updateCartQuantity({
-                    id: product.id,
-                    itemType: "product",
-                    quantity: normalizedQuantity,
-                  });
-                }}
-                className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <CartIcon className="text-[#3B3B3B]/70" />
-              </button>
-              <button onClick={() => toggleProductFavorite(product.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-[#E4E9EC]">
-                <HeartIcon filled={favorites.includes(product.id)} className={favorites.includes(product.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
-              </button>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  disabled={isOutOfStock}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    addToCart({ id: product.id, itemType: "product" });
+                    updateCartQuantity({
+                      id: product.id,
+                      itemType: "product",
+                      quantity: normalizedQuantity,
+                    });
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-[#B0BABF] py-3 text-center font-semibold text-[#252C32] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 transition cursor-pointer"
+                >
+                  <CartIcon className="h-4 w-4 text-[#3B3B3B]" />
+                  <span>Add to Cart</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleProductFavorite(product.id)}
+                  className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[#E4E9EC] hover:bg-slate-50 transition cursor-pointer"
+                  aria-label="Save to favorites"
+                >
+                  <HeartIcon filled={favorites.includes(product.id)} className={favorites.includes(product.id) ? "text-[#E11D48]" : "text-[#3B3B3B]/60"} />
+                </button>
+              </div>
             </div>
 
             {(product.eligibleForQuote || product.eligibleForInstallation) && (
