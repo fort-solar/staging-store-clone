@@ -1553,7 +1553,10 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               (() => {
                                 const validityDays = Number(quote.formExtras?.validity_days) || 14;
                                 const createdDate = new Date(quote.updatedAt);
-                                const expirationDate = new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
+                                const storedExpiry = quote.formExtras?.expires_at ? new Date(String(quote.formExtras.expires_at)) : null;
+                                const expirationDate = storedExpiry && !Number.isNaN(storedExpiry.getTime())
+                                  ? storedExpiry
+                                  : new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
                                 const now = new Date();
                                 const isExpired = now.getTime() > expirationDate.getTime();
                                 const remainingMs = expirationDate.getTime() - now.getTime();
