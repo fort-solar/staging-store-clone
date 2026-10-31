@@ -773,6 +773,8 @@ const CheckoutPage = () => {
     if (!shippingAddress.email.trim()) errors.shippingEmail = true;
     if (!shippingAddress.phone.trim()) errors.shippingPhone = true;
     if (!shippingAddress.addressLine1.trim()) errors.shippingAddressLine1 = true;
+    if (!shippingAddress.city.trim()) errors.shippingCity = true;
+    if (!shippingAddress.state.trim()) errors.shippingState = true;
 
     // 2. Validate Billing Address (if not same as shipping)
     if (!useShippingAsBilling) {
