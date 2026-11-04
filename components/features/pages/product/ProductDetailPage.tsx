@@ -435,12 +435,17 @@ const ProductDetailPage = () => {
             )}
 
             <div className="mt-6 p-4 text-xs">
-              <div className="flex items-center justify-between font-semibold text-[#252C32]">
+              <button
+                type="button"
+                aria-expanded={showFeatures}
+                onClick={() => setShowFeatures((open) => !open)}
+                className="flex w-full cursor-pointer items-center justify-between text-left font-semibold text-[#252C32]"
+              >
                 <span>Product Highlights / Quick Specs</span>
-                <span onClick={() => setShowFeatures(!showFeatures)}>
-                  {showFeatures ? <ChevronDown className="h-5 w-5 text-gray-500" /> : <ChevronUp className="h-5 w-5 text-gray-500" />}
-                </span>
-              </div>
+                <ChevronDown
+                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${showFeatures ? "rotate-180" : ""}`}
+                />
+              </button>
               {showFeatures ? (
                 <div className="mt-3 text-[#5A646B]">
                   {specRows.map((spec) => (

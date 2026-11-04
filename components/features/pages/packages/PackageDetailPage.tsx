@@ -243,15 +243,18 @@ const PackageDetailPage = () => {
 
               {/* Collapsible Package Specifications & Gallery (Merged cleanly without duplicate thumbnail) */}
               <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-5 border border-slate-200 dark:border-slate-700">
-                <div
-                  className="flex items-center justify-between cursor-pointer"
-                  onClick={() => setShowSpecsGallery(!showSpecsGallery)}
+                <button
+                  type="button"
+                  aria-expanded={showSpecsGallery}
+                  className="flex w-full cursor-pointer items-center justify-between text-left"
+                  onClick={() => setShowSpecsGallery((open) => !open)}
                 >
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Package Specifications & Gallery</h3>
-                  <span className="text-neutral-500 dark:text-slate-400">
-                    {showSpecsGallery ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  </span>
-                </div>                {showSpecsGallery && (
+                  <ChevronDown
+                    className={`h-5 w-5 text-neutral-500 transition-transform duration-200 dark:text-slate-400 ${showSpecsGallery ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {showSpecsGallery && (
                   <div className="mt-4 space-y-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                     {/* Datasheets */}
                     {data.datasheets?.length ? (
@@ -439,15 +442,17 @@ const PackageDetailPage = () => {
 
             {/* Package Includes Dropdown */}
             <div className="mt-6 p-4 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827]">
-              <div
-                className="flex items-center justify-between font-semibold text-slate-900 dark:text-white cursor-pointer"
-                onClick={() => setShowFeatures(!showFeatures)}
+              <button
+                type="button"
+                aria-expanded={showFeatures}
+                className="flex w-full cursor-pointer items-center justify-between text-left font-semibold text-slate-900 dark:text-white"
+                onClick={() => setShowFeatures((open) => !open)}
               >
                 <span>Package Includes</span>
-                <span>
-                  {showFeatures ? <ChevronDown className="h-5 w-5 text-gray-500 dark:text-slate-400" /> : <ChevronUp className="h-5 w-5 text-gray-500 dark:text-slate-400" />}
-                </span>
-              </div>
+                <ChevronDown
+                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 dark:text-slate-400 ${showFeatures ? "rotate-180" : ""}`}
+                />
+              </button>
               {showFeatures ? (
                 <div className="mt-3 text-slate-600 dark:text-slate-400">
                   {data.packageIncludes.map((item) => (

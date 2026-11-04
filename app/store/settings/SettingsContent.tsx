@@ -1523,37 +1523,89 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               </div>
                             )}
 
-                            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                              <div className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
-                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Total Load:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.totalLoad || "N/A"}</span></p>
-                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Total Watt Hours / Day:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.totalWattHoursPerDay || "N/A"}</span></p>
-                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Daily Usage:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.dailyUsage || "N/A"}</span></p>
-                                <p><span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase">Monthly Usage:</span> <span className="font-semibold text-slate-900 dark:text-white">{quote.energySummary.monthlyUsage || "N/A"}</span></p>
+                            {/* Appliances Breakdown Table & Summary */}
+                            <div className="mt-4 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                                  Audited Connected Appliances
+                                </p>
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  {quote.applianceList?.length ?? quote.appliances.length} items listed
+                                </span>
                               </div>
-                              <div className="space-y-2">
-                                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Appliances</p>
+
+                              {quote.applianceList && quote.applianceList.length > 0 ? (
+                                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                  <table className="w-full text-left text-xs">
+                                    <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
+                                      <tr>
+                                        <th className="px-3 py-2 font-semibold">Appliance</th>
+                                        <th className="px-3 py-2 font-semibold text-center">Qty</th>
+                                        <th className="px-3 py-2 font-semibold text-right">Power Rating</th>
+                                        <th className="px-3 py-2 font-semibold text-right">Daily Usage</th>
+                                        <th className="px-3 py-2 font-semibold text-right">Energy / Day</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+                                      {quote.applianceList.map((app, idx) => (
+                                        <tr key={app.id || idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                          <td className="px-3 py-2 font-medium">{app.name}</td>
+                                          <td className="px-3 py-2 text-center">{app.quantity ?? 1}</td>
+                                          <td className="px-3 py-2 text-right">{app.wattage ? `${app.wattage} W` : "—"}</td>
+                                          <td className="px-3 py-2 text-right">{app.hoursPerDay ? `${app.hoursPerDay} hrs` : "—"}</td>
+                                          <td className="px-3 py-2 text-right font-semibold text-slate-900 dark:text-white">
+                                            {app.whPerDay ? `${Math.round(app.whPerDay).toLocaleString()} Wh` : "—"}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : quote.appliances.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
-                                  {quote.appliances.length > 0 ? (
-                                    quote.appliances.map((item) => (
-                                      <span
-                                        key={`${quote.id}-${item}`}
-                                        className="rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium"
-                                      >
-                                        {item}
-                                      </span>
-                                    ))
-                                  ) : (
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">No appliances supplied.</span>
-                                  )}
+                                  {quote.appliances.map((item) => (
+                                    <span
+                                      key={`${quote.id}-${item}`}
+                                      className="rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium"
+                                    >
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 italic">No appliances listed.</p>
+                              )}
+
+                              {/* Energy Demand Summary Cards */}
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold block">Total Load</span>
+                                  <strong className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">{quote.energySummary.totalLoad || "N/A"}</strong>
+                                </div>
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold block">Watt Hours / Day</span>
+                                  <strong className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">{quote.energySummary.totalWattHoursPerDay || "N/A"}</strong>
+                                </div>
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold block">Daily Usage</span>
+                                  <strong className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">{quote.energySummary.dailyUsage || "N/A"}</strong>
+                                </div>
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold block">Monthly Usage</span>
+                                  <strong className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">{quote.energySummary.monthlyUsage || "N/A"}</strong>
                                 </div>
                               </div>
                             </div>
 
-                            {quote.status === "quoted" && (
+                            {(quote.status === "quoted" || quote.status === "quote_sent" || quote.status === "revision_requested") && (
                               (() => {
-                                const validityDays = Number(quote.formExtras?.validity_days) || 14;
+                                const validityDays = Number(quote.activeVersion?.validity_days || quote.formExtras?.validity_days) || 7;
                                 const createdDate = new Date(quote.updatedAt);
-                                const storedExpiry = quote.formExtras?.expires_at ? new Date(String(quote.formExtras.expires_at)) : null;
+                                const storedExpiry = quote.activeVersion?.expires_at
+                                  ? new Date(quote.activeVersion.expires_at)
+                                  : quote.formExtras?.expires_at
+                                  ? new Date(String(quote.formExtras.expires_at))
+                                  : null;
                                 const expirationDate = storedExpiry && !Number.isNaN(storedExpiry.getTime())
                                   ? storedExpiry
                                   : new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
@@ -1562,28 +1614,84 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                 const remainingMs = expirationDate.getTime() - now.getTime();
                                 const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
                                 const tp = quote.tailoredPackage || (quote.formExtras?.tailored_package as Record<string, any>) || null;
+                                const version = quote.activeVersion;
 
                                 return (
-                                  <div className="mt-4 p-5 border border-slate-200 dark:border-slate-700/80 rounded-2xl bg-white dark:bg-slate-900/90 shadow-xs space-y-4 transition-colors">
+                                  <div className="mt-4 p-5 border border-slate-200 dark:border-slate-700/80 rounded-2xl bg-white dark:bg-slate-900/90 shadow-xs space-y-5 transition-colors">
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                                       <div>
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#048A05] dark:text-emerald-400 block">
-                                          Tailored System Package Proposal
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#048A05] dark:text-emerald-400 block">
+                                            Official Solar Service Quotation
+                                          </span>
+                                          {version ? (
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold">
+                                              v{version.version}
+                                            </span>
+                                          ) : null}
+                                        </div>
                                         <h4 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
-                                          {tp?.name || (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW Tailored Solar Package` : "Tailored System Package")}
+                                          {version?.title || tp?.name || (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW Tailored Solar Package` : "Tailored System Package")}
                                         </h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                          System Size: {version?.system_size_kw ? `${version.system_size_kw} kW` : (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "Custom")}
+                                          {version?.battery_capacity_kwh ? ` / ${version.battery_capacity_kwh} kWh Storage` : ""}
+                                          {version?.inverter_capacity_kva ? ` || Inverter Capacity: ${version.inverter_capacity_kva} kVa` : ""}
+                                        </p>
                                       </div>
                                       <div className="text-left sm:text-right">
-                                        <span className="text-xs text-slate-500 dark:text-slate-400 block">System Investment</span>
-                                        <span className="text-xl font-bold text-slate-900 dark:text-white">
-                                          {quote.estimatedCost ? formatCurrency(quote.estimatedCost) : "Custom Estimate"}
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 block">Total Quoted Investment</span>
+                                        <span className="text-xl font-extrabold text-[#048A05] dark:text-emerald-400">
+                                          {formatCurrency(version?.total ?? quote.estimatedCost ?? 0)}
                                         </span>
                                       </div>
                                     </div>
 
-                                    {/* Tailored Component Specifications */}
-                                    {tp ? (
+                                    {/* Components Breakdown Table */}
+                                    {version?.line_items && version.line_items.length > 0 ? (
+                                      <div className="space-y-2">
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                                          Components Breakdown
+                                        </span>
+                                        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                          <table className="w-full text-left text-xs">
+                                            <thead className="bg-[#0f75bc] text-white">
+                                              <tr>
+                                                <th className="px-3.5 py-2.5 font-bold">Component</th>
+                                                <th className="px-3.5 py-2.5 font-bold text-center w-20">Quantity</th>
+                                                <th className="px-3.5 py-2.5 font-bold text-right w-32">Unit Price</th>
+                                                <th className="px-3.5 py-2.5 font-bold text-right w-32">Total</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+                                              {version.line_items.map((item, idx) => (
+                                                <tr key={item.id || idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                                  <td className="px-3.5 py-2.5 font-medium">{item.name}</td>
+                                                  <td className="px-3.5 py-2.5 text-center font-semibold">{item.quantity}</td>
+                                                  <td className="px-3.5 py-2.5 text-right text-slate-500 dark:text-slate-400">
+                                                    {item.is_lot || String(item.quantity).toLowerCase() === "lot"
+                                                      ? "—"
+                                                      : formatCurrency(item.unit_price)}
+                                                  </td>
+                                                  <td className="px-3.5 py-2.5 text-right font-bold text-slate-900 dark:text-white">
+                                                    {formatCurrency(item.amount)}
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                              {/* Total Row */}
+                                              <tr className="bg-slate-50/80 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-700">
+                                                <td colSpan={3} className="px-3.5 py-2.5 text-center uppercase tracking-wider text-slate-900 dark:text-white">
+                                                  TOTAL
+                                                </td>
+                                                <td className="px-3.5 py-2.5 text-right text-sm text-[#048A05] dark:text-emerald-400 font-extrabold">
+                                                  {formatCurrency(version.total)}
+                                                </td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    ) : tp ? (
                                       <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                         <div>
                                           <span className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Solar Panels</span>
@@ -1604,10 +1712,52 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                       </div>
                                     ) : null}
 
+                                    {/* Value Proposition Banner */}
+                                    <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 text-center">
+                                      <p className="text-xs font-bold text-[#0070c0] dark:text-blue-400">
+                                        Why Fortsolar? Free Installation • Free Insurance • 24/7 After-sales Service • Solar Financing
+                                      </p>
+                                      <p className="text-[11px] text-slate-600 dark:text-slate-300 italic mt-0.5">
+                                        Contact our lines for the energy financing option.
+                                      </p>
+                                    </div>
+
+                                    {/* System Overview Narrative */}
+                                    {(version?.overview || quote.adminNotes) && (
+                                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                                        <span className="font-bold text-[#048A05] dark:text-emerald-400 uppercase tracking-wide block">
+                                          System Overview
+                                        </span>
+                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed m-0">
+                                          {version?.overview || quote.adminNotes}
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {/* Structured Warranty Coverage */}
+                                    {version?.warranty && version.warranty.length > 0 && (
+                                      <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2 text-xs">
+                                        <span className="font-bold text-[#048A05] dark:text-emerald-400 uppercase tracking-wide block">
+                                          Warranty Information
+                                        </span>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 dark:text-slate-300">
+                                          {version.warranty.map((w, idx) => (
+                                            <div key={idx} className="flex items-start gap-1.5">
+                                              <span className="font-semibold text-slate-900 dark:text-white shrink-0">{w.component}:</span>
+                                              <span>{w.description || `${w.duration_years || 5} Years`}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Proposal Metadata Grid */}
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                                       <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
                                         <span className="text-slate-500 dark:text-slate-400 text-[11px] block">System Size:</span>
-                                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">{quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "N/A"}</p>
+                                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
+                                          {version?.system_size_kw ? `${version.system_size_kw} kW` : (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "N/A")}
+                                        </p>
                                       </div>
                                       <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
                                         <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Est. Annual Savings:</span>
@@ -1625,24 +1775,22 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                       </div>
                                     </div>
 
-                                    {quote.adminNotes && (
-                                      <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-3 rounded-xl">
-                                        <strong className="text-slate-900 dark:text-white">Engineer's Note: </strong> {quote.adminNotes}
-                                      </div>
-                                    )}
-
-                                    {quote.quoteAssetUrl && (
-                                      <div>
-                                        <a
-                                          href={quote.quoteAssetUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#048A05] dark:text-emerald-400 hover:underline"
-                                        >
-                                          📄 Download Official Proposal PDF / Spec Sheet
-                                        </a>
-                                      </div>
-                                    )}
+                                    {/* PDF Download Button & Revision Status */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                                      <a
+                                        href={quote.quotePdfUrl || `/api/v1/customer/me/quotes/${quote.id}/pdf`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-xs font-bold text-white bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 px-4 py-2 rounded-xl transition w-fit"
+                                      >
+                                        📄 Download Official Proposal PDF
+                                      </a>
+                                      {quote.status === "revision_requested" && (
+                                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-1.5 rounded-xl">
+                                          ⏳ Revision requested — engineering team is updating your proposal.
+                                        </span>
+                                      )}
+                                    </div>
 
                                     {/* Action Buttons */}
                                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -1665,7 +1813,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                         <div className="w-full space-y-2 text-left">
                                           <textarea
                                             className="w-full text-xs p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#048A05]"
-                                            placeholder="Enter reasons for revision or change requests..."
+                                            placeholder="Enter adjustments needed (e.g. change battery size, remove an appliance, budget adjustment)..."
                                             value={rejectionNotes[quote.id] || ""}
                                             onChange={(e) => setRejectionNotes(prev => ({ ...prev, [quote.id]: e.target.value }))}
                                           />
@@ -1693,7 +1841,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                             className="px-4 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-800/80 rounded-xl w-full sm:w-fit cursor-pointer"
                                             disabled={isFeedbackSubmittingQuoteId === quote.id}
                                           >
-                                            Reject &amp; Request Revision
+                                            Request Changes / Revision
                                           </Button>
                                           <Button
                                             onClick={() => handleQuoteFeedback(quote.id, "approved")}
@@ -1710,7 +1858,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               })()
                             )}
 
-                            {(quote.status === "approved" || quote.status === "reviewed") && (
+                            {(quote.status === "approved" || quote.status === "reviewed" || quote.status === "accepted") && (
                               <div className="mt-4 p-4 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                 <div>
                                   <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Proposal Accepted</p>
@@ -1726,8 +1874,8 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                         "fortsolar:active_package_order",
                                         JSON.stringify({
                                           packageId: tailoredPkgId,
-                                          packageTitle: quote.tailoredPackage?.name || "Tailored Solar System",
-                                          price: quote.estimatedCost || 0,
+                                          packageTitle: quote.activeVersion?.title || quote.tailoredPackage?.name || "Tailored Solar System",
+                                          price: quote.activeVersion?.total || quote.estimatedCost || 0,
                                           image: "/images/custom-solar-package.png",
                                           quoteId: quote.id,
                                         })
@@ -1742,7 +1890,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               </div>
                             )}
 
-                            {quote.status === "rejected" && (
+                            {(quote.status === "rejected" || quote.status === "revision_requested") && (
                               <div className="mt-4 p-3 border border-rose-200 dark:border-rose-800/50 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-xs text-rose-700 dark:text-rose-300">
                                 Proposal revision requested. Our engineering team has been notified to provide revised specifications.
                               </div>
