@@ -1715,10 +1715,10 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     {/* Value Proposition Banner */}
                                     <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 text-center">
                                       <p className="text-xs font-bold text-[#0070c0] dark:text-blue-400">
-                                        Why Fortsolar? Free Installation • Free Insurance • 24/7 After-sales Service • Solar Financing
+                                        Why Fortsolar? {(version as any)?.why_fortsolar_banner || "Free Installation • Free Insurance • 24/7 After-sales Service • Solar Financing"}
                                       </p>
                                       <p className="text-[11px] text-slate-600 dark:text-slate-300 italic mt-0.5">
-                                        Contact our lines for the energy financing option.
+                                        {(version as any)?.why_fortsolar_subtext || "Contact our lines for the energy financing option."}
                                       </p>
                                     </div>
 
