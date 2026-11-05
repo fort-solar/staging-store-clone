@@ -842,8 +842,9 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
   const [isFeedbackSubmittingQuoteId, setIsFeedbackSubmittingQuoteId] = useState<string | null>(null);
   const [rejectionNotes, setRejectionNotes] = useState<Record<string, string>>({});
   const [showRejectionFormQuoteId, setShowRejectionFormQuoteId] = useState<string | null>(null);
+  const [selectedVersionByQuoteId, setSelectedVersionByQuoteId] = useState<Record<string, number>>({});
 
-  async function handleQuoteFeedback(id: string, response: "approved" | "rejected") {
+  async function handleQuoteFeedback(id: string, response: "approved" | "rejected", selectedVersionNum?: number) {
     if (isFeedbackSubmittingQuoteId) return;
     const note = rejectionNotes[id]?.trim();
     if (response === "rejected" && !note) {
@@ -860,7 +861,11 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
     });
 
     try {
-      const result = await submitCustomerQuoteFeedback(id, { response, feedback: note });
+      const result = await submitCustomerQuoteFeedback(id, {
+        response,
+        feedback: note,
+        ...(selectedVersionNum ? { version: selectedVersionNum } : {}),
+      });
       setPageStatus({
         tone: "success",
         message: response === "approved"
@@ -878,11 +883,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
       
       if (response === "approved") {
         const quoteItem = quotes.find((q) => q.id === id);
+        const chosenVer = quoteItem?.versions?.find((v) => v.version === selectedVersionNum) || quoteItem?.activeVersion;
         const pkgReqId = (result as any)?.data?.convertedPackageRequestId;
-        const tailoredPkgId = (result as any)?.data?.tailoredPackageId || quoteItem?.tailoredPackageId;
+        const tailoredPkgId = (result as any)?.data?.tailoredPackageId || chosenVer?.package_id || quoteItem?.tailoredPackageId;
         const targetPackageId = tailoredPkgId || pkgReqId || id;
-        const packageTitle = quoteItem?.tailoredPackage?.name || `Tailored Solar System (${quoteItem?.recommendedSystemSize ? `${quoteItem.recommendedSystemSize} kW` : "Custom"})`;
-        const packagePrice = quoteItem?.estimatedCost || 0;
+        const packageTitle = chosenVer?.title || quoteItem?.tailoredPackage?.name || `Tailored Solar System (${quoteItem?.recommendedSystemSize ? `${quoteItem.recommendedSystemSize} kW` : "Custom"})`;
+        const packagePrice = chosenVer?.total || quoteItem?.estimatedCost || 0;
 
         // Store active package order for the standard checkout process
         try {
@@ -894,6 +900,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
               price: packagePrice,
               image: "/images/custom-solar-package.png",
               quoteId: id,
+              version: chosenVer?.version,
             })
           );
         } catch (_) {}
@@ -1597,12 +1604,20 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                               </div>
                             </div>
 
-                            {(quote.status === "quoted" || quote.status === "quote_sent" || quote.status === "revision_requested") && (
+                            {(quote.status === "quoted" || quote.status === "quote_sent" || quote.status === "revision_requested" || (quote.versions && quote.versions.length > 0)) && (
                               (() => {
-                                const validityDays = Number(quote.activeVersion?.validity_days || quote.formExtras?.validity_days) || 7;
-                                const createdDate = new Date(quote.updatedAt);
-                                const storedExpiry = quote.activeVersion?.expires_at
-                                  ? new Date(quote.activeVersion.expires_at)
+                                const availableVersions = Array.isArray(quote.versions) && quote.versions.length > 0
+                                  ? quote.versions
+                                  : quote.activeVersion
+                                  ? [quote.activeVersion]
+                                  : [];
+                                const selectedVerNum = selectedVersionByQuoteId[quote.id] ?? quote.activeVersion?.version ?? availableVersions[0]?.version;
+                                const version = availableVersions.find((v) => v.version === selectedVerNum) || quote.activeVersion || availableVersions[0] || null;
+
+                                const validityDays = Number(version?.validity_days || quote.formExtras?.validity_days) || 7;
+                                const createdDate = new Date(version?.created_at || quote.updatedAt);
+                                const storedExpiry = version?.expires_at
+                                  ? new Date(version.expires_at)
                                   : quote.formExtras?.expires_at
                                   ? new Date(String(quote.formExtras.expires_at))
                                   : null;
@@ -1610,14 +1625,61 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                   ? storedExpiry
                                   : new Date(createdDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
                                 const now = new Date();
-                                const isExpired = now.getTime() > expirationDate.getTime();
+                                const isVersionMarkedExpired = version?.state === "expired";
+                                const isExpired = isVersionMarkedExpired || now.getTime() > expirationDate.getTime();
                                 const remainingMs = expirationDate.getTime() - now.getTime();
                                 const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
                                 const tp = quote.tailoredPackage || (quote.formExtras?.tailored_package as Record<string, any>) || null;
-                                const version = quote.activeVersion;
+
+                                const pvVal = version?.pv_size_kwp ?? version?.system_size_kw;
+                                const invVal = version?.inverter_size_kw ?? version?.inverter_capacity_kva;
+                                const batVal = version?.battery_capacity_kwh;
+                                const specParts: string[] = [];
+                                if (pvVal !== null && pvVal !== undefined && Number(pvVal) > 0) {
+                                  specParts.push(`PV Size: ${pvVal}kWp`);
+                                }
+                                if (invVal !== null && invVal !== undefined && Number(invVal) > 0) {
+                                  specParts.push(`Inverter Size: ${invVal}kW`);
+                                }
+                                if (batVal !== null && batVal !== undefined && Number(batVal) > 0) {
+                                  specParts.push(`Battery Size: ${batVal}kWh`);
+                                }
+                                const systemSpecsLine = specParts.join(" || ");
 
                                 return (
                                   <div className="mt-4 p-5 border border-slate-200 dark:border-slate-700/80 rounded-2xl bg-white dark:bg-slate-900/90 shadow-xs space-y-5 transition-colors">
+                                    {/* Version Selector Bar */}
+                                    {availableVersions.length > 0 && (
+                                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                                          Available Quote Versions ({availableVersions.length})
+                                        </span>
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          {availableVersions.map((v) => {
+                                            const isChosen = version?.version === v.version;
+                                            const vExpired = v.state === "expired" || (v.expires_at && new Date(v.expires_at).getTime() < now.getTime());
+                                            return (
+                                              <button
+                                                key={v.id || v.version}
+                                                type="button"
+                                                onClick={() => setSelectedVersionByQuoteId((prev) => ({ ...prev, [quote.id]: v.version }))}
+                                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                                                  isChosen
+                                                    ? "bg-[#048A05] text-white border-[#048A05] shadow-xs"
+                                                    : vExpired
+                                                    ? "border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400"
+                                                    : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
+                                                }`}
+                                              >
+                                                Version {v.version} — {formatCurrency(v.total || 0)}
+                                                {vExpired ? " (Expired)" : v.state === "accepted" ? " (Accepted)" : ""}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    )}
+
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                                       <div>
                                         <div className="flex items-center gap-2">
@@ -1625,19 +1687,25 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                             Official Solar Service Quotation
                                           </span>
                                           {version ? (
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold">
-                                              v{version.version}
+                                            <span
+                                              className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                                isExpired
+                                                  ? "bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300"
+                                                  : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
+                                              }`}
+                                            >
+                                              v{version.version} {isExpired ? "• Expired" : ""}
                                             </span>
                                           ) : null}
                                         </div>
                                         <h4 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
                                           {version?.title || tp?.name || (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW Tailored Solar Package` : "Tailored System Package")}
                                         </h4>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                          System Size: {version?.system_size_kw ? `${version.system_size_kw} kW` : (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "Custom")}
-                                          {version?.battery_capacity_kwh ? ` / ${version.battery_capacity_kwh} kWh Storage` : ""}
-                                          {version?.inverter_capacity_kva ? ` || Inverter Capacity: ${version.inverter_capacity_kva} kVa` : ""}
-                                        </p>
+                                        {systemSpecsLine ? (
+                                          <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold mt-0.5">
+                                            {systemSpecsLine}
+                                          </p>
+                                        ) : null}
                                       </div>
                                       <div className="text-left sm:text-right">
                                         <span className="text-xs text-slate-500 dark:text-slate-400 block">Total Quoted Investment</span>
@@ -1678,7 +1746,6 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                                   </td>
                                                 </tr>
                                               ))}
-                                              {/* Total Row */}
                                               <tr className="bg-slate-50/80 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-700">
                                                 <td colSpan={3} className="px-3.5 py-2.5 text-center uppercase tracking-wider text-slate-900 dark:text-white">
                                                   TOTAL
@@ -1715,10 +1782,10 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     {/* Value Proposition Banner */}
                                     <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 text-center">
                                       <p className="text-xs font-bold text-[#0070c0] dark:text-blue-400">
-                                        Why Fortsolar? {(version as any)?.why_fortsolar_banner || "Free Installation • Free Insurance • 24/7 After-sales Service • Solar Financing"}
+                                        {version?.why_fortsolar_banner || "Why Fortsolar? Free Installation • Free Insurance • 24/7 After-sales Service • Solar Financing"}
                                       </p>
                                       <p className="text-[11px] text-slate-600 dark:text-slate-300 italic mt-0.5">
-                                        {(version as any)?.why_fortsolar_subtext || "Contact our lines for the energy financing option."}
+                                        {version?.why_fortsolar_subtext || "Contact our lines for the energy financing option."}
                                       </p>
                                     </div>
 
@@ -1754,18 +1821,22 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     {/* Proposal Metadata Grid */}
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                                       <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
-                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">System Size:</span>
+                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">PV / System Size:</span>
                                         <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
-                                          {version?.system_size_kw ? `${version.system_size_kw} kW` : (quote.recommendedSystemSize ? `${quote.recommendedSystemSize} kW` : "N/A")}
+                                          {pvVal && Number(pvVal) > 0 ? `${pvVal} kWp` : "BESS / Custom"}
                                         </p>
                                       </div>
                                       <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
-                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Est. Annual Savings:</span>
-                                        <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400 mt-0.5">{quote.estimatedSavings ? formatCurrency(quote.estimatedSavings) : "N/A"}</p>
+                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Inverter Size:</span>
+                                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
+                                          {invVal && Number(invVal) > 0 ? `${invVal} kW` : "—"}
+                                        </p>
                                       </div>
                                       <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
-                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Payback Period:</span>
-                                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">{quote.paybackPeriodYears ? `${quote.paybackPeriodYears} Years` : "N/A"}</p>
+                                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Battery Size:</span>
+                                        <p className="font-bold text-sm text-slate-900 dark:text-white mt-0.5">
+                                          {batVal && Number(batVal) > 0 ? `${batVal} kWh` : "—"}
+                                        </p>
                                       </div>
                                       <div className="rounded-xl border border-slate-100 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-800/40">
                                         <span className="text-slate-500 dark:text-slate-400 text-[11px] block">Quote Validity:</span>
@@ -1778,16 +1849,16 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                     {/* PDF Download Button & Revision Status */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                                       <a
-                                        href={quote.quotePdfUrl || `/api/v1/customer/me/quotes/${quote.id}/pdf`}
+                                        href={`/api/v1/customer/me/quotes/${quote.id}/pdf${version ? `?version=${version.version}` : ""}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-2 text-xs font-bold text-white bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 px-4 py-2 rounded-xl transition w-fit"
                                       >
-                                        📄 Download Official Proposal PDF
+                                        Download Official Proposal PDF {version ? `(v${version.version})` : ""}
                                       </a>
                                       {quote.status === "revision_requested" && (
                                         <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-1.5 rounded-xl">
-                                          ⏳ Revision requested — engineering team is updating your proposal.
+                                          Revision requested — engineering team is updating your proposal.
                                         </span>
                                       )}
                                     </div>
@@ -1797,11 +1868,12 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                       {isExpired ? (
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-xs">
                                           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-medium">
-                                            <span className="text-base">⚠️</span>
-                                            <span>This proposal validity window has expired. You can request a refreshed quote with updated component pricing.</span>
+                                            <span>
+                                              This version {version ? `(v${version.version})` : ""} has expired and can no longer be paid for. Select another active version above or request a quote refresh.
+                                            </span>
                                           </div>
                                           <a
-                                            href={`https://wa.me/2348087366156?text=${encodeURIComponent(`Hi Fortsolar, my custom quote #${quote.id.slice(0, 8)} has expired. Could you please refresh it for me?`)}`}
+                                            href={`https://wa.me/2348087366156?text=${encodeURIComponent(`Hi Fortsolar, my custom quote #${quote.id.slice(0, 8)} ${version ? `(v${version.version})` : ""} has expired. Could you please refresh it for me?`)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="shrink-0 px-3.5 py-2 rounded-lg bg-[#048A05] hover:bg-[#036B04] text-white font-bold text-xs shadow-xs transition text-center"
@@ -1826,7 +1898,7 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                               Cancel
                                             </Button>
                                             <Button
-                                              onClick={() => handleQuoteFeedback(quote.id, "rejected")}
+                                              onClick={() => handleQuoteFeedback(quote.id, "rejected", version?.version)}
                                               className="px-3.5 py-1.5 text-xs rounded-xl bg-rose-600 text-white hover:bg-rose-700"
                                               disabled={isFeedbackSubmittingQuoteId === quote.id}
                                             >
@@ -1844,11 +1916,13 @@ const SettingsContent = ({ page }: { page: TabKey }) => {
                                             Request Changes / Revision
                                           </Button>
                                           <Button
-                                            onClick={() => handleQuoteFeedback(quote.id, "approved")}
+                                            onClick={() => handleQuoteFeedback(quote.id, "approved", version?.version)}
                                             className="px-5 py-2 text-xs font-semibold text-white bg-[#048A05] hover:bg-[#036B04] rounded-xl w-full sm:w-fit cursor-pointer shadow-xs"
                                             disabled={isFeedbackSubmittingQuoteId === quote.id}
                                           >
-                                            {isFeedbackSubmittingQuoteId === quote.id ? "Proceeding to Checkout..." : "Accept & Proceed to Checkout →"}
+                                            {isFeedbackSubmittingQuoteId === quote.id
+                                              ? "Proceeding to Checkout..."
+                                              : `Accept & Pay for ${version ? `v${version.version}` : "Quote"} (${formatCurrency(version?.total ?? quote.estimatedCost ?? 0)}) →`}
                                           </Button>
                                         </>
                                       )}

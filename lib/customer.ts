@@ -55,7 +55,7 @@ export function submitCustomerQuoteRequest(payload: Record<string, unknown>) {
   });
 }
 
-export function submitCustomerQuoteFeedback(id: string, payload: { response: "approved" | "rejected"; feedback?: string }) {
+export function submitCustomerQuoteFeedback(id: string, payload: { response: "approved" | "rejected"; feedback?: string; version?: number }) {
   return appRequest<ApiSuccessResponse>(`/api/v1/customer/me/quotes/${id}/feedback`, {
     method: "PATCH",
     body: payload,

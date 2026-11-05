@@ -481,34 +481,42 @@ export type CustomerQuoteRecord = {
     hoursPerDay?: number;
     whPerDay?: number;
   }>;
-  activeVersion?: {
-    id: string;
-    version: number;
-    state: string;
-    title: string | null;
-    system_size_kw: number | null;
-    inverter_capacity_kva: number | null;
-    battery_capacity_kwh: number | null;
-    line_items: Array<{
-      id?: string;
-      name: string;
-      quantity: number | string;
-      unit_price: number;
-      amount: number;
-      is_lot?: boolean;
-    }>;
-    warranty: Array<{
-      component: string;
-      duration_years?: number | string;
-      description: string;
-    }>;
-    overview: string | null;
-    validity_days: number;
-    total: number;
-    expires_at: string | null;
-    package_id: string | null;
-  } | null;
+  activeVersion?: CustomerQuoteVersionRecord | null;
+  versions?: CustomerQuoteVersionRecord[];
   quotePdfUrl?: string;
+};
+
+export type CustomerQuoteVersionRecord = {
+  id: string;
+  version: number;
+  state: string;
+  title: string | null;
+  pv_size_kwp?: number | null;
+  inverter_size_kw?: number | null;
+  system_size_kw: number | null;
+  inverter_capacity_kva: number | null;
+  battery_capacity_kwh: number | null;
+  line_items: Array<{
+    id?: string;
+    name: string;
+    quantity: number | string;
+    unit_price: number;
+    amount: number;
+    is_lot?: boolean;
+  }>;
+  warranty: Array<{
+    component: string;
+    duration_years?: number | string;
+    description: string;
+  }>;
+  overview: string | null;
+  why_fortsolar_banner?: string | null;
+  why_fortsolar_subtext?: string | null;
+  validity_days: number;
+  total: number;
+  expires_at: string | null;
+  package_id: string | null;
+  created_at?: string;
 };
 
 export type CustomerQuoteListApiResponse = ApiCollectionResponse<CustomerQuoteRecord>;
